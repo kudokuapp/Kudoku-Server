@@ -1,6 +1,9 @@
 import { ApolloServer } from "apollo-server";
 import { PrismaClient } from "@prisma/client";
-import { ApolloServerPluginLandingPageLocalDefault } from "apollo-server-core";
+import {
+	ApolloServerPluginLandingPageLocalDefault,
+	ApolloServerPluginLandingPageDisabled,
+} from "apollo-server-core";
 import { schema } from "./schema";
 import { context } from "./context";
 
@@ -8,7 +11,11 @@ export const server = new ApolloServer({
 	schema,
 	context,
 	introspection: process.env.NODE_ENV !== "production",
-	plugins: [ApolloServerPluginLandingPageLocalDefault()],
+	plugins: [
+		process.env.NODE_ENV === "production"
+			? ApolloServerPluginLandingPageDisabled()
+			: ApolloServerPluginLandingPageLocalDefault(),
+	],
 });
 
 const port = (process.env.PORT as unknown as number) || 3000;
