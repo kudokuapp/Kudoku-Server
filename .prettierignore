@@ -20,6 +20,8 @@ node_modules
 /build
 /package
 
+/prisma
+
 
 # Ignore files for PNPM, NPM and YARN
 pnpm-lock.yaml
