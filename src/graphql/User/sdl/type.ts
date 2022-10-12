@@ -8,5 +8,6 @@ export const User = objectType({
 		t.nonNull.string("name");
 		t.nonNull.string("email");
 		t.nonNull.string("whatsapp");
+		t.nonNull.int("kudos");
 	},
 });

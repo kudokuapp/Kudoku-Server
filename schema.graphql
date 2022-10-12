@@ -21,6 +21,7 @@ type Query {
 type User {
   email: String!
   id: String!
+  kudos: Int!
   name: String!
   username: String!
   whatsapp: String!

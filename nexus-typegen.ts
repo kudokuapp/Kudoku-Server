@@ -37,6 +37,7 @@ export interface NexusGenObjects {
   User: { // root type
     email: string; // String!
     id: string; // String!
+    kudos: number; // Int!
     name: string; // String!
     username: string; // String!
     whatsapp: string; // String!
@@ -70,6 +71,7 @@ export interface NexusGenFieldTypes {
   User: { // field return type
     email: string; // String!
     id: string; // String!
+    kudos: number; // Int!
     name: string; // String!
     username: string; // String!
     whatsapp: string; // String!
@@ -93,6 +95,7 @@ export interface NexusGenFieldTypeNames {
   User: { // field return type name
     email: 'String'
     id: 'String'
+    kudos: 'Int'
     name: 'String'
     username: 'String'
     whatsapp: 'String'
