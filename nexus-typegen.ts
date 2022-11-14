@@ -60,6 +60,8 @@ export interface NexusGenFieldTypes {
     user: NexusGenRootTypes['User']; // User!
   }
   Mutation: { // field return type
+    changePassword: NexusGenRootTypes['AuthPayLoad']; // AuthPayLoad!
+    getTokenFromOtp: NexusGenRootTypes['AuthPayLoad']; // AuthPayLoad!
     login: NexusGenRootTypes['AuthPayLoad']; // AuthPayLoad!
     signup: NexusGenRootTypes['AuthPayLoad']; // AuthPayLoad!
   }
@@ -84,6 +86,8 @@ export interface NexusGenFieldTypeNames {
     user: 'User'
   }
   Mutation: { // field return type name
+    changePassword: 'AuthPayLoad'
+    getTokenFromOtp: 'AuthPayLoad'
     login: 'AuthPayLoad'
     signup: 'AuthPayLoad'
   }
@@ -104,6 +108,14 @@ export interface NexusGenFieldTypeNames {
 
 export interface NexusGenArgTypes {
   Mutation: {
+    changePassword: { // args
+      password: string; // String!
+    }
+    getTokenFromOtp: { // args
+      email?: string | null; // String
+      otp: string; // String!
+      whatsapp?: string | null; // String
+    }
     login: { // args
       password: string; // String!
       username: string; // String!

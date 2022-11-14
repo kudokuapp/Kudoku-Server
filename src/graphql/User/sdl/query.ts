@@ -5,6 +5,8 @@ export const LinkQuery = extendType({
 	definition(t) {
 		t.nonNull.list.nonNull.field("getalluser", {
 			type: "User",
+			description:
+				"This API is to get every user's data in our database. Useful for checking if username is already taken or not.",
 			resolve(parent, args, context, info) {
 				return context.prisma.user.findMany();
 			},
@@ -12,6 +14,7 @@ export const LinkQuery = extendType({
 
 		t.field("getuserbyid", {
 			type: "User",
+			description: "This API is to get a spesific user's data by their id",
 			args: {
 				id: nonNull(idArg()),
 			},
@@ -26,6 +29,8 @@ export const LinkQuery = extendType({
 
 		t.field("getuserbyusername", {
 			type: "User",
+			description:
+				"This API is to get a spesific user's data by their username.",
 			args: {
 				username: nonNull(stringArg()),
 			},

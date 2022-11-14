@@ -3,24 +3,60 @@
 
 
 type AuthPayLoad {
+  """JWT Token"""
   token: String!
   user: User!
 }
 
 type Mutation {
+  """
+  Change the user password. Must have JWT Token from running mutation `getTokenFromOtp`
+  """
+  changePassword(password: String!): AuthPayLoad!
+
+  """
+  Get JWT Token from email/whatsapp OTP that has been requested from the client. We then verified the OTP in this server. WhatsApp needs to have "+62" prefix.
+  """
+  getTokenFromOtp(
+    """
+    Fill this with user email if you want to verify the OTP via the EMAIL OTP, otherwise fill this with "null"
+    """
+    email: String
+    otp: String!
+
+    """
+    Fill this with user phone number if you want to verify the OTP via the SMS OTP, otherwise fill this with "null"
+    """
+    whatsapp: String
+  ): AuthPayLoad!
   login(password: String!, username: String!): AuthPayLoad!
+
+  """
+  This is the API where user can sign up after they got invited. This means that the user's data is already in our MongoDB database.
+  """
   signup(id: ID!, password: String!, username: String!): AuthPayLoad!
 }
 
 type Query {
+  """
+  This API is to get every user's data in our database. Useful for checking if username is already taken or not.
+  """
   getalluser: [User!]!
+
+  """This API is to get a spesific user's data by their id"""
   getuserbyid(id: ID!): User
+
+  """This API is to get a spesific user's data by their username."""
   getuserbyusername(username: String!): User
 }
 
 type User {
   email: String!
+
+  """id generated automatically by MongoDB"""
   id: String!
+
+  """This is the kudos No."""
   kudos: Int!
   name: String!
   username: String!

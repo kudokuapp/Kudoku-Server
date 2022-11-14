@@ -18,7 +18,7 @@ export const server = new ApolloServer({
 	],
 });
 
-const port = (process.env.PORT as unknown as number) || 3000;
+const port = (process.env.PORT as unknown as number) || 8080;
 
 server.listen({ port }).then(({ url }) => {
 	console.log(`Server ready at ${url}`);
