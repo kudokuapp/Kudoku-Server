@@ -1,46 +1,48 @@
 {
-	"name": "kudoku-server",
-	"version": "1.0.0",
-	"description": "Server supporting the Kudoku App on the Web, iOS, iPadOS, macOS, Windows, and Android.",
-	"main": "dist/index.js",
-	"scripts": {
-		"dev": "ts-node-dev --transpile-only --no-notify --exit-child src/index.ts",
-		"generate": "ts-node --transpile-only src/schema.ts",
-		"migrate:deploy": "prisma migrate deploy",
-		"build": "prisma generate && npm run generate && tsc",
-		"start": "node dist/src/index.js",
-		"test:brick": "ts-node-dev --respawn --no-notify src/utils/test/brick.ts",
-		"test:data": "ts-node-dev --respawn --no-notify src/utils/test/sortdata.ts"
-	},
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/kudokuapp/Kudoku-Server.git"
-	},
-	"author": "PT. Kudoku Finansial Indonesia",
-	"license": "",
-	"bugs": {
-		"url": "https://github.com/kudokuapp/Kudoku-Server/issues"
-	},
-	"homepage": "https://github.com/kudokuapp/Kudoku-Server#readme",
-	"dependencies": {
-		"@prisma/client": "^4.4.0",
-		"apollo-server": "^3.10.3",
-		"axios": "^1.1.2",
-		"bcryptjs": "^2.4.3",
-		"graphql": "^16.6.0",
-		"jsonwebtoken": "^8.5.1",
-		"nexus": "^1.3.0",
-		"onebrick-node-sdk": "^1.0.17"
-	},
-	"devDependencies": {
-		"@types/bcryptjs": "^2.4.2",
-		"@types/jsonwebtoken": "^8.5.9",
-		"@types/mongodb": "^4.0.7",
-		"@types/node": "^18.8.5",
-		"api": "^4.5.2",
-		"dotenv": "^16.0.3",
-		"prisma": "^4.4.0",
-		"ts-node-dev": "^2.0.0",
-		"typescript": "^4.8.4"
-	}
+  "name": "kudoku-server",
+  "version": "1.0.0",
+  "description": "Server supporting the Kudoku App on the Web, iOS, iPadOS, macOS, Windows, and Android.",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "ts-node-dev --transpile-only --no-notify --exit-child src/index.ts",
+    "generate": "ts-node --transpile-only src/schema.ts",
+    "migrate:deploy": "prisma migrate deploy",
+    "build": "prisma generate && npm run generate && tsc",
+    "start": "node dist/src/index.js",
+    "test:brick": "ts-node-dev --respawn --no-notify src/utils/test/brick.ts",
+    "test:data": "ts-node-dev --respawn --no-notify src/utils/test/sortdata.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kudokuapp/Kudoku-Server.git"
+  },
+  "author": "PT. Kudoku Finansial Indonesia",
+  "license": "",
+  "bugs": {
+    "url": "https://github.com/kudokuapp/Kudoku-Server/issues"
+  },
+  "homepage": "https://github.com/kudokuapp/Kudoku-Server#readme",
+  "dependencies": {
+    "@prisma/client": "^4.4.0",
+    "apollo-server": "^3.10.3",
+    "axios": "^1.1.2",
+    "bcryptjs": "^2.4.3",
+    "graphql": "^16.6.0",
+    "jsonwebtoken": "^8.5.1",
+    "nexus": "^1.3.0",
+    "onebrick-node-sdk": "^1.0.17"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.2",
+    "@types/jsonwebtoken": "^8.5.9",
+    "@types/mongodb": "^4.0.7",
+    "@types/node": "^18.8.5",
+    "api": "^4.5.2",
+    "dotenv": "^16.0.3",
+    "eslint": "^8.27.0",
+    "husky": "^8.0.2",
+    "prisma": "^4.4.0",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^4.8.4"
+  }
 }

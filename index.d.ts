@@ -1,2 +1,2 @@
-declare module "onebrick-node-sdk";
-declare module "api";
+declare module 'onebrick-node-sdk';
+declare module 'api';
