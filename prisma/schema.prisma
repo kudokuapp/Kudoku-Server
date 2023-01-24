@@ -8,11 +8,101 @@ datasource db {
 }
 
 model User {
-  id        String      @id @default(auto()) @map("_id") @db.ObjectId
-  username  String      @unique
-  password  String
-  name      String
-  email     String      @unique
-  whatsapp  String      @unique
-  kudos     Int         @unique
+  id                String      @id @default(auto()) @map("_id") @db.ObjectId
+  username          String      @unique
+  password          String
+  firstName          String
+  lastName          String
+  email             String      @unique
+  whatsapp          String      @unique
+  kudosNo           Int         @unique
+  createdAt         DateTime    @default(now())
+  subscribe?        Subscribe[] @relation(references: [id])
+  profile?           Profile      @relation(fields: [profileId], references: [id])
+  profileId?         String      @db.ObjectId
+  refresh           Refresh[]   @relation(references: [id])
+  account           Account[]   @relation(references: [id])
+}
+
+model Profile {
+  id               String  @id @default(auto()) @map("_id") @db.ObjectId
+  user             User    @relation(fields: [userId], references: [id])
+  userId           String  @unique @db.ObjectId
+  bio              String
+  profilePicture    String
+}
+
+model Subscribe {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  user        User      @relation(fields: [userId], references: [id])
+  userId      String    @unique @db.ObjectId
+  startDate   DateTime
+  endDate     DateTime
+}
+
+model Refresh {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  user      User      @relation(fields: [userId], references: [id])
+  userId    String    @unique @db.ObjectId
+  date      DateTime
+}
+
+model Account {
+  id                String          @id @default(auto()) @map("_id") @db.ObjectId
+  user              User            @relation(fields: [userId], references: [id])
+  userId            String
+  institution       Institution     @relation(fileds: [institutionId], references: [id])
+  institutionId     Int
+  accountNumber     String
+  accessToken       String
+  createdAt         DateTime        @default(now())
+  Transaction       Transaction[]   
+}
+
+model Institution {
+  id            String          @id @default(auto()) @map("_id") @db.ObjectId
+  name          String
+  displayName   String
+  picture       String
+}
+
+model Merchant {
+  id            String          @id @default(auto()) @map("_id") @db.ObjectId
+  name          String
+  picture       String
+}
+
+model Transaction {
+  id                    String            @id @default(auto()) @map("_id") @db.ObjectId
+  account               Account           @relation(fileds: [accountId], references: [id])
+  accountId             String            @unique @db.ObjectId
+  dateTimestamp         DateTime
+  referenceId           String
+  currency              String
+  amount                String            //Takut aneh kalo number
+  onlineTransaction     Boolean           @default(false)
+  isReviewed            Boolean           @default(false)
+  merchant              Merchant          @relation(fileds: [merchantId], references: [id])
+  merchantId            Int               @unique @db.ObjectId
+  expenseCategory       String[]
+  transactionType       TransactionType   @default(EXPENSE)
+  isSubscription        Boolean           @default(false)
+  description           String
+  notes?                String
+  institutionId         Int
+  location?             Location
+  tags?                 String[]
+  isHideFromBudget      Boolean           @default(false)
+  isHideFromInsight     Boolean           @default(false) 
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+  INTERNAL TRANSFER
+}
+
+type Location {
+  longitude   String
+  latitude    String
 }

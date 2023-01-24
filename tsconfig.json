@@ -8,7 +8,11 @@
     "outDir": "dist",
     "sourceMap": true,
     "esModuleInterop": true,
-    "noImplicitAny": false
+    "noImplicitAny": false,
+    "baseUrl": ".",
+    "paths": {
+      "$algorithm/*": ["algorithm/*"]
+    }
   },
   "exclude": ["node_modules"]
 }
