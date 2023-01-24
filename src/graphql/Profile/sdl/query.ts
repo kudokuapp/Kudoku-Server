@@ -2,24 +2,15 @@ import { arg, extendType, idArg, nonNull, stringArg } from 'nexus';
 import * as jwt from 'jsonwebtoken';
 import { AuthTokenPayload } from '$utils/auth';
 
-export const UserQuery = extendType({
+export const ProfileQuery = extendType({
   type: 'Query',
   definition(t) {
-    t.nonNull.list.nonNull.field('getAllUser', {
-      type: 'User',
-      description:
-        "This API is to get every user's data in our database. Useful for checking if username is already taken or not.",
-
-      async resolve(parent, args, context, info) {
-        return await context.prisma.user.findMany();
-      },
-    });
 
     t.field('getUser', {
-      type: 'User',
-      description: "Get User's info from either their ID, Username, or Token",
+      type: 'Profile',
+      description: "Get User's info from either their userId or username",
       args: {
-        id: arg({
+        userId: arg({
           type: 'String',
           description:
             'Fill this with their id, otherwise fill this with "null"',
@@ -29,14 +20,10 @@ export const UserQuery = extendType({
           description:
             'Fill this with username, otherwise fill this with "null"',
         }),
-        token: arg({
-          type: 'String',
-          description:
-            'Fill this with JWT Token, otherwise fill this with "null"',
-        }),
       },
+      
       async resolve(parent, args, context, info) {
-        const { id, username, token } = args;
+        const { userId, username } = args;
 
         if (id !== null && id !== undefined) {
           const user = await context.prisma.user.findFirst({ where: { id } });

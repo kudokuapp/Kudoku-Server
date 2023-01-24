@@ -30,15 +30,18 @@ export interface NexusGenScalars {
 export interface NexusGenObjects {
   AuthPayLoad: { // root type
     token: string; // String!
-    user: NexusGenRootTypes['User']; // User!
   }
   Mutation: {};
   Query: {};
+  ResponseMessage: { // root type
+    response?: string | null; // String
+  }
   User: { // root type
     email: string; // String!
+    firstName: string; // String!
     id: string; // String!
-    kudos: number; // Int!
-    name: string; // String!
+    kudosNo: number; // Int!
+    lastName: string; // String!
     username: string; // String!
     whatsapp: string; // String!
   }
@@ -57,24 +60,30 @@ export type NexusGenAllTypes = NexusGenRootTypes & NexusGenScalars
 export interface NexusGenFieldTypes {
   AuthPayLoad: { // field return type
     token: string; // String!
-    user: NexusGenRootTypes['User']; // User!
   }
   Mutation: { // field return type
     changePassword: NexusGenRootTypes['AuthPayLoad']; // AuthPayLoad!
-    getTokenFromOtp: NexusGenRootTypes['AuthPayLoad']; // AuthPayLoad!
-    login: NexusGenRootTypes['AuthPayLoad']; // AuthPayLoad!
+    changePin: NexusGenRootTypes['AuthPayLoad']; // AuthPayLoad!
     signup: NexusGenRootTypes['AuthPayLoad']; // AuthPayLoad!
+    updateUserFirstAndLastName: NexusGenRootTypes['User']; // User!
   }
   Query: { // field return type
-    getalluser: NexusGenRootTypes['User'][]; // [User!]!
-    getuserbyid: NexusGenRootTypes['User'] | null; // User
-    getuserbyusername: NexusGenRootTypes['User'] | null; // User
+    getAllUser: NexusGenRootTypes['User'][]; // [User!]!
+    getOtp: NexusGenRootTypes['ResponseMessage'] | null; // ResponseMessage
+    getUser: NexusGenRootTypes['User'] | null; // User
+    login: NexusGenRootTypes['AuthPayLoad']; // AuthPayLoad!
+    verifyOtp: NexusGenRootTypes['AuthPayLoad']; // AuthPayLoad!
+    verifyPin: NexusGenRootTypes['AuthPayLoad']; // AuthPayLoad!
+  }
+  ResponseMessage: { // field return type
+    response: string | null; // String
   }
   User: { // field return type
     email: string; // String!
+    firstName: string; // String!
     id: string; // String!
-    kudos: number; // Int!
-    name: string; // String!
+    kudosNo: number; // Int!
+    lastName: string; // String!
     username: string; // String!
     whatsapp: string; // String!
   }
@@ -83,24 +92,30 @@ export interface NexusGenFieldTypes {
 export interface NexusGenFieldTypeNames {
   AuthPayLoad: { // field return type name
     token: 'String'
-    user: 'User'
   }
   Mutation: { // field return type name
     changePassword: 'AuthPayLoad'
-    getTokenFromOtp: 'AuthPayLoad'
-    login: 'AuthPayLoad'
+    changePin: 'AuthPayLoad'
     signup: 'AuthPayLoad'
+    updateUserFirstAndLastName: 'User'
   }
   Query: { // field return type name
-    getalluser: 'User'
-    getuserbyid: 'User'
-    getuserbyusername: 'User'
+    getAllUser: 'User'
+    getOtp: 'ResponseMessage'
+    getUser: 'User'
+    login: 'AuthPayLoad'
+    verifyOtp: 'AuthPayLoad'
+    verifyPin: 'AuthPayLoad'
+  }
+  ResponseMessage: { // field return type name
+    response: 'String'
   }
   User: { // field return type name
     email: 'String'
+    firstName: 'String'
     id: 'String'
-    kudos: 'Int'
-    name: 'String'
+    kudosNo: 'Int'
+    lastName: 'String'
     username: 'String'
     whatsapp: 'String'
   }
@@ -109,28 +124,46 @@ export interface NexusGenFieldTypeNames {
 export interface NexusGenArgTypes {
   Mutation: {
     changePassword: { // args
+      jwtToken: string; // String!
       password: string; // String!
     }
-    getTokenFromOtp: { // args
+    changePin: { // args
+      jwtToken: string; // String!
+      pin: string; // String!
+    }
+    signup: { // args
+      id: string; // ID!
+      jwtToken: string; // String!
+      password: string; // String!
+      pin: string; // String!
+      username: string; // String!
+    }
+    updateUserFirstAndLastName: { // args
+      firstName?: string | null; // String
+      lastName?: string | null; // String
+    }
+  }
+  Query: {
+    getOtp: { // args
       email?: string | null; // String
-      otp: string; // String!
       whatsapp?: string | null; // String
+    }
+    getUser: { // args
+      id?: string | null; // String
+      token?: string | null; // String
+      username?: string | null; // String
     }
     login: { // args
       password: string; // String!
       username: string; // String!
     }
-    signup: { // args
-      id: string; // ID!
-      password: string; // String!
-      username: string; // String!
+    verifyOtp: { // args
+      email?: string | null; // String
+      otp: string; // String!
+      whatsapp?: string | null; // String
     }
-  }
-  Query: {
-    getuserbyid: { // args
-      id: string; // ID!
-    }
-    getuserbyusername: { // args
+    verifyPin: { // args
+      pin: string; // String!
       username: string; // String!
     }
   }

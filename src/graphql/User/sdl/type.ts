@@ -7,10 +7,11 @@ export const User = objectType({
       description: 'id generated automatically by MongoDB',
     });
     t.nonNull.string('username');
-    t.nonNull.string('name');
+    t.nonNull.string('firstName');
+    t.nonNull.string('lastName');
     t.nonNull.string('email');
     t.nonNull.string('whatsapp');
-    t.nonNull.int('kudos', {
+    t.nonNull.int('kudosNo', {
       description: 'This is the kudos No.',
     });
   },
