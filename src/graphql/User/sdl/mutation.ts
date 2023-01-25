@@ -1,7 +1,4 @@
-import { arg, extendType, idArg, nonNull, stringArg } from 'nexus';
-import * as bcrypt from 'bcryptjs';
-import * as jwt from 'jsonwebtoken';
-import { APP_SECRET } from '../../../utils/auth';
+import { arg, extendType } from 'nexus';
 
 export const UserMutation = extendType({
   type: 'Mutation',
@@ -32,18 +29,38 @@ export const UserMutation = extendType({
         }
 
         if (firstName !== null && firstName !== undefined) {
-          return await context.prisma.user.update({
+          await context.prisma.user.update({
             where: { id },
             data: { firstName },
           });
-        } else if (lastName !== null && lastName !== undefined) {
-          return await context.prisma.user.update({
+        }
+        if (lastName !== null && lastName !== undefined) {
+          await context.prisma.user.update({
             where: { id },
             data: { lastName },
           });
-        } else {
+        }
+
+        if (!lastName && !firstName) {
           throw new Error('Cannot have both firstName and lastName null');
         }
+
+        const response = await context.prisma.user.findFirst({ where: { id } });
+
+        if (!response)
+          throw new Error('somehow cannot find user after updating');
+
+        if (!response.username) throw new Error('Username is null');
+
+        return {
+          id: response.id,
+          username: response.username,
+          firstName: response.firstName,
+          lastName: response.lastName,
+          email: response.email,
+          whatsapp: response.whatsapp,
+          kudosNo: response.kudosNo,
+        };
       },
     });
   },

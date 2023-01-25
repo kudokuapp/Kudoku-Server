@@ -57,9 +57,20 @@ export const ProfileQuery = extendType({
           );
         }
 
+        if (!responseUser.username)
+          throw new Error('username is null or undefined');
+
         return {
           id: response.id,
-          user: responseUser,
+          user: {
+            id: responseUser.id,
+            username: responseUser.username,
+            firstName: responseUser.firstName,
+            lastName: responseUser.lastName,
+            email: responseUser.email,
+            whatsapp: responseUser.whatsapp,
+            kudosNo: responseUser.kudosNo,
+          },
           userId: response.id,
           bio: response.bio ?? null,
           profilePicture: response.profilePicture ?? null,
