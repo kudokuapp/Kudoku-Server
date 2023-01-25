@@ -72,9 +72,20 @@ export const ProfileMutation = extendType({
 
         if (!response) throw new Error('Unable to reach the server');
 
+        if (user.username === null || user.username === undefined)
+          throw new Error('username is null or undefined');
+
         return {
           id: response.id,
-          user: user,
+          user: {
+            id: user.id,
+            username: user.username,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            whatsapp: user.whatsapp,
+            kudosNo: user.kudosNo,
+          },
           userId: user.id,
           bio: response.bio ?? null,
           profilePicture: response.profilePicture ?? null,

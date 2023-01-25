@@ -9,15 +9,15 @@ datasource db {
 
 model User {
   id                String            @id @default(auto()) @map("_id") @db.ObjectId
-  username          String?           @unique
-  password          String?
-  pin               String?
+  username          String            @unique
+  password          String
+  pin               String
   firstName          String
   lastName          String
   email             String            @unique
   whatsapp          String            @unique
   kudosNo           Int               @unique
-  createdAt         DateTime?         @default(now())
+  createdAt         DateTime          @default(now())
   subscribe         Subscribe?       
   profile            Profile?            
   refresh           Refresh?         
