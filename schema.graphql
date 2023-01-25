@@ -21,6 +21,22 @@ type Mutation {
   """
   signup(id: ID!, jwtToken: String!, password: String!, pin: String!, username: String!): AuthPayLoad!
 
+  """Change user's email or whatsapp"""
+  updateEmailOrWhatsapp(
+    """
+    Fill this with the updated email, otherwise fill this with "null"
+    """
+    email: String
+
+    """Fill this with jwtToken after running otpVerify"""
+    jwtToken: String!
+
+    """
+    Fill this with the updated whatsapp, otherwise fill this with "null"
+    """
+    whatsapp: String
+  ): User!
+
   """Change user's public profile"""
   updateProfile(
     """Fill this with the user's public bio"""

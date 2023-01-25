@@ -1,4 +1,6 @@
-import { arg, extendType } from 'nexus';
+import { arg, extendType, nonNull } from 'nexus';
+import * as jwt from 'jsonwebtoken';
+import { AuthTokenPayload, OTP_SECRET } from '$utils/auth';
 
 export const UserMutation = extendType({
   type: 'Mutation',
@@ -42,6 +44,79 @@ export const UserMutation = extendType({
         }
 
         if (!lastName && !firstName) {
+          throw new Error('Cannot have both firstName and lastName null');
+        }
+
+        const response = await context.prisma.user.findFirst({ where: { id } });
+
+        if (!response)
+          throw new Error('somehow cannot find user after updating');
+
+        if (!response.username) throw new Error('Username is null');
+
+        return {
+          id: response.id,
+          username: response.username,
+          firstName: response.firstName,
+          lastName: response.lastName,
+          email: response.email,
+          whatsapp: response.whatsapp,
+          kudosNo: response.kudosNo,
+        };
+      },
+    });
+
+    t.nonNull.field('updateEmailOrWhatsapp', {
+      type: 'User',
+      description: "Change user's email or whatsapp",
+      args: {
+        email: arg({
+          type: 'String',
+          description:
+            'Fill this with the updated email, otherwise fill this with "null"',
+        }),
+        whatsapp: arg({
+          type: 'String',
+          description:
+            'Fill this with the updated whatsapp, otherwise fill this with "null"',
+        }),
+        jwtToken: nonNull(
+          arg({
+            type: 'String',
+            description: 'Fill this with jwtToken after running otpVerify',
+          })
+        ),
+      },
+
+      async resolve(parent, args, context) {
+        const { email, whatsapp, jwtToken } = args;
+        const { userId: id, prisma } = context;
+
+        const { userId: otpId } = jwt.verify(
+          jwtToken,
+          OTP_SECRET
+        ) as unknown as AuthTokenPayload;
+
+        if (otpId !== id || !id) throw new Error('Invalid token');
+
+        const user = await prisma.user.findFirst({ where: { id } });
+
+        if (!user) throw new Error('Cannot find user');
+
+        if (email !== null && email !== undefined) {
+          await context.prisma.user.update({
+            where: { id },
+            data: { email },
+          });
+        }
+        if (whatsapp !== null && whatsapp !== undefined) {
+          await context.prisma.user.update({
+            where: { id },
+            data: { whatsapp },
+          });
+        }
+
+        if (!email && !whatsapp) {
           throw new Error('Cannot have both firstName and lastName null');
         }
 

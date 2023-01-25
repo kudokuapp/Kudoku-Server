@@ -73,6 +73,7 @@ export interface NexusGenFieldTypes {
     changePassword: NexusGenRootTypes['AuthPayLoad']; // AuthPayLoad!
     changePin: NexusGenRootTypes['AuthPayLoad']; // AuthPayLoad!
     signup: NexusGenRootTypes['AuthPayLoad']; // AuthPayLoad!
+    updateEmailOrWhatsapp: NexusGenRootTypes['User']; // User!
     updateProfile: NexusGenRootTypes['Profile']; // Profile!
     updateUserFirstAndLastName: NexusGenRootTypes['User']; // User!
   }
@@ -115,6 +116,7 @@ export interface NexusGenFieldTypeNames {
     changePassword: 'AuthPayLoad'
     changePin: 'AuthPayLoad'
     signup: 'AuthPayLoad'
+    updateEmailOrWhatsapp: 'User'
     updateProfile: 'Profile'
     updateUserFirstAndLastName: 'User'
   }
@@ -165,6 +167,11 @@ export interface NexusGenArgTypes {
       password: string; // String!
       pin: string; // String!
       username: string; // String!
+    }
+    updateEmailOrWhatsapp: { // args
+      email?: string | null; // String
+      jwtToken: string; // String!
+      whatsapp?: string | null; // String
     }
     updateProfile: { // args
       bio?: string | null; // String
