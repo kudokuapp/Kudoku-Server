@@ -6,8 +6,14 @@ export const AuthPayLoad = objectType({
     t.nonNull.string('token', {
       description: 'JWT Token',
     });
-    t.nonNull.field('user', {
-      type: 'User',
+  },
+});
+
+export const ResponseMessage = objectType({
+  name: 'ResponseMessage',
+  definition(t) {
+    t.string('response', {
+      description: 'Response message',
     });
   },
 });
