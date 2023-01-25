@@ -167,7 +167,7 @@ export const AuthQuery = extendType({
                 channel: 'email',
                 locale: 'id',
               });
-            return response.toJSON();
+            return { response: JSON.stringify(response) };
           } catch (e: any) {
             throw new Error(e);
           }
@@ -181,7 +181,7 @@ export const AuthQuery = extendType({
                 locale: 'id',
               });
 
-            return response.toJSON();
+            return { response: JSON.stringify(response) };
           } catch (e: any) {
             throw new Error(e);
           }

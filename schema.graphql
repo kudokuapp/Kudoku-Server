@@ -21,6 +21,20 @@ type Mutation {
   """
   signup(id: ID!, jwtToken: String!, password: String!, pin: String!, username: String!): AuthPayLoad!
 
+  """Change user's public profile"""
+  updateProfile(
+    """Fill this with the user's public bio"""
+    bio: String
+
+    """Fill this with the user's birthday. Format: YYYY-MM-DD"""
+    birthday: String
+
+    """
+    Fill this with the user's profile picture. Important: Use base64 images.
+    """
+    profilePicture: String
+  ): Profile!
+
   """
   Change user's info (email, whatsapp, etc.) but not the user public profile
   """
@@ -35,6 +49,19 @@ type Mutation {
     """
     lastName: String
   ): User!
+}
+
+type Profile {
+  bio: String
+  birthday: String
+
+  """id generated automatically by MongoDB"""
+  id: String!
+  profilePicture: String
+  user: User!
+
+  """userId for that particular user"""
+  userId: String!
 }
 
 type Query {
@@ -55,6 +82,19 @@ type Query {
     """
     whatsapp: String
   ): ResponseMessage
+
+  """Get User's profile from their userId or username"""
+  getProfile(
+    """
+    Fill this with their id, otherwise fill this with "null"
+    """
+    userId: String
+
+    """
+    Fill this with username, otherwise fill this with "null"
+    """
+    username: String
+  ): Profile
 
   """Get User's info from either their ID, Username, or Token"""
   getUser(

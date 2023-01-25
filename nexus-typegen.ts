@@ -32,6 +32,14 @@ export interface NexusGenObjects {
     token: string; // String!
   }
   Mutation: {};
+  Profile: { // root type
+    bio?: string | null; // String
+    birthday?: string | null; // String
+    id: string; // String!
+    profilePicture?: string | null; // String
+    user: NexusGenRootTypes['User']; // User!
+    userId: string; // String!
+  }
   Query: {};
   ResponseMessage: { // root type
     response?: string | null; // String
@@ -65,11 +73,21 @@ export interface NexusGenFieldTypes {
     changePassword: NexusGenRootTypes['AuthPayLoad']; // AuthPayLoad!
     changePin: NexusGenRootTypes['AuthPayLoad']; // AuthPayLoad!
     signup: NexusGenRootTypes['AuthPayLoad']; // AuthPayLoad!
+    updateProfile: NexusGenRootTypes['Profile']; // Profile!
     updateUserFirstAndLastName: NexusGenRootTypes['User']; // User!
+  }
+  Profile: { // field return type
+    bio: string | null; // String
+    birthday: string | null; // String
+    id: string; // String!
+    profilePicture: string | null; // String
+    user: NexusGenRootTypes['User']; // User!
+    userId: string; // String!
   }
   Query: { // field return type
     getAllUser: NexusGenRootTypes['User'][]; // [User!]!
     getOtp: NexusGenRootTypes['ResponseMessage'] | null; // ResponseMessage
+    getProfile: NexusGenRootTypes['Profile'] | null; // Profile
     getUser: NexusGenRootTypes['User'] | null; // User
     login: NexusGenRootTypes['AuthPayLoad']; // AuthPayLoad!
     verifyOtp: NexusGenRootTypes['AuthPayLoad']; // AuthPayLoad!
@@ -97,11 +115,21 @@ export interface NexusGenFieldTypeNames {
     changePassword: 'AuthPayLoad'
     changePin: 'AuthPayLoad'
     signup: 'AuthPayLoad'
+    updateProfile: 'Profile'
     updateUserFirstAndLastName: 'User'
+  }
+  Profile: { // field return type name
+    bio: 'String'
+    birthday: 'String'
+    id: 'String'
+    profilePicture: 'String'
+    user: 'User'
+    userId: 'String'
   }
   Query: { // field return type name
     getAllUser: 'User'
     getOtp: 'ResponseMessage'
+    getProfile: 'Profile'
     getUser: 'User'
     login: 'AuthPayLoad'
     verifyOtp: 'AuthPayLoad'
@@ -138,6 +166,11 @@ export interface NexusGenArgTypes {
       pin: string; // String!
       username: string; // String!
     }
+    updateProfile: { // args
+      bio?: string | null; // String
+      birthday?: string | null; // String
+      profilePicture?: string | null; // String
+    }
     updateUserFirstAndLastName: { // args
       firstName?: string | null; // String
       lastName?: string | null; // String
@@ -147,6 +180,10 @@ export interface NexusGenArgTypes {
     getOtp: { // args
       email?: string | null; // String
       whatsapp?: string | null; // String
+    }
+    getProfile: { // args
+      userId?: string | null; // String
+      username?: string | null; // String
     }
     getUser: { // args
       id?: string | null; // String
