@@ -31,6 +31,15 @@ export interface NexusGenObjects {
   AuthPayLoad: { // root type
     token: string; // String!
   }
+  CashAccount: { // root type
+    accountName: string; // String!
+    balance: string; // String!
+    createdAt: string; // String!
+    displayPicture?: string | null; // String
+    id: string; // String!
+    user: NexusGenRootTypes['User']; // User!
+    userId: string; // String!
+  }
   Mutation: {};
   Profile: { // root type
     bio?: string | null; // String
@@ -69,7 +78,18 @@ export interface NexusGenFieldTypes {
   AuthPayLoad: { // field return type
     token: string; // String!
   }
+  CashAccount: { // field return type
+    accountName: string; // String!
+    balance: string; // String!
+    createdAt: string; // String!
+    displayPicture: string | null; // String
+    id: string; // String!
+    user: NexusGenRootTypes['User']; // User!
+    userId: string; // String!
+  }
   Mutation: { // field return type
+    addCashAccount: NexusGenRootTypes['CashAccount']; // CashAccount!
+    addCashTransaction: NexusGenRootTypes['CashAccount']; // CashAccount!
     changePassword: NexusGenRootTypes['AuthPayLoad']; // AuthPayLoad!
     changePin: NexusGenRootTypes['AuthPayLoad']; // AuthPayLoad!
     signup: NexusGenRootTypes['AuthPayLoad']; // AuthPayLoad!
@@ -112,7 +132,18 @@ export interface NexusGenFieldTypeNames {
   AuthPayLoad: { // field return type name
     token: 'String'
   }
+  CashAccount: { // field return type name
+    accountName: 'String'
+    balance: 'String'
+    createdAt: 'String'
+    displayPicture: 'String'
+    id: 'String'
+    user: 'User'
+    userId: 'String'
+  }
   Mutation: { // field return type name
+    addCashAccount: 'CashAccount'
+    addCashTransaction: 'CashAccount'
     changePassword: 'AuthPayLoad'
     changePin: 'AuthPayLoad'
     signup: 'AuthPayLoad'
@@ -153,6 +184,16 @@ export interface NexusGenFieldTypeNames {
 
 export interface NexusGenArgTypes {
   Mutation: {
+    addCashAccount: { // args
+      accountName: string; // String!
+      displayPicture?: string | null; // String
+      startingBalance: string; // String!
+    }
+    addCashTransaction: { // args
+      accountName: string; // String!
+      displayPicture?: string | null; // String
+      startingBalance: string; // String!
+    }
     changePassword: { // args
       jwtToken: string; // String!
       password: string; // String!

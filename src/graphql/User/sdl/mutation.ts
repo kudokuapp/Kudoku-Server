@@ -1,6 +1,6 @@
 import { arg, extendType, nonNull } from 'nexus';
 import * as jwt from 'jsonwebtoken';
-import { AuthTokenPayload, OTP_SECRET } from '$utils/auth';
+import { AuthTokenPayload, OTP_SECRET } from '../../../utils/auth';
 
 export const UserMutation = extendType({
   type: 'Mutation',

@@ -1,3 +1,4 @@
+import { cleanDate } from '$utils/date';
 import { Profile, User } from '@prisma/client';
 import { arg, extendType } from 'nexus';
 
@@ -74,11 +75,7 @@ export const ProfileQuery = extendType({
           userId: response.id,
           bio: response.bio ?? null,
           profilePicture: response.profilePicture ?? null,
-          birthday: response.birthday
-            ? `${new Date(response.birthday).getFullYear()}-${
-                new Date(response.birthday).getMonth() + 1
-              }-${new Date(response.birthday).getDate()}`
-            : null,
+          birthday: response.birthday ? cleanDate(response.birthday) : null,
         };
       },
     });

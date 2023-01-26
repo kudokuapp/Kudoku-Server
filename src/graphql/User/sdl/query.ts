@@ -1,6 +1,6 @@
-import { arg, extendType, idArg, nonNull, stringArg } from 'nexus';
+import { arg, extendType } from 'nexus';
 import * as jwt from 'jsonwebtoken';
-import { AuthTokenPayload } from '$utils/auth';
+import { AuthTokenPayload } from '../../../utils/auth';
 
 export const UserQuery = extendType({
   type: 'Query',

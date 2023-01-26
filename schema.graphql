@@ -7,7 +7,56 @@ type AuthPayLoad {
   token: String!
 }
 
+type CashAccount {
+  """
+  Name, should user choose it's name differently. Default should be just "Cash"
+  """
+  accountName: String!
+
+  """The balance of that cash account"""
+  balance: String!
+
+  """When this account is created"""
+  createdAt: String!
+
+  """base64 image"""
+  displayPicture: String
+
+  """id generated automatically by MongoDB"""
+  id: String!
+  user: User!
+  userId: String!
+}
+
 type Mutation {
+  """Create a new cash account."""
+  addCashAccount(
+    """
+    The account name of the cash account that user created. Default to "Cash"
+    """
+    accountName: String! = "Cash"
+
+    """The icon or display picture of that account"""
+    displayPicture: String
+
+    """The starting balance of the cash account"""
+    startingBalance: String! = "0"
+  ): CashAccount!
+
+  """Create a new cash account."""
+  addCashTransaction(
+    """
+    The account name of the cash account that user created. Default to "Cash"
+    """
+    accountName: String! = "Cash"
+
+    """The icon or display picture of that account"""
+    displayPicture: String
+
+    """The starting balance of the cash account"""
+    startingBalance: String! = "0"
+  ): CashAccount!
+
   """
   Change the user password. Must have JWT Token from running OTP Verification
   """
