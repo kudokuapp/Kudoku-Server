@@ -22,7 +22,7 @@ model User {
   profile            Profile?            
   refresh           Refresh?         
   account           Account?         
-  manualAccount     ManualAccount?   
+  cashAccount       CashAccount?   
 }
 
 model Profile {
@@ -57,36 +57,36 @@ model Account {
   institutionId     String          @unique @db.ObjectId
   accountNumber     String
   accessToken       String
+  balance           String
   createdAt         DateTime        @default(now())
   transaction       Transaction[]   
 }
 
-model ManualAccount {
+model CashAccount {
   id                String                @id @default(auto()) @map("_id") @db.ObjectId
   user              User                  @relation(fields: [userId], references: [id])
   userId            String                @unique @db.ObjectId
   createdAt         DateTime              @default(now())
-  transaction       ManualTransaction[]   
+  lastUpdate        DateTime
+  cashTransaction   CashTransaction[]   
   accountName       String
-  displayPicture    String
+  displayPicture    String?
+  balance           String
 }
 
-model ManualTransaction {
+model CashTransaction {
   id                    String            @id @default(auto()) @map("_id") @db.ObjectId
-  account               ManualAccount     @relation(fields: [accountId], references: [id])
-  accountId             String            @unique @db.ObjectId
+  cashAccount           CashAccount       @relation(fields: [cashAccountId], references: [id])
+  cashAccountId         String            @unique @db.ObjectId
   dateTimestamp         DateTime
-  referenceId           String
   currency              String
   amount                String            //Takut aneh kalo number
-  onlineTransaction     Boolean           @default(false)
   merchant              Merchant          @relation(fields: [merchantId], references: [id])
   merchantId            String            @unique @db.ObjectId
   expenseCategory       String[]
-  transactionType       TransactionType   @default(expense)
-  isSubscription        Boolean           @default(false)
-  notes                 String
-  location              Location
+  transactionType       TransactionType   @default(EXPENSE)
+  notes                 String?
+  location              Location?
   tags                  String[]
   isHideFromBudget      Boolean           @default(false)
   isHideFromInsight     Boolean           @default(false) 
@@ -101,10 +101,11 @@ model Institution {
 }
 
 model Merchant {
-  id                    String          @id @default(auto()) @map("_id") @db.ObjectId
+  id                    String              @id @default(auto()) @map("_id") @db.ObjectId
   name                  String
   picture               String
-  manualTransaction     ManualTransaction[]
+  url                   String
+  cashTransaction       CashTransaction[]
   transaction           Transaction[]
 }
 
@@ -121,7 +122,7 @@ model Transaction {
   merchant              Merchant          @relation(fields: [merchantId], references: [id])
   merchantId            String            @unique @db.ObjectId
   expenseCategory       String[]
-  transactionType       TransactionType   @default(expense)
+  transactionType       TransactionType   @default(EXPENSE)
   isSubscription        Boolean           @default(false)
   description           String
   notes                 String
@@ -133,9 +134,9 @@ model Transaction {
 }
 
 enum TransactionType {
-  income
-  expense
-  internalTransfer
+  INCOME
+  EXPENSE
+  TRANSFER
 }
 
 type Location {

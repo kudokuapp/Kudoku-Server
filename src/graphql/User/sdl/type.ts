@@ -14,5 +14,7 @@ export const User = objectType({
     t.nonNull.int('kudosNo', {
       description: 'This is the kudos No.',
     });
+
+    t.nonNull.string('createdAt');
   },
 });

@@ -14,9 +14,14 @@ declare global {
 }
 
 export interface NexusGenInputs {
+  LocationInputType: { // input type
+    latitude: string; // String!
+    longitude: string; // String!
+  }
 }
 
 export interface NexusGenEnums {
+  ExpenseTypeEnum: "EXPENSE" | "INCOME" | "TRANSFER"
 }
 
 export interface NexusGenScalars {
@@ -30,6 +35,41 @@ export interface NexusGenScalars {
 export interface NexusGenObjects {
   AuthPayLoad: { // root type
     token: string; // String!
+  }
+  CashAccount: { // root type
+    accountName: string; // String!
+    balance: string; // String!
+    createdAt: string; // String!
+    displayPicture?: string | null; // String
+    id: string; // String!
+    lastUpdate: string; // String!
+    userId: string; // String!
+  }
+  CashTransaction: { // root type
+    amount: string; // String!
+    cashAccountId: string; // String!
+    currency: string; // String!
+    dateTimestamp: string; // String!
+    expenseCategory: Array<string | null>; // [String]!
+    id: string; // String!
+    isHideFromBudget: boolean; // Boolean!
+    isHideFromInsight: boolean; // Boolean!
+    location?: NexusGenRootTypes['Location'] | null; // Location
+    merchant: NexusGenRootTypes['Merchant']; // Merchant!
+    merchantId: string; // String!
+    notes?: string | null; // String
+    tags?: Array<string | null> | null; // [String]
+    transactionType: string; // String!
+  }
+  Location: { // root type
+    latitude: string; // String!
+    longitude: string; // String!
+  }
+  Merchant: { // root type
+    id: string; // String!
+    name: string; // String!
+    picture: string; // String!
+    url: string; // String!
   }
   Mutation: {};
   Profile: { // root type
@@ -45,6 +85,7 @@ export interface NexusGenObjects {
     response?: string | null; // String
   }
   User: { // root type
+    createdAt: string; // String!
     email: string; // String!
     firstName: string; // String!
     id: string; // String!
@@ -63,15 +104,56 @@ export interface NexusGenUnions {
 
 export type NexusGenRootTypes = NexusGenObjects
 
-export type NexusGenAllTypes = NexusGenRootTypes & NexusGenScalars
+export type NexusGenAllTypes = NexusGenRootTypes & NexusGenScalars & NexusGenEnums
 
 export interface NexusGenFieldTypes {
   AuthPayLoad: { // field return type
     token: string; // String!
   }
+  CashAccount: { // field return type
+    accountName: string; // String!
+    balance: string; // String!
+    createdAt: string; // String!
+    displayPicture: string | null; // String
+    id: string; // String!
+    lastUpdate: string; // String!
+    userId: string; // String!
+  }
+  CashTransaction: { // field return type
+    amount: string; // String!
+    cashAccountId: string; // String!
+    currency: string; // String!
+    dateTimestamp: string; // String!
+    expenseCategory: Array<string | null>; // [String]!
+    id: string; // String!
+    isHideFromBudget: boolean; // Boolean!
+    isHideFromInsight: boolean; // Boolean!
+    location: NexusGenRootTypes['Location'] | null; // Location
+    merchant: NexusGenRootTypes['Merchant']; // Merchant!
+    merchantId: string; // String!
+    notes: string | null; // String
+    tags: Array<string | null> | null; // [String]
+    transactionType: string; // String!
+  }
+  Location: { // field return type
+    latitude: string; // String!
+    longitude: string; // String!
+  }
+  Merchant: { // field return type
+    id: string; // String!
+    name: string; // String!
+    picture: string; // String!
+    url: string; // String!
+  }
   Mutation: { // field return type
+    addCashAccount: NexusGenRootTypes['CashAccount']; // CashAccount!
+    addCashTransaction: NexusGenRootTypes['CashTransaction']; // CashTransaction!
+    addMerchant: NexusGenRootTypes['Merchant']; // Merchant!
     changePassword: NexusGenRootTypes['AuthPayLoad']; // AuthPayLoad!
     changePin: NexusGenRootTypes['AuthPayLoad']; // AuthPayLoad!
+    deleteCashAccount: NexusGenRootTypes['ResponseMessage'] | null; // ResponseMessage
+    deleteCashTransaction: NexusGenRootTypes['ResponseMessage'] | null; // ResponseMessage
+    editCashAccount: NexusGenRootTypes['CashAccount']; // CashAccount!
     signup: NexusGenRootTypes['AuthPayLoad']; // AuthPayLoad!
     updateEmailOrWhatsapp: NexusGenRootTypes['User']; // User!
     updateProfile: NexusGenRootTypes['Profile']; // Profile!
@@ -86,6 +168,8 @@ export interface NexusGenFieldTypes {
     userId: string; // String!
   }
   Query: { // field return type
+    getAllCashTransaction: Array<NexusGenRootTypes['CashTransaction'] | null> | null; // [CashTransaction]
+    getAllMerchant: NexusGenRootTypes['Merchant'][]; // [Merchant!]!
     getAllUser: NexusGenRootTypes['User'][]; // [User!]!
     getOtp: NexusGenRootTypes['ResponseMessage'] | null; // ResponseMessage
     getProfile: NexusGenRootTypes['Profile'] | null; // Profile
@@ -98,6 +182,7 @@ export interface NexusGenFieldTypes {
     response: string | null; // String
   }
   User: { // field return type
+    createdAt: string; // String!
     email: string; // String!
     firstName: string; // String!
     id: string; // String!
@@ -112,9 +197,50 @@ export interface NexusGenFieldTypeNames {
   AuthPayLoad: { // field return type name
     token: 'String'
   }
+  CashAccount: { // field return type name
+    accountName: 'String'
+    balance: 'String'
+    createdAt: 'String'
+    displayPicture: 'String'
+    id: 'String'
+    lastUpdate: 'String'
+    userId: 'String'
+  }
+  CashTransaction: { // field return type name
+    amount: 'String'
+    cashAccountId: 'String'
+    currency: 'String'
+    dateTimestamp: 'String'
+    expenseCategory: 'String'
+    id: 'String'
+    isHideFromBudget: 'Boolean'
+    isHideFromInsight: 'Boolean'
+    location: 'Location'
+    merchant: 'Merchant'
+    merchantId: 'String'
+    notes: 'String'
+    tags: 'String'
+    transactionType: 'String'
+  }
+  Location: { // field return type name
+    latitude: 'String'
+    longitude: 'String'
+  }
+  Merchant: { // field return type name
+    id: 'String'
+    name: 'String'
+    picture: 'String'
+    url: 'String'
+  }
   Mutation: { // field return type name
+    addCashAccount: 'CashAccount'
+    addCashTransaction: 'CashTransaction'
+    addMerchant: 'Merchant'
     changePassword: 'AuthPayLoad'
     changePin: 'AuthPayLoad'
+    deleteCashAccount: 'ResponseMessage'
+    deleteCashTransaction: 'ResponseMessage'
+    editCashAccount: 'CashAccount'
     signup: 'AuthPayLoad'
     updateEmailOrWhatsapp: 'User'
     updateProfile: 'Profile'
@@ -129,6 +255,8 @@ export interface NexusGenFieldTypeNames {
     userId: 'String'
   }
   Query: { // field return type name
+    getAllCashTransaction: 'CashTransaction'
+    getAllMerchant: 'Merchant'
     getAllUser: 'User'
     getOtp: 'ResponseMessage'
     getProfile: 'Profile'
@@ -141,6 +269,7 @@ export interface NexusGenFieldTypeNames {
     response: 'String'
   }
   User: { // field return type name
+    createdAt: 'String'
     email: 'String'
     firstName: 'String'
     id: 'String'
@@ -153,6 +282,29 @@ export interface NexusGenFieldTypeNames {
 
 export interface NexusGenArgTypes {
   Mutation: {
+    addCashAccount: { // args
+      accountName: string; // String!
+      displayPicture?: string | null; // String
+      startingBalance: string; // String!
+    }
+    addCashTransaction: { // args
+      amount: string; // String!
+      cashAccountId: string; // String!
+      currency: string; // String!
+      expenseCategory: string[]; // [String!]!
+      isHideFromBudget: boolean; // Boolean!
+      isHideFromInsight: boolean; // Boolean!
+      location?: NexusGenInputs['LocationInputType'] | null; // LocationInputType
+      merchantId: string; // String!
+      notes?: string | null; // String
+      tags: string[]; // [String!]!
+      transactionType: NexusGenEnums['ExpenseTypeEnum']; // ExpenseTypeEnum!
+    }
+    addMerchant: { // args
+      name: string; // String!
+      picture: string; // String!
+      url: string; // String!
+    }
     changePassword: { // args
       jwtToken: string; // String!
       password: string; // String!
@@ -160,6 +312,17 @@ export interface NexusGenArgTypes {
     changePin: { // args
       jwtToken: string; // String!
       pin: string; // String!
+    }
+    deleteCashAccount: { // args
+      id: string; // String!
+    }
+    deleteCashTransaction: { // args
+      id: string; // String!
+    }
+    editCashAccount: { // args
+      accountName: string | null; // String
+      displayPicture?: string | null; // String
+      id: string; // String!
     }
     signup: { // args
       id: string; // ID!
@@ -184,6 +347,9 @@ export interface NexusGenArgTypes {
     }
   }
   Query: {
+    getAllCashTransaction: { // args
+      cashAccountId: string; // String!
+    }
     getOtp: { // args
       email?: string | null; // String
       whatsapp?: string | null; // String
@@ -193,9 +359,7 @@ export interface NexusGenArgTypes {
       username?: string | null; // String
     }
     getUser: { // args
-      id?: string | null; // String
-      token?: string | null; // String
-      username?: string | null; // String
+      username: string; // String!
     }
     login: { // args
       password: string; // String!
@@ -221,9 +385,9 @@ export interface NexusGenTypeInterfaces {
 
 export type NexusGenObjectNames = keyof NexusGenObjects;
 
-export type NexusGenInputNames = never;
+export type NexusGenInputNames = keyof NexusGenInputs;
 
-export type NexusGenEnumNames = never;
+export type NexusGenEnumNames = keyof NexusGenEnums;
 
 export type NexusGenInterfaceNames = never;
 

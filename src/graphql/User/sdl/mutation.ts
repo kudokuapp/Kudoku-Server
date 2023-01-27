@@ -1,6 +1,7 @@
 import { arg, extendType, nonNull } from 'nexus';
 import * as jwt from 'jsonwebtoken';
-import { AuthTokenPayload, OTP_SECRET } from '$utils/auth';
+import { AuthTokenPayload, OTP_SECRET } from '../../../utils/auth';
+import { toTimeStamp } from '../../../utils/date';
 
 export const UserMutation = extendType({
   type: 'Mutation',
@@ -62,6 +63,7 @@ export const UserMutation = extendType({
           email: response.email,
           whatsapp: response.whatsapp,
           kudosNo: response.kudosNo,
+          createdAt: toTimeStamp(response.createdAt),
         };
       },
     });
@@ -135,6 +137,7 @@ export const UserMutation = extendType({
           email: response.email,
           whatsapp: response.whatsapp,
           kudosNo: response.kudosNo,
+          createdAt: toTimeStamp(response.createdAt),
         };
       },
     });

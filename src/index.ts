@@ -6,6 +6,7 @@ import {
 } from 'apollo-server-core';
 import { schema } from './schema';
 import { context } from './context';
+import { toTimeStamp } from './utils/date';
 
 export const server = new ApolloServer({
   schema,

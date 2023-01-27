@@ -1,4 +1,4 @@
-import { arg, extendType, idArg, nonNull, stringArg } from 'nexus';
+import { extendType, idArg, nonNull, stringArg } from 'nexus';
 import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
 import { AuthTokenPayload, OTP_SECRET, APP_SECRET } from '../../../utils/auth';
