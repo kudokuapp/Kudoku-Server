@@ -1,4 +1,4 @@
-import { cleanDate } from '$utils/date';
+import { cleanDate, toTimeStamp } from '../../../utils/date';
 import { Profile, User } from '@prisma/client';
 import { arg, extendType } from 'nexus';
 
@@ -71,6 +71,7 @@ export const ProfileQuery = extendType({
             email: responseUser.email,
             whatsapp: responseUser.whatsapp,
             kudosNo: responseUser.kudosNo,
+            createdAt: toTimeStamp(responseUser.createdAt),
           },
           userId: response.id,
           bio: response.bio ?? null,

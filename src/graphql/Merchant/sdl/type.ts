@@ -15,5 +15,9 @@ export const Merchant = objectType({
     t.nonNull.string('picture', {
       description: 'The display picture of that merchant',
     });
+
+    t.nonNull.string('url', {
+      description: 'The URL of that merchant',
+    });
   },
 });

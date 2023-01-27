@@ -1,6 +1,5 @@
-import { arg, extendType } from 'nexus';
-import * as jwt from 'jsonwebtoken';
-import { AuthTokenPayload } from '../../../utils/auth';
+import { arg, extendType, nonNull } from 'nexus';
+import { toTimeStamp } from '../../../utils/date';
 
 export const UserQuery = extendType({
   type: 'Query',
@@ -11,58 +10,64 @@ export const UserQuery = extendType({
         "This API is to get every user's data in our database. Useful for checking if username is already taken or not.",
 
       async resolve(parent, args, context, info) {
-        return await context.prisma.user.findMany();
+        const user = await context.prisma.user.findMany();
+
+        let arrayOfUsers = new Array(user.length);
+
+        for (let i = 0; i < user.length; i++) {
+          const element = user[i];
+
+          const obj = {
+            id: element.id,
+            username: element.username,
+            firstName: element.firstName,
+            lastName: element.lastName,
+            email: element.email,
+            whatsapp: element.whatsapp,
+            createdAt: toTimeStamp(element.createdAt),
+          };
+
+          arrayOfUsers.push(obj);
+        }
+
+        return arrayOfUsers;
       },
     });
 
     t.field('getUser', {
       type: 'User',
-      description: "Get User's info from either their ID, Username, or Token",
+      description: "Get User's info from their Username",
       args: {
-        id: arg({
-          type: 'String',
-          description:
-            'Fill this with their id, otherwise fill this with "null"',
-        }),
-        username: arg({
-          type: 'String',
-          description:
-            'Fill this with username, otherwise fill this with "null"',
-        }),
-        token: arg({
-          type: 'String',
-          description:
-            'Fill this with JWT Token, otherwise fill this with "null"',
-        }),
+        username: nonNull(
+          arg({
+            type: 'String',
+            description:
+              'Fill this with username, otherwise fill this with "null"',
+          })
+        ),
       },
       async resolve(parent, args, context, info) {
-        const { id, username, token } = args;
+        const { username } = args;
 
-        if (id !== null && id !== undefined) {
-          const user = await context.prisma.user.findFirst({ where: { id } });
-          if (!user) throw new Error('Cannot find user');
-          return user;
-        } else if (username !== null && username !== undefined) {
-          const user = await context.prisma.user.findFirst({
-            where: { username },
-          });
-          if (!user) throw new Error('Cannot find user');
-          return user;
-        } else if (token !== null && token !== undefined) {
-          const { userId } = jwt.verify(
-            token,
-            process.env.APP_SECRET as string
-          ) as AuthTokenPayload;
-          const user = await context.prisma.user.findFirst({
-            where: { id: userId },
-          });
-          if (!user) throw new Error('Cannot find user');
-          return user;
-        } else {
-          throw new Error(
-            'Cannot find have all id, username, and token null or undefined'
-          );
-        }
+        const { prisma } = context;
+
+        if (!username)
+          throw new Error('cannot have username null or undefined');
+
+        const user = await prisma.user.findFirst({ where: { username } });
+
+        if (!user) throw new Error('cannot find user with that username');
+
+        return {
+          id: user.id,
+          username: user.username,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          whatsapp: user.whatsapp,
+          createdAt: toTimeStamp(user.createdAt),
+          kudosNo: user.kudosNo,
+        };
       },
     });
   },

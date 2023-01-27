@@ -1,3 +1,4 @@
+import { cleanDate, toTimeStamp } from '../../../utils/date';
 import { arg, extendType } from 'nexus';
 
 export const ProfileMutation = extendType({
@@ -85,15 +86,12 @@ export const ProfileMutation = extendType({
             email: user.email,
             whatsapp: user.whatsapp,
             kudosNo: user.kudosNo,
+            createdAt: toTimeStamp(user.createdAt),
           },
           userId: user.id,
           bio: response.bio ?? null,
           profilePicture: response.profilePicture ?? null,
-          birthday: response.birthday
-            ? `${new Date(response.birthday).getFullYear()}-${
-                new Date(response.birthday).getMonth() + 1
-              }-${new Date(response.birthday).getDate()}`
-            : null,
+          birthday: response.birthday ? cleanDate(response.birthday) : null,
         };
       },
     });

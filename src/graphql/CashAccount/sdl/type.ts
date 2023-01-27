@@ -1,4 +1,4 @@
-import { objectType } from 'nexus';
+import { inputObjectType, objectType } from 'nexus';
 
 export const CashAccount = objectType({
   name: 'CashAccount',
@@ -7,19 +7,15 @@ export const CashAccount = objectType({
       description: 'id generated automatically by MongoDB',
     });
 
-    t.nonNull.field('user', {
-      type: 'User',
-    });
-
     t.nonNull.string('userId');
 
     t.nonNull.string('createdAt', {
       description: 'When this account is created',
     });
-
-    // t.nonNull.field('cashTransaction', {
-    //   type: 'CashTransaction',
-    // });
+    
+    t.nonNull.string('lastUpdate', {
+      description: 'When this account is last updated',
+    });
 
     t.nonNull.string('accountName', {
       description:
@@ -41,13 +37,12 @@ export const CashTransaction = objectType({
       description: 'id generated automatically by MongoDB',
     });
 
-    t.nonNull.field('cashAccount', {
-      type: 'CashAccount',
-      description: 'The cash account associated to this transaction',
-    });
-
     t.nonNull.string('cashAccountId', {
       description: 'The cash account Id',
+    });
+
+    t.nonNull.string('dateTimestamp', {
+      description: 'Date and Timestamp for this transaction',
     });
 
     t.nonNull.string('currency', {
@@ -60,12 +55,12 @@ export const CashTransaction = objectType({
 
     t.nonNull.field('merchant', {
       type: 'Merchant',
-      description: 'The merchant'
-    })
+      description: 'The merchant',
+    });
 
     t.nonNull.string('merchantId', {
-      description: 'The merchant Id'
-    })
+      description: 'The merchant Id',
+    });
 
     t.nonNull.list.string('expenseCategory', {
       description: 'The expense category for this transaction',
@@ -101,6 +96,14 @@ export const CashTransaction = objectType({
 
 export const Location = objectType({
   name: 'Location',
+  definition(t) {
+    t.nonNull.string('latitude');
+    t.nonNull.string('longitude');
+  },
+});
+
+export const LocationInputType = inputObjectType({
+  name: 'LocationInputType',
   definition(t) {
     t.nonNull.string('latitude');
     t.nonNull.string('longitude');

@@ -67,6 +67,7 @@ model CashAccount {
   user              User                  @relation(fields: [userId], references: [id])
   userId            String                @unique @db.ObjectId
   createdAt         DateTime              @default(now())
+  lastUpdate        DateTime
   cashTransaction   CashTransaction[]   
   accountName       String
   displayPicture    String?
@@ -75,17 +76,17 @@ model CashAccount {
 
 model CashTransaction {
   id                    String            @id @default(auto()) @map("_id") @db.ObjectId
-  cashAccount           CashAccount       @relation(fields: [cashAcountId], references: [id])
-  cashAcountId          String            @unique @db.ObjectId
+  cashAccount           CashAccount       @relation(fields: [cashAccountId], references: [id])
+  cashAccountId         String            @unique @db.ObjectId
   dateTimestamp         DateTime
   currency              String
   amount                String            //Takut aneh kalo number
   merchant              Merchant          @relation(fields: [merchantId], references: [id])
   merchantId            String            @unique @db.ObjectId
   expenseCategory       String[]
-  transactionType       TransactionType   @default(expense)
-  notes                 String
-  location              Location
+  transactionType       TransactionType   @default(EXPENSE)
+  notes                 String?
+  location              Location?
   tags                  String[]
   isHideFromBudget      Boolean           @default(false)
   isHideFromInsight     Boolean           @default(false) 
@@ -100,9 +101,10 @@ model Institution {
 }
 
 model Merchant {
-  id                    String          @id @default(auto()) @map("_id") @db.ObjectId
+  id                    String              @id @default(auto()) @map("_id") @db.ObjectId
   name                  String
   picture               String
+  url                   String
   cashTransaction       CashTransaction[]
   transaction           Transaction[]
 }
@@ -120,7 +122,7 @@ model Transaction {
   merchant              Merchant          @relation(fields: [merchantId], references: [id])
   merchantId            String            @unique @db.ObjectId
   expenseCategory       String[]
-  transactionType       TransactionType   @default(expense)
+  transactionType       TransactionType   @default(EXPENSE)
   isSubscription        Boolean           @default(false)
   description           String
   notes                 String
@@ -132,9 +134,9 @@ model Transaction {
 }
 
 enum TransactionType {
-  income
-  expense
-  internalTransfer
+  INCOME
+  EXPENSE
+  TRANSFER
 }
 
 type Location {
