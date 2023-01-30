@@ -1,5 +1,4 @@
 import { arg, enumType, extendType, list, nonNull } from 'nexus';
-import { NexusObjectTypeDef } from 'nexus/dist/definitions/objectType';
 import { MaybePromise } from 'nexus/dist/typegenTypeHelpers';
 import { toTimeStamp } from '../../../utils/date';
 import { updateBalance } from '../../../utils/transaction';
@@ -385,7 +384,7 @@ export const CashTransactionMutation = extendType({
           merchant: merchant,
           merchantId: response.merchantId ?? '',
           category: response.category as unknown as MaybePromise<
-            MaybePromise<{ amount: string; name: string } | null>[]
+            ({ amount: string; name: string } | null)[] | null | undefined
           >,
           transactionType: response.transactionType,
           internalTransferAccountId: response.internalTransferAccountId,
