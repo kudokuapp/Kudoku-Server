@@ -72,24 +72,27 @@ model CashAccount {
   accountName       String
   displayPicture    String?
   balance           String
+  currency          String
 }
 
 model CashTransaction {
-  id                    String            @id @default(auto()) @map("_id") @db.ObjectId
-  cashAccount           CashAccount       @relation(fields: [cashAccountId], references: [id])
-  cashAccountId         String            @unique @db.ObjectId
-  dateTimestamp         DateTime
-  currency              String
-  amount                String            //Takut aneh kalo number
-  merchant              Merchant          @relation(fields: [merchantId], references: [id])
-  merchantId            String            @unique @db.ObjectId
-  expenseCategory       String[]
-  transactionType       TransactionType   @default(EXPENSE)
-  notes                 String?
-  location              Location?
-  tags                  String[]
-  isHideFromBudget      Boolean           @default(false)
-  isHideFromInsight     Boolean           @default(false) 
+  id                              String            @id @default(auto()) @map("_id") @db.ObjectId
+  cashAccount                     CashAccount       @relation(fields: [cashAccountId], references: [id])
+  cashAccountId                   String            @db.ObjectId
+  dateTimestamp                   DateTime
+  currency                        String
+  amount                          String            //Takut aneh kalo number
+  merchant                        Merchant?         @relation(fields: [merchantId], references: [id])
+  merchantId                      String?           @db.ObjectId
+  category                        Json?
+  transactionType                 TransactionType   @default(EXPENSE)
+  direction                       DirectionType     @default(OUT)
+  internalTransferAccountId       String?           @db.ObjectId
+  notes                           String?
+  location                        Location?
+  tags                            String[]
+  isHideFromBudget                Boolean           @default(false)
+  isHideFromInsight               Boolean           @default(false) 
 }
 
 model Institution {
@@ -137,6 +140,12 @@ enum TransactionType {
   INCOME
   EXPENSE
   TRANSFER
+  RECONCILE
+}
+
+enum DirectionType {
+  IN
+  OUT
 }
 
 type Location {

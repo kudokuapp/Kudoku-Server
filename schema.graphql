@@ -19,6 +19,9 @@ type CashAccount {
   """When this account is created"""
   createdAt: String!
 
+  """The ISO currency of this account"""
+  currency: String!
+
   """base64 image"""
   displayPicture: String
 
@@ -37,17 +40,23 @@ type CashTransaction {
   """The cash account Id"""
   cashAccountId: String!
 
+  """The category for this transaction"""
+  category: [Category]
+
   """ISO 4217 Currency"""
   currency: String!
 
   """Date and Timestamp for this transaction"""
   dateTimestamp: String!
 
-  """The expense category for this transaction"""
-  expenseCategory: [String]!
+  """The direction of the transaction. It's either `IN`, or `OUT`"""
+  direction: String!
 
   """id generated automatically by MongoDB"""
   id: String!
+
+  """The account id for internal transfer"""
+  internalTransferAccountId: String
 
   """Whether or not this transaction is hidden from budget"""
   isHideFromBudget: Boolean!
@@ -59,10 +68,10 @@ type CashTransaction {
   location: Location
 
   """The merchant"""
-  merchant: Merchant!
+  merchant: Merchant
 
   """The merchant Id"""
-  merchantId: String!
+  merchantId: String
 
   """Additional notes for this transaction"""
   notes: String
@@ -71,14 +80,30 @@ type CashTransaction {
   tags: [String]
 
   """
-  The transaction type for this transaction. It's either `income`, `expense`, or `internalTransfer`
+  The transaction type for this transaction. It's either `INCOME`, `EXPENSE`, or `TRANSFER`
   """
   transactionType: String!
+}
+
+type Category {
+  amount: String!
+  name: String!
+}
+
+input CategoryInputType {
+  amount: String!
+  name: String!
+}
+
+enum DirectionTypeEnum {
+  IN
+  OUT
 }
 
 enum ExpenseTypeEnum {
   EXPENSE
   INCOME
+  RECONCILE
   TRANSFER
 }
 
@@ -114,6 +139,9 @@ type Mutation {
     """
     accountName: String! = "Cash"
 
+    """The currency of this account. Use ISO currency"""
+    currency: String! = "IDR"
+
     """The icon or display picture of that account"""
     displayPicture: String
 
@@ -131,11 +159,17 @@ type Mutation {
     """The associated id of that cash account id"""
     cashAccountId: String!
 
+    """The category of the transaction"""
+    category: [CategoryInputType]!
+
     """The currency of this transaction, according to ISO 4217"""
     currency: String! = "IDR"
 
-    """The expense category of the transaction"""
-    expenseCategory: [String!]!
+    """The direction for this transaction. `IN` or `OUT`"""
+    direction: DirectionTypeEnum!
+
+    """The account id if internal transfer"""
+    internalTransferAccountId: String
 
     """Whether or not this transaction is hide from budget. default: false"""
     isHideFromBudget: Boolean! = false
@@ -207,6 +241,15 @@ type Mutation {
     id: String!
   ): CashAccount!
 
+  """Reconcile cash balance"""
+  reconcileCashBalance(
+    """The cash account id"""
+    cashAccountId: String!
+
+    """The new balance"""
+    newBalance: String!
+  ): ResponseMessage
+
   """
   This is the API where user can sign up after they got invited. This means that the user's data is already in our MongoDB database.
   """
@@ -272,6 +315,9 @@ type Profile {
 }
 
 type Query {
+  """Get all cash account for a particular user."""
+  getAllCashAccount: [CashAccount]
+
   """Get all the cash transaction from their cashAccountId"""
   getAllCashTransaction(
     """Fill this with cash account id"""

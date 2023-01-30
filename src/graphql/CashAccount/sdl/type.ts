@@ -12,7 +12,7 @@ export const CashAccount = objectType({
     t.nonNull.string('createdAt', {
       description: 'When this account is created',
     });
-    
+
     t.nonNull.string('lastUpdate', {
       description: 'When this account is last updated',
     });
@@ -26,6 +26,10 @@ export const CashAccount = objectType({
 
     t.nonNull.string('balance', {
       description: 'The balance of that cash account',
+    });
+
+    t.nonNull.string('currency', {
+      description: 'The ISO currency of this account',
     });
   },
 });
@@ -53,22 +57,32 @@ export const CashTransaction = objectType({
       description: 'The transaction amount',
     });
 
-    t.nonNull.field('merchant', {
+    t.field('merchant', {
       type: 'Merchant',
       description: 'The merchant',
     });
 
-    t.nonNull.string('merchantId', {
+    t.string('merchantId', {
       description: 'The merchant Id',
     });
 
-    t.nonNull.list.string('expenseCategory', {
-      description: 'The expense category for this transaction',
+    t.list.field('category', {
+      type: 'Category',
+      description: 'The category for this transaction',
     });
 
     t.nonNull.string('transactionType', {
       description:
-        "The transaction type for this transaction. It's either `income`, `expense`, or `internalTransfer`",
+        "The transaction type for this transaction. It's either `INCOME`, `EXPENSE`, or `TRANSFER`",
+    });
+
+    t.string('internalTransferAccountId', {
+      description: 'The account id for internal transfer',
+    });
+
+    t.nonNull.string('direction', {
+      description:
+        "The direction of the transaction. It's either `IN`, or `OUT`",
     });
 
     t.string('notes', {
@@ -102,11 +116,27 @@ export const Location = objectType({
   },
 });
 
+export const Category = objectType({
+  name: 'Category',
+  definition(t) {
+    t.nonNull.string('name');
+    t.nonNull.string('amount');
+  },
+});
+
 export const LocationInputType = inputObjectType({
   name: 'LocationInputType',
   definition(t) {
     t.nonNull.string('latitude');
     t.nonNull.string('longitude');
+  },
+});
+
+export const CategoryInputType = inputObjectType({
+  name: 'CategoryInputType',
+  definition(t) {
+    t.nonNull.string('name');
+    t.nonNull.string('amount');
   },
 });
 
