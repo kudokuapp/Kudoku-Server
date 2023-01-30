@@ -1,6 +1,9 @@
 import { arg, enumType, extendType, list, nonNull } from 'nexus';
+import { NexusObjectTypeDef } from 'nexus/dist/definitions/objectType';
+import { MaybePromise } from 'nexus/dist/typegenTypeHelpers';
 import { toTimeStamp } from '../../../utils/date';
 import { updateBalance } from '../../../utils/transaction';
+import { CategoryInputType } from './type';
 
 export const CashAccountMutation = extendType({
   type: 'Mutation',
@@ -28,10 +31,17 @@ export const CashAccountMutation = extendType({
             default: '0',
           })
         ),
+        currency: nonNull(
+          arg({
+            type: 'String',
+            description: 'The currency of this account. Use ISO currency',
+            default: 'IDR',
+          })
+        ),
       },
 
       async resolve(parent, args, context) {
-        const { accountName, displayPicture, startingBalance } = args;
+        const { accountName, displayPicture, startingBalance, currency } = args;
         const { userId: id, prisma } = context;
 
         if (!id) throw new Error('Invalid token');
@@ -62,6 +72,7 @@ export const CashAccountMutation = extendType({
             balance: startingBalance,
             createdAt: new Date(),
             lastUpdate: new Date(),
+            currency,
           },
         });
 
@@ -73,6 +84,7 @@ export const CashAccountMutation = extendType({
           displayPicture: response.displayPicture,
           createdAt: toTimeStamp(response.createdAt),
           lastUpdate: toTimeStamp(response.lastUpdate),
+          currency: response.currency,
         };
       },
     });
@@ -151,6 +163,7 @@ export const CashAccountMutation = extendType({
           displayPicture: response.displayPicture ?? null,
           balance: response.balance,
           lastUpdate: toTimeStamp(response.lastUpdate),
+          currency: response.currency,
         };
       },
     });
@@ -230,10 +243,10 @@ export const CashTransactionMutation = extendType({
           })
         ),
 
-        expenseCategory: nonNull(
+        category: nonNull(
           arg({
-            type: nonNull(list(nonNull('String'))),
-            description: 'The expense category of the transaction',
+            type: list(CategoryInputType),
+            description: 'The category of the transaction',
           })
         ),
 
@@ -244,6 +257,18 @@ export const CashTransactionMutation = extendType({
               'The transaction type. Either INCOME for in transation, EXPENSE for outgoing transaction, and TRANSFER for internal transfer.',
           })
         ),
+
+        direction: nonNull(
+          arg({
+            type: DirectionTypeEnum,
+            description: 'The direction for this transaction. `IN` or `OUT`',
+          })
+        ),
+
+        internalTransferAccountId: arg({
+          type: 'String',
+          description: 'The account id if internal transfer',
+        }),
 
         notes: arg({
           type: 'String',
@@ -276,7 +301,20 @@ export const CashTransactionMutation = extendType({
       },
 
       async resolve(parent, args, context) {
-        const { cashAccountId, amount, merchantId, transactionType } = args;
+        const {
+          cashAccountId,
+          amount,
+          merchantId,
+          transactionType,
+          direction,
+          internalTransferAccountId,
+          category,
+        } = args;
+
+        if (transactionType === 'TRANSFER' && !internalTransferAccountId)
+          throw new Error(
+            'Internal transfer account ID is required for Internal Transfer transaction'
+          );
 
         const { userId, prisma } = context;
 
@@ -285,6 +323,25 @@ export const CashTransactionMutation = extendType({
         const user = await prisma.user.findFirst({ where: { id: userId } });
 
         if (!user) throw new Error('Cannot find user');
+
+        /*
+        Check if the category match the amount
+        */
+
+        let categorySum: number = 0;
+
+        for (let i = 0; i < category.length; i++) {
+          const element = category[i];
+
+          if (!element) throw new Error('Object is null');
+
+          categorySum += Number(element.amount);
+        }
+
+        if (categorySum !== Number(amount))
+          throw new Error(
+            'The amount sum of categories need to be the same with the amount given'
+          );
 
         const cashAccount = await prisma.cashAccount.findFirst({
           where: { id: cashAccountId },
@@ -302,7 +359,7 @@ export const CashTransactionMutation = extendType({
             balance: updateBalance({
               balance: cashAccount.balance,
               amount,
-              type: transactionType,
+              direction,
               reverse: false,
             }).toString(),
             lastUpdate: new Date(),
@@ -326,9 +383,13 @@ export const CashTransactionMutation = extendType({
           currency: response.currency,
           amount: response.amount,
           merchant: merchant,
-          merchantId: response.merchantId,
-          expenseCategory: response.expenseCategory,
+          merchantId: response.merchantId ?? '',
+          category: response.category as unknown as MaybePromise<
+            MaybePromise<{ amount: string; name: string } | null>[]
+          >,
           transactionType: response.transactionType,
+          internalTransferAccountId: response.internalTransferAccountId,
+          direction: response.direction,
           notes: response.notes,
           location: response.location,
           tags: response.tags,
@@ -379,9 +440,9 @@ export const CashTransactionMutation = extendType({
           where: { id: cashAccountId },
           data: {
             balance: updateBalance({
-              balance: cashAccount.id,
+              balance: cashAccount.balance,
               amount: transaction.amount,
-              type: transaction.transactionType,
+              direction: transaction.direction,
               reverse: true,
             }).toString(),
             lastUpdate: new Date(),
@@ -395,10 +456,83 @@ export const CashTransactionMutation = extendType({
         };
       },
     });
+
+    t.field('reconcileCashBalance', {
+      type: 'ResponseMessage',
+      description: 'Reconcile cash balance',
+      args: {
+        newBalance: nonNull(
+          arg({
+            type: 'String',
+            description: 'The new balance',
+          })
+        ),
+        cashAccountId: nonNull(
+          arg({ type: 'String', description: 'The cash account id' })
+        ),
+      },
+
+      async resolve(parent, args, context, info) {
+        const { newBalance, cashAccountId } = args;
+
+        const { userId, prisma } = context;
+
+        if (!userId) throw new Error('Invalid token');
+
+        const user = await prisma.user.findFirst({ where: { id: userId } });
+
+        if (!user) throw new Error('Cannot find user');
+
+        const cashAccount = await prisma.cashAccount.findFirst({
+          where: { id: cashAccountId },
+        });
+
+        if (!cashAccount) throw new Error('Cannot find that cash account');
+
+        if (Number(newBalance) === Number(cashAccount.balance))
+          throw new Error(
+            'New balance cannot be the same as the current balance'
+          );
+
+        await prisma.cashAccount.update({
+          where: { id: cashAccountId },
+          data: { balance: newBalance },
+        });
+
+        const bigger = Number(newBalance) > Number(cashAccount.balance);
+
+        const transactionAmount = bigger
+          ? Number(newBalance) - Number(cashAccount.balance)
+          : Number(cashAccount.balance) - Number(newBalance);
+
+        await prisma.cashTransaction.create({
+          data: {
+            cashAccountId,
+            dateTimestamp: new Date(),
+            currency: cashAccount.currency,
+            amount: transactionAmount.toString(),
+            transactionType: 'RECONCILE',
+            direction: bigger ? 'IN' : 'OUT',
+            tags: [],
+            isHideFromBudget: true,
+            isHideFromInsight: true,
+          },
+        });
+
+        return {
+          response: `Successfully reconcile. The new balance for the account id ${cashAccountId} is ${newBalance}`,
+        };
+      },
+    });
   },
 });
 
 export const ExpenseTypeEnum = enumType({
   name: 'ExpenseTypeEnum',
-  members: ['INCOME', 'EXPENSE', 'TRANSFER'],
+  members: ['INCOME', 'EXPENSE', 'TRANSFER', 'RECONCILE'],
+});
+
+export const DirectionTypeEnum = enumType({
+  name: 'DirectionTypeEnum',
+  members: ['IN', 'OUT'],
 });

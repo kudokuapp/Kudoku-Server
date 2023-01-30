@@ -1,17 +1,17 @@
 export const updateBalance = ({
   balance,
   amount,
-  type,
+  direction,
   reverse,
 }: {
   balance: string;
   amount: string;
-  type: 'INCOME' | 'EXPENSE' | 'TRANSFER';
+  direction: 'IN' | 'OUT';
   reverse: boolean;
 }) => {
   const balanceNumber = Number(balance);
   const amountNumber = Number(amount);
-  if (type === 'INCOME') {
+  if (direction === 'IN') {
     return reverse
       ? balanceNumber - amountNumber
       : balanceNumber + amountNumber;

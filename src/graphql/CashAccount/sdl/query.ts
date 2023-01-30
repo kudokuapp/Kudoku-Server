@@ -1,5 +1,6 @@
 import { toTimeStamp } from '../../../utils/date';
 import { arg, extendType, nonNull } from 'nexus';
+import { GraphQLError } from 'graphql';
 
 export const CashAccountQuery = extendType({
   type: 'Query',
@@ -21,7 +22,9 @@ export const CashAccountQuery = extendType({
 
         const { userId, prisma } = context;
 
-        if (!userId) throw new Error('Invalid token');
+        if (!userId) {
+          throw new Error('Invalid token');
+        }
 
         const user = await prisma.user.findFirst({ where: { id: userId } });
 
@@ -38,13 +41,13 @@ export const CashAccountQuery = extendType({
           orderBy: [{ dateTimestamp: 'desc' }],
         });
 
-        let responseArray = new Array(response.length);
+        let responseArray: any[] = [];
 
         for (let i = 0; i < response.length; i++) {
           const element = response[i];
 
           const merchant = await prisma.merchant.findFirst({
-            where: { id: element.merchantId },
+            where: { id: element.merchantId ?? '63d3be20009767d5eb7e7410' },
           });
 
           const obj = {
@@ -53,10 +56,12 @@ export const CashAccountQuery = extendType({
             dateTimestamp: toTimeStamp(element.dateTimestamp),
             currency: element.currency,
             amount: element.amount,
-            merchant,
-            merchantId: element.merchantId,
-            expenseCategory: element.expenseCategory,
+            merchant: merchant ?? null,
+            merchantId: element.merchantId ?? null,
+            category: element.category,
+            direction: element.direction,
             transactionType: element.transactionType,
+            internalTransferAccountId: element.internalTransferAccountId,
             notes: element.notes,
             location: element.location,
             tags: element.tags,
@@ -68,6 +73,45 @@ export const CashAccountQuery = extendType({
         }
 
         return responseArray;
+      },
+    });
+
+    t.list.field('getAllCashAccount', {
+      type: 'CashAccount',
+      description: 'Get all cash account for a particular user.',
+
+      async resolve(parent, args, context, info) {
+        const { userId, prisma } = context;
+
+        if (!userId) throw new Error('Invalid token');
+
+        const cashAccount = await prisma.cashAccount.findMany({
+          where: { userId },
+        });
+
+        if (!cashAccount)
+          throw new Error('User have not created a cash account');
+
+        let response: any[] = [];
+
+        for (let i = 0; i < cashAccount.length; i++) {
+          const element = cashAccount[i];
+
+          const obj = {
+            id: element.id,
+            userId: element.userId,
+            createdAt: toTimeStamp(element.createdAt),
+            lastUpdate: toTimeStamp(element.lastUpdate),
+            accountName: element.accountName,
+            displayPicture: element.displayPicture,
+            balance: element.balance,
+            currency: element.currency,
+          };
+
+          response.push(obj);
+        }
+
+        return response;
       },
     });
   },
