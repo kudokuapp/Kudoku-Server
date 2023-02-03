@@ -204,6 +204,81 @@ export const CashAccountMutation = extendType({
         };
       },
     });
+
+    t.nonNull.field('reconcileCashBalance', {
+      type: 'CashAccount',
+      description: 'Reconcile cash balance',
+      args: {
+        newBalance: nonNull(
+          arg({
+            type: 'String',
+            description: 'The new balance',
+          })
+        ),
+        cashAccountId: nonNull(
+          arg({ type: 'String', description: 'The cash account id' })
+        ),
+      },
+
+      async resolve(parent, args, context, info) {
+        const { newBalance, cashAccountId } = args;
+
+        const { userId, prisma } = context;
+
+        if (!userId) throw new Error('Invalid token');
+
+        const user = await prisma.user.findFirst({ where: { id: userId } });
+
+        if (!user) throw new Error('Cannot find user');
+
+        const cashAccount = await prisma.cashAccount.findFirst({
+          where: { id: cashAccountId },
+        });
+
+        if (!cashAccount) throw new Error('Cannot find that cash account');
+
+        if (Number(newBalance) === Number(cashAccount.balance))
+          throw new Error(
+            'New balance cannot be the same as the current balance'
+          );
+
+        const response = await prisma.cashAccount.update({
+          where: { id: cashAccountId },
+          data: { balance: newBalance },
+        });
+
+        const bigger = Number(newBalance) > Number(cashAccount.balance);
+
+        const transactionAmount = bigger
+          ? Number(newBalance) - Number(cashAccount.balance)
+          : Number(cashAccount.balance) - Number(newBalance);
+
+        await prisma.cashTransaction.create({
+          data: {
+            cashAccountId,
+            dateTimestamp: new Date(),
+            currency: cashAccount.currency,
+            amount: transactionAmount.toString(),
+            transactionType: 'RECONCILE',
+            direction: bigger ? 'IN' : 'OUT',
+            tags: [],
+            isHideFromBudget: true,
+            isHideFromInsight: true,
+          },
+        });
+
+        return {
+          id: response.id,
+          accountName: response.accountName,
+          userId: response.userId,
+          balance: response.balance,
+          displayPicture: response.displayPicture,
+          createdAt: toTimeStamp(response.createdAt),
+          lastUpdate: toTimeStamp(response.lastUpdate),
+          currency: response.currency,
+        };
+      },
+    });
   },
 });
 
@@ -452,74 +527,6 @@ export const CashTransactionMutation = extendType({
 
         return {
           response: 'Successfully delete transaction and update its balance',
-        };
-      },
-    });
-
-    t.field('reconcileCashBalance', {
-      type: 'ResponseMessage',
-      description: 'Reconcile cash balance',
-      args: {
-        newBalance: nonNull(
-          arg({
-            type: 'String',
-            description: 'The new balance',
-          })
-        ),
-        cashAccountId: nonNull(
-          arg({ type: 'String', description: 'The cash account id' })
-        ),
-      },
-
-      async resolve(parent, args, context, info) {
-        const { newBalance, cashAccountId } = args;
-
-        const { userId, prisma } = context;
-
-        if (!userId) throw new Error('Invalid token');
-
-        const user = await prisma.user.findFirst({ where: { id: userId } });
-
-        if (!user) throw new Error('Cannot find user');
-
-        const cashAccount = await prisma.cashAccount.findFirst({
-          where: { id: cashAccountId },
-        });
-
-        if (!cashAccount) throw new Error('Cannot find that cash account');
-
-        if (Number(newBalance) === Number(cashAccount.balance))
-          throw new Error(
-            'New balance cannot be the same as the current balance'
-          );
-
-        await prisma.cashAccount.update({
-          where: { id: cashAccountId },
-          data: { balance: newBalance },
-        });
-
-        const bigger = Number(newBalance) > Number(cashAccount.balance);
-
-        const transactionAmount = bigger
-          ? Number(newBalance) - Number(cashAccount.balance)
-          : Number(cashAccount.balance) - Number(newBalance);
-
-        await prisma.cashTransaction.create({
-          data: {
-            cashAccountId,
-            dateTimestamp: new Date(),
-            currency: cashAccount.currency,
-            amount: transactionAmount.toString(),
-            transactionType: 'RECONCILE',
-            direction: bigger ? 'IN' : 'OUT',
-            tags: [],
-            isHideFromBudget: true,
-            isHideFromInsight: true,
-          },
-        });
-
-        return {
-          response: `Successfully reconcile. The new balance for the account id ${cashAccountId} is ${newBalance}`,
         };
       },
     });
