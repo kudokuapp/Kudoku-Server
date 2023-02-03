@@ -4,6 +4,7 @@ import { TransactionTypeNoTransfer } from '@prisma/client';
 import _ from 'lodash';
 import { CategoryInputType } from '../../CashAccount/sdl/type';
 import { updateBalance } from '../../../utils/transaction';
+import { MaybePromise } from 'nexus/dist/typegenTypeHelpers';
 
 export const EMoneyAccountMutation = extendType({
   type: 'Mutation',
@@ -102,7 +103,7 @@ export const EMoneyTransactionMutation = extendType({
   type: 'Mutation',
   definition(t) {
     t.nonNull.field('addEMoneyTransaction', {
-      type: 'ResponseMessage',
+      type: 'EMoneyTransaction',
       description:
         'Update transaction and balance for a particular e-wallet account',
 
@@ -262,8 +263,31 @@ export const EMoneyTransactionMutation = extendType({
           },
         });
 
+        const merchant = await prisma.merchant.findFirst({
+          where: { id: response.merchantId ?? '63d3be20009767d5eb7e7410' },
+        });
+
         return {
-          response: `Successfully create new transaction and update new balance`,
+          id: response.id,
+          eMoneyAccountId: response.eMoneyAccountId,
+          dateTimestamp: toTimeStamp(response.dateTimestamp),
+          institutionId: response.institutionId,
+          currency: response.currency,
+          amount: response.amount,
+          isReviewed: response.isReviewed,
+          merchant: merchant ?? null,
+          merchantId: response.merchantId,
+          category: response.category as MaybePromise<
+            ({ amount: string; name: string } | null)[] | null | undefined
+          >,
+          transactionType: response.transactionType,
+          description: response.description,
+          direction: response.direction,
+          notes: response.notes,
+          location: response.location,
+          tags: response.tags,
+          isHideFromBudget: response.isHideFromBudget,
+          isHideFromInsight: response.isHideFromInsight,
         };
       },
     });

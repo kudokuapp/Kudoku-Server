@@ -265,16 +265,8 @@ type EMoneyTransaction {
   """Additional notes for this transaction"""
   notes: String
 
-  """
-  The reference id. The reference id is to check on what number is the transaction for the day
-  """
-  referenceId: String!
-
   """Additional tags for this transaction"""
   tags: [String]
-
-  """The transaction method. `Virtual Account`, `Debit`"""
-  transactionMethod: String!
 
   """
   The transaction type for this transaction. It's either `INCOME`, or `EXPENSE`.
@@ -417,7 +409,7 @@ type Mutation {
 
     """The transaction type. It's either `INCOME` or `EXPENSE`"""
     transactionType: String!
-  ): ResponseMessage!
+  ): EMoneyTransaction!
 
   """Add new merchant, if it's not available"""
   addMerchant(
@@ -499,13 +491,13 @@ type Mutation {
 
     """The new balance"""
     newBalance: String!
-  ): ResponseMessage
+  ): CashAccount!
 
   """Update transaction and balance for a particular debit account"""
   refreshBcaTransactionViaBrick(
     """The associated id of that debit account id"""
     debitAccountId: String!
-  ): ResponseMessage!
+  ): [DebitTransaction]
 
   """
   This is the API where user can sign up after they got invited. This means that the user's data is already in our MongoDB database.

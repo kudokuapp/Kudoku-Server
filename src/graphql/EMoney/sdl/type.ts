@@ -46,11 +46,6 @@ export const EMoneyTransaction = objectType({
       description: 'Date and Timestamp for this transaction',
     });
 
-    t.nonNull.string('referenceId', {
-      description:
-        'The reference id. The reference id is to check on what number is the transaction for the day',
-    });
-
     t.nonNull.string('institutionId', {
       description: 'The institution id',
     });
@@ -115,10 +110,6 @@ export const EMoneyTransaction = objectType({
 
     t.nonNull.boolean('isHideFromInsight', {
       description: 'Whether or not this transaction is hidden from insight',
-    });
-
-    t.nonNull.string('transactionMethod', {
-      description: 'The transaction method. `Virtual Account`, `Debit`',
     });
   },
 });

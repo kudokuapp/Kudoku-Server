@@ -135,9 +135,7 @@ export interface NexusGenObjects {
     merchant?: NexusGenRootTypes['Merchant'] | null; // Merchant
     merchantId?: string | null; // String
     notes?: string | null; // String
-    referenceId: string; // String!
     tags?: Array<string | null> | null; // [String]
-    transactionMethod: string; // String!
     transactionType: string; // String!
   }
   Location: { // root type
@@ -289,9 +287,7 @@ export interface NexusGenFieldTypes {
     merchant: NexusGenRootTypes['Merchant'] | null; // Merchant
     merchantId: string | null; // String
     notes: string | null; // String
-    referenceId: string; // String!
     tags: Array<string | null> | null; // [String]
-    transactionMethod: string; // String!
     transactionType: string; // String!
   }
   Location: { // field return type
@@ -307,7 +303,7 @@ export interface NexusGenFieldTypes {
   Mutation: { // field return type
     addCashAccount: NexusGenRootTypes['CashAccount']; // CashAccount!
     addCashTransaction: NexusGenRootTypes['CashTransaction']; // CashTransaction!
-    addEMoneyTransaction: NexusGenRootTypes['ResponseMessage']; // ResponseMessage!
+    addEMoneyTransaction: NexusGenRootTypes['EMoneyTransaction']; // EMoneyTransaction!
     addMerchant: NexusGenRootTypes['Merchant']; // Merchant!
     changePassword: NexusGenRootTypes['AuthPayLoad']; // AuthPayLoad!
     changePin: NexusGenRootTypes['AuthPayLoad']; // AuthPayLoad!
@@ -316,8 +312,8 @@ export interface NexusGenFieldTypes {
     deleteCashAccount: NexusGenRootTypes['ResponseMessage'] | null; // ResponseMessage
     deleteCashTransaction: NexusGenRootTypes['ResponseMessage'] | null; // ResponseMessage
     editCashAccount: NexusGenRootTypes['CashAccount']; // CashAccount!
-    reconcileCashBalance: NexusGenRootTypes['ResponseMessage'] | null; // ResponseMessage
-    refreshBcaTransactionViaBrick: NexusGenRootTypes['ResponseMessage']; // ResponseMessage!
+    reconcileCashBalance: NexusGenRootTypes['CashAccount']; // CashAccount!
+    refreshBcaTransactionViaBrick: Array<NexusGenRootTypes['DebitTransaction'] | null> | null; // [DebitTransaction]
     signup: NexusGenRootTypes['AuthPayLoad']; // AuthPayLoad!
     updateEmailOrWhatsapp: NexusGenRootTypes['User']; // User!
     updateProfile: NexusGenRootTypes['Profile']; // Profile!
@@ -467,9 +463,7 @@ export interface NexusGenFieldTypeNames {
     merchant: 'Merchant'
     merchantId: 'String'
     notes: 'String'
-    referenceId: 'String'
     tags: 'String'
-    transactionMethod: 'String'
     transactionType: 'String'
   }
   Location: { // field return type name
@@ -485,7 +479,7 @@ export interface NexusGenFieldTypeNames {
   Mutation: { // field return type name
     addCashAccount: 'CashAccount'
     addCashTransaction: 'CashTransaction'
-    addEMoneyTransaction: 'ResponseMessage'
+    addEMoneyTransaction: 'EMoneyTransaction'
     addMerchant: 'Merchant'
     changePassword: 'AuthPayLoad'
     changePin: 'AuthPayLoad'
@@ -494,8 +488,8 @@ export interface NexusGenFieldTypeNames {
     deleteCashAccount: 'ResponseMessage'
     deleteCashTransaction: 'ResponseMessage'
     editCashAccount: 'CashAccount'
-    reconcileCashBalance: 'ResponseMessage'
-    refreshBcaTransactionViaBrick: 'ResponseMessage'
+    reconcileCashBalance: 'CashAccount'
+    refreshBcaTransactionViaBrick: 'DebitTransaction'
     signup: 'AuthPayLoad'
     updateEmailOrWhatsapp: 'User'
     updateProfile: 'Profile'

@@ -10,7 +10,11 @@ import {
 } from '../../../utils/brick';
 import axios from 'axios';
 import moment from 'moment';
-import { DirectionType, TransactionType } from '@prisma/client';
+import {
+  DebitTransaction,
+  DirectionType,
+  TransactionType,
+} from '@prisma/client';
 import _ from 'lodash';
 
 export const DebitAccountMutation = extendType({
@@ -217,8 +221,8 @@ export const DebitAccountMutation = extendType({
 export const DebitTransactionMutation = extendType({
   type: 'Mutation',
   definition(t) {
-    t.nonNull.field('refreshBcaTransactionViaBrick', {
-      type: 'ResponseMessage',
+    t.list.field('refreshBcaTransactionViaBrick', {
+      type: 'DebitTransaction',
       description:
         'Update transaction and balance for a particular debit account',
       args: {
@@ -295,10 +299,12 @@ export const DebitTransactionMutation = extendType({
         if (newTransaction.length === 0)
           throw new Error('There is no new transaction');
 
+        let responseToIterate: DebitTransaction[] = [];
+
         for (let i = 0; i < newTransaction.length; i++) {
           const element = newTransaction[i];
 
-          await prisma.debitTransaction.create({
+          const trans = await prisma.debitTransaction.create({
             data: {
               debitAccountId: debitAccount.id,
               dateTimestamp: new Date(
@@ -328,6 +334,8 @@ export const DebitTransactionMutation = extendType({
               transactionMethod: 'UNDEFINED',
             },
           });
+
+          responseToIterate.push(trans);
         }
 
         /*
@@ -357,9 +365,52 @@ export const DebitTransactionMutation = extendType({
           },
         });
 
-        return {
-          response: `Successfully create ${newTransaction.length} new transaction and update new balance`,
-        };
+        /*
+        Iterating to comply with graphql type
+        */
+
+        if (responseToIterate.length === 0) {
+          return null;
+        } else {
+          let response: any[] = [];
+          for (let i = 0; i < responseToIterate.length; i++) {
+            const element = responseToIterate[i];
+
+            const merchant = await prisma.merchant.findFirst({
+              where: { id: element.merchantId ?? '63d3be20009767d5eb7e7410' },
+            });
+
+            const obj = {
+              id: element.id,
+              debitAccountId: element.debitAccountId,
+              dateTimestamp: toTimeStamp(element.dateTimestamp),
+              referenceId: element.referenceId,
+              institutionId: element.institutionId,
+              currency: element.currency,
+              amount: element.amount,
+              onlineTransaction: element.onlineTransaction,
+              isReviewed: element.isReviewed,
+              merchant: merchant ?? null,
+              merchantId: element.merchantId,
+              category: element.category,
+              transactionType: element.transactionType,
+              description: element.description,
+              internalTransferAccountId: element.internalTransferAccountId,
+              direction: element.direction,
+              notes: element.notes,
+              location: element.location,
+              tags: element.tags,
+              isSubscription: element.isSubscription,
+              isHideFromBudget: element.isHideFromBudget,
+              isHideFromInsight: element.isHideFromInsight,
+              transactionMethod: element.transactionMethod,
+            };
+
+            response.push(obj);
+          }
+
+          return response;
+        }
       },
     });
   },
