@@ -95,9 +95,191 @@ input CategoryInputType {
   name: String!
 }
 
+type DebitAccount {
+  accountNumber: String!
+
+  """The balance of that cash account"""
+  balance: String!
+
+  """When this account is created"""
+  createdAt: String!
+
+  """The ISO currency of this account"""
+  currency: String!
+
+  """id generated automatically by MongoDB"""
+  id: String!
+  institutionId: String!
+
+  """When this account is last updated"""
+  lastUpdate: String!
+  userId: String!
+}
+
+type DebitTransaction {
+  """The transaction amount"""
+  amount: String!
+
+  """The category for this transaction"""
+  category: [Category]
+
+  """ISO 4217 Currency"""
+  currency: String!
+
+  """Date and Timestamp for this transaction"""
+  dateTimestamp: String!
+
+  """The debit account Id"""
+  debitAccountId: String!
+
+  """The description given by the Banks API"""
+  description: String!
+
+  """The direction of the transaction. It's either `IN`, or `OUT`"""
+  direction: String!
+
+  """id generated automatically by MongoDB"""
+  id: String!
+
+  """The institution id"""
+  institutionId: String!
+
+  """The account id for internal transfer"""
+  internalTransferAccountId: String
+
+  """Whether or not this transaction is hidden from budget"""
+  isHideFromBudget: Boolean!
+
+  """Whether or not this transaction is hidden from insight"""
+  isHideFromInsight: Boolean!
+
+  """Whether or not this transaction is reviewed by the user on the client"""
+  isReviewed: Boolean!
+
+  """Whether or not this transaction is a subscription"""
+  isSubscription: Boolean!
+
+  """The location of the transaction"""
+  location: Location
+
+  """The merchant"""
+  merchant: Merchant
+
+  """The merchant Id"""
+  merchantId: String
+
+  """Additional notes for this transaction"""
+  notes: String
+
+  """Whether or not this transaction is online"""
+  onlineTransaction: Boolean!
+
+  """
+  The reference id. The reference id is to check on what number is the transaction for the day
+  """
+  referenceId: String!
+
+  """Additional tags for this transaction"""
+  tags: [String]
+
+  """The transaction method. `Virtual Account`, `Debit`"""
+  transactionMethod: String!
+
+  """
+  The transaction type for this transaction. It's either `INCOME`, `EXPENSE`, or `TRANSFER`
+  """
+  transactionType: String!
+}
+
 enum DirectionTypeEnum {
   IN
   OUT
+}
+
+type EMoneyAccount {
+  """The balance of that cash account"""
+  balance: String!
+  cardNumber: String!
+
+  """When this account is created"""
+  createdAt: String!
+
+  """The ISO currency of this account"""
+  currency: String!
+
+  """id generated automatically by MongoDB"""
+  id: String!
+  institutionId: String!
+
+  """When this account is last updated"""
+  lastUpdate: String!
+  userId: String!
+}
+
+type EMoneyTransaction {
+  """The transaction amount"""
+  amount: String!
+
+  """The category for this transaction"""
+  category: [Category]
+
+  """ISO 4217 Currency"""
+  currency: String!
+
+  """Date and Timestamp for this transaction"""
+  dateTimestamp: String!
+
+  """The description given by the Banks API"""
+  description: String
+
+  """The direction of the transaction. It's either `IN`, or `OUT`"""
+  direction: String!
+
+  """The E-Wallet account Id"""
+  eMoneyAccountId: String!
+
+  """id generated automatically by MongoDB"""
+  id: String!
+
+  """The institution id"""
+  institutionId: String!
+
+  """Whether or not this transaction is hidden from budget"""
+  isHideFromBudget: Boolean!
+
+  """Whether or not this transaction is hidden from insight"""
+  isHideFromInsight: Boolean!
+
+  """Whether or not this transaction is reviewed by the user on the client"""
+  isReviewed: Boolean!
+
+  """The location of the transaction"""
+  location: Location
+
+  """The merchant"""
+  merchant: Merchant
+
+  """The merchant Id"""
+  merchantId: String
+
+  """Additional notes for this transaction"""
+  notes: String
+
+  """
+  The reference id. The reference id is to check on what number is the transaction for the day
+  """
+  referenceId: String!
+
+  """Additional tags for this transaction"""
+  tags: [String]
+
+  """The transaction method. `Virtual Account`, `Debit`"""
+  transactionMethod: String!
+
+  """
+  The transaction type for this transaction. It's either `INCOME`, or `EXPENSE`.
+  """
+  transactionType: String!
 }
 
 enum ExpenseTypeEnum {
@@ -195,6 +377,48 @@ type Mutation {
     transactionType: ExpenseTypeEnum!
   ): CashTransaction!
 
+  """Update transaction and balance for a particular e-wallet account"""
+  addEMoneyTransaction(
+    """The amount for that transaction"""
+    amount: String!
+
+    """The category of the transaction"""
+    category: [CategoryInputType]!
+
+    """The ISO currency"""
+    currency: String! = "IDR"
+
+    """Description for the transaction"""
+    description: String
+
+    """The associated id of that e-money account id"""
+    eMoneyAccountId: String!
+
+    """The institution ID"""
+    institutionId: String!
+
+    """Whether or not this transaction is hide from budget. default: false"""
+    isHideFromBudget: Boolean! = false
+
+    """Whether or not this transaction is hide from insight. default: false"""
+    isHideFromInsight: Boolean! = false
+
+    """The location for this transaction"""
+    location: LocationInputType
+
+    """The merchant ID"""
+    merchantId: String!
+
+    """Notes for the transaction"""
+    notes: String
+
+    """The tags for this transaction"""
+    tags: [String!]!
+
+    """The transaction type. It's either `INCOME` or `EXPENSE`"""
+    transactionType: String!
+  ): ResponseMessage!
+
   """Add new merchant, if it's not available"""
   addMerchant(
     """The merchant name"""
@@ -214,6 +438,33 @@ type Mutation {
 
   """Change the user pin. Must have JWT Token from running OTP Verification"""
   changePin(jwtToken: String!, pin: String!): AuthPayLoad!
+
+  """Connect debit card account via BRICK."""
+  connectBcaViaBrick(
+    """The BRICK institution Id."""
+    brickInstitutionId: Int!
+
+    """The password for the particular bank details"""
+    password: String!
+
+    """The username for the particular bank details"""
+    username: String!
+  ): DebitAccount!
+
+  """Create an E-Money account"""
+  createEMoneyAccount(
+    """The e-money card number"""
+    cardNumber: String!
+
+    """The currency according to ISO standard"""
+    currency: String! = "IDR"
+
+    """sessionId after running `sendOtpGopayViaBrick` query"""
+    initialBalance: String!
+
+    """The institution ID"""
+    institutionId: String!
+  ): EMoneyAccount!
 
   """Delete cash account"""
   deleteCashAccount(
@@ -249,6 +500,12 @@ type Mutation {
     """The new balance"""
     newBalance: String!
   ): ResponseMessage
+
+  """Update transaction and balance for a particular debit account"""
+  refreshBcaTransactionViaBrick(
+    """The associated id of that debit account id"""
+    debitAccountId: String!
+  ): ResponseMessage!
 
   """
   This is the API where user can sign up after they got invited. This means that the user's data is already in our MongoDB database.
@@ -324,6 +581,24 @@ type Query {
     cashAccountId: String!
   ): [CashTransaction]
 
+  """Get all debit account for a particular user."""
+  getAllDebitAccount: [DebitAccount]
+
+  """Get all the debit transaction from their debitAccountId"""
+  getAllDebitTransaction(
+    """Fill this with debit account id"""
+    debitAccountId: String!
+  ): [DebitTransaction]
+
+  """Get all e-money account for a particular user."""
+  getAllEMoneyAccount: [EMoneyAccount]
+
+  """Get all the e-money transaction from their eMoneyAccountId"""
+  getAllEMoneyTransaction(
+    """Fill this with e-money account id"""
+    eMoneyAccountId: String!
+  ): [EMoneyTransaction]
+
   """This API is to get every merchant's data"""
   getAllMerchant: [Merchant!]!
 
@@ -358,6 +633,19 @@ type Query {
     username: String
   ): Profile
 
+  """Get the User's frequent refresh behaviour"""
+  getRefresh(
+    """
+    Fill this with their id, otherwise fill this with "null"
+    """
+    userId: String
+
+    """
+    Fill this with username, otherwise fill this with "null"
+    """
+    username: String
+  ): [Refresh]
+
   """Get User's info from their Username"""
   getUser(
     """
@@ -385,6 +673,13 @@ type Query {
 
   """Get JWT Token from user's PIN."""
   verifyPin(pin: String!, username: String!): AuthPayLoad!
+}
+
+type Refresh {
+  date: String!
+  id: String!
+  user: User!
+  userId: String!
 }
 
 type ResponseMessage {

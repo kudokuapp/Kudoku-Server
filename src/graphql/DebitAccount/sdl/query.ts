@@ -1,23 +1,23 @@
 import { toTimeStamp } from '../../../utils/date';
 import { arg, extendType, nonNull } from 'nexus';
 
-export const CashAccountQuery = extendType({
+export const DebitAccountQuery = extendType({
   type: 'Query',
   definition(t) {
-    t.list.field('getAllCashTransaction', {
-      type: 'CashTransaction',
-      description: 'Get all the cash transaction from their cashAccountId',
+    t.list.field('getAllDebitTransaction', {
+      type: 'DebitTransaction',
+      description: 'Get all the debit transaction from their debitAccountId',
       args: {
-        cashAccountId: nonNull(
+        debitAccountId: nonNull(
           arg({
             type: 'String',
-            description: 'Fill this with cash account id',
+            description: 'Fill this with debit account id',
           })
         ),
       },
 
       async resolve(parent, args, context, info) {
-        const { cashAccountId } = args;
+        const { debitAccountId } = args;
 
         const { userId, prisma } = context;
 
@@ -29,15 +29,15 @@ export const CashAccountQuery = extendType({
 
         if (!user) throw new Error('Cannot find user');
 
-        const cashAccount = await prisma.cashAccount.findFirst({
-          where: { id: cashAccountId },
+        const debitAccount = await prisma.debitAccount.findFirst({
+          where: { id: debitAccountId },
         });
 
-        if (!cashAccount) throw new Error('Cannot find cash account');
+        if (!debitAccount) throw new Error('Cannot find debit account');
 
-        const response = await prisma.cashTransaction.findMany({
-          where: { cashAccountId },
-          orderBy: [{ dateTimestamp: 'desc' }],
+        const response = await prisma.debitTransaction.findMany({
+          where: { debitAccountId },
+          orderBy: [{ dateTimestamp: 'desc' }, { referenceId: 'desc' }],
         });
 
         let responseArray: any[] = [];
@@ -51,7 +51,7 @@ export const CashAccountQuery = extendType({
 
           const obj = {
             id: element.id,
-            cashAccountId: element.cashAccountId,
+            debitAccountId: element.debitAccountId,
             dateTimestamp: toTimeStamp(element.dateTimestamp),
             currency: element.currency,
             amount: element.amount,
@@ -66,6 +66,13 @@ export const CashAccountQuery = extendType({
             tags: element.tags,
             isHideFromBudget: element.isHideFromBudget,
             isHideFromInsight: element.isHideFromInsight,
+            description: element.description,
+            institutionId: element.institutionId,
+            referenceId: element.referenceId,
+            onlineTransaction: element.onlineTransaction,
+            isReviewed: element.isReviewed,
+            isSubscription: element.isSubscription,
+            transactionMethod: element.transactionMethod,
           };
 
           responseArray.push(obj);
@@ -75,36 +82,36 @@ export const CashAccountQuery = extendType({
       },
     });
 
-    t.list.field('getAllCashAccount', {
-      type: 'CashAccount',
-      description: 'Get all cash account for a particular user.',
+    t.list.field('getAllDebitAccount', {
+      type: 'DebitAccount',
+      description: 'Get all debit account for a particular user.',
 
       async resolve(parent, args, context, info) {
         const { userId, prisma } = context;
 
         if (!userId) throw new Error('Invalid token');
 
-        const cashAccount = await prisma.cashAccount.findMany({
+        const debitAccount = await prisma.debitAccount.findMany({
           where: { userId },
         });
 
-        if (!cashAccount)
-          throw new Error('User have not created a cash account');
+        if (!debitAccount)
+          throw new Error('User have not created a debit account');
 
         let response: any[] = [];
 
-        for (let i = 0; i < cashAccount.length; i++) {
-          const element = cashAccount[i];
+        for (let i = 0; i < debitAccount.length; i++) {
+          const element = debitAccount[i];
 
           const obj = {
             id: element.id,
             userId: element.userId,
             createdAt: toTimeStamp(element.createdAt),
             lastUpdate: toTimeStamp(element.lastUpdate),
-            accountName: element.accountName,
-            displayPicture: element.displayPicture,
             balance: element.balance,
             currency: element.currency,
+            institutionId: element.institutionId,
+            accountNumber: element.accountNumber,
           };
 
           response.push(obj);
