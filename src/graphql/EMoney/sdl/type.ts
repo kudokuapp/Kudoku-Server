@@ -1,13 +1,17 @@
-import { inputObjectType, objectType } from 'nexus';
+import { objectType } from 'nexus';
 
-export const CashAccount = objectType({
-  name: 'CashAccount',
+export const EMoneyAccount = objectType({
+  name: 'EMoneyAccount',
   definition(t) {
     t.nonNull.string('id', {
       description: 'id generated automatically by MongoDB',
     });
 
     t.nonNull.string('userId');
+
+    t.nonNull.string('institutionId');
+
+    t.nonNull.string('cardNumber');
 
     t.nonNull.string('createdAt', {
       description: 'When this account is created',
@@ -16,13 +20,6 @@ export const CashAccount = objectType({
     t.nonNull.string('lastUpdate', {
       description: 'When this account is last updated',
     });
-
-    t.nonNull.string('accountName', {
-      description:
-        'Name, should user choose it\'s name differently. Default should be just "Cash"',
-    });
-
-    t.string('displayPicture', { description: 'base64 image' });
 
     t.nonNull.string('balance', {
       description: 'The balance of that cash account',
@@ -34,19 +31,28 @@ export const CashAccount = objectType({
   },
 });
 
-export const CashTransaction = objectType({
-  name: 'CashTransaction',
+export const EMoneyTransaction = objectType({
+  name: 'EMoneyTransaction',
   definition(t) {
     t.nonNull.string('id', {
       description: 'id generated automatically by MongoDB',
     });
 
-    t.nonNull.string('cashAccountId', {
-      description: 'The cash account Id',
+    t.nonNull.string('eMoneyAccountId', {
+      description: 'The E-Wallet account Id',
     });
 
     t.nonNull.string('dateTimestamp', {
       description: 'Date and Timestamp for this transaction',
+    });
+
+    t.nonNull.string('referenceId', {
+      description:
+        'The reference id. The reference id is to check on what number is the transaction for the day',
+    });
+
+    t.nonNull.string('institutionId', {
+      description: 'The institution id',
     });
 
     t.nonNull.string('currency', {
@@ -55,6 +61,11 @@ export const CashTransaction = objectType({
 
     t.nonNull.string('amount', {
       description: 'The transaction amount',
+    });
+
+    t.nonNull.boolean('isReviewed', {
+      description:
+        'Whether or not this transaction is reviewed by the user on the client',
     });
 
     t.field('merchant', {
@@ -73,11 +84,11 @@ export const CashTransaction = objectType({
 
     t.nonNull.string('transactionType', {
       description:
-        "The transaction type for this transaction. It's either `INCOME`, `EXPENSE`, or `TRANSFER`",
+        "The transaction type for this transaction. It's either `INCOME`, or `EXPENSE`.",
     });
 
-    t.string('internalTransferAccountId', {
-      description: 'The account id for internal transfer',
+    t.string('description', {
+      description: 'The description given by the Banks API',
     });
 
     t.nonNull.string('direction', {
@@ -105,37 +116,9 @@ export const CashTransaction = objectType({
     t.nonNull.boolean('isHideFromInsight', {
       description: 'Whether or not this transaction is hidden from insight',
     });
-  },
-});
 
-export const Location = objectType({
-  name: 'Location',
-  definition(t) {
-    t.nonNull.string('latitude');
-    t.nonNull.string('longitude');
-  },
-});
-
-export const Category = objectType({
-  name: 'Category',
-  definition(t) {
-    t.nonNull.string('name');
-    t.nonNull.string('amount');
-  },
-});
-
-export const LocationInputType = inputObjectType({
-  name: 'LocationInputType',
-  definition(t) {
-    t.nonNull.string('latitude');
-    t.nonNull.string('longitude');
-  },
-});
-
-export const CategoryInputType = inputObjectType({
-  name: 'CategoryInputType',
-  definition(t) {
-    t.nonNull.string('name');
-    t.nonNull.string('amount');
+    t.nonNull.string('transactionMethod', {
+      description: 'The transaction method. `Virtual Account`, `Debit`',
+    });
   },
 });

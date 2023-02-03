@@ -41,6 +41,34 @@ declare global {
     language: 'id' | 'en';
     isWhiteLabel: boolean;
   }
+
+  interface BrickAccountDetail {
+    accountId: string;
+    accountHolder: string;
+    accountNumber: string;
+    balances: {
+      available: number;
+      current: number;
+      limit: null | number;
+    };
+    currency: string;
+    type?: string;
+  }
+
+  interface BrickTokenData {
+    accessToken: string;
+    ubc_id: number;
+    bankId: string;
+    target: string | URL;
+    userId: string;
+  }
+
+  interface BrickOTPData {
+    username: string;
+    uniqueId: string;
+    sessionId: string;
+    otpToken: string;
+  }
 }
 
 type Category = {

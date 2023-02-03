@@ -47,3 +47,53 @@ export async function getClientIdandRedirectRefId(
     })();
   });
 }
+
+export function mapBrickInstitutionIdToKudoku(institutionId: number): string {
+  switch (institutionId) {
+    case 2:
+      return '63d8bb09a2b49c686d736525';
+
+    case 11:
+      return '63d94170d3e050940af0caf2';
+
+    case 37:
+      return '63d8bb09a2b49c686d736525';
+
+    case 38:
+      return '63d8bb09a2b49c686d736525';
+
+    default:
+      return '63d8bb09a2b49c686d736525';
+  }
+}
+
+export async function getAccountDetail(
+  accessToken: string
+): Promise<BrickAccountDetail[]> {
+  const url = brickUrl(`/v1/account/list`);
+
+  const options = {
+    method: 'GET',
+    url: url.href,
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+  };
+
+  return new Promise((resolve, reject) => {
+    (async () => {
+      try {
+        const {
+          data: { data },
+        }: { data: { data: BrickAccountDetail[] } } = await axios.request(
+          options
+        );
+
+        resolve(data);
+      } catch (e) {
+        reject(e);
+      }
+    })();
+  });
+}
