@@ -26,60 +26,65 @@ export const RefreshQuery = extendType({
 
         const { prisma } = context;
 
-        let response: Refresh;
-        let responseUser: User;
+        let refresh: Refresh[];
+        let user: User;
 
         if (userId !== null && userId !== undefined) {
-          const user = await prisma.user.findFirst({
+          const response = await prisma.user.findFirst({
             where: { id: userId },
           });
-          if (!user) throw new Error('Cannot find user');
-          responseUser = user;
+          if (!response) throw new Error('Cannot find user');
 
-          const refresh = await prisma.refresh.findFirst({
+          user = response;
+
+          refresh = await prisma.refresh.findMany({
             where: { userId },
+            orderBy: [{ date: 'desc' }],
           });
-          if (!refresh) throw new Error('Cannot find refresh profile');
-
-          response = refresh;
         } else if (username !== null && username !== undefined) {
-          const user = await prisma.user.findFirst({
+          const response = await prisma.user.findFirst({
             where: { username },
           });
-          if (!user) throw new Error('Cannot find user');
-          responseUser = user;
-          const refresh = await prisma.refresh.findFirst({
-            where: { user: { username } },
-          });
-          if (!refresh) throw new Error('Cannot find refresh');
+          if (!response) throw new Error('Cannot find user');
+          user = response;
 
-          response = refresh;
+          refresh = await prisma.refresh.findMany({
+            where: { user: { username } },
+            orderBy: [{ date: 'desc' }],
+          });
         } else {
           throw new Error(
             'Cannot find have all id, username, and token null or undefined'
           );
         }
 
-        if (!responseUser.username)
-          throw new Error('username is null or undefined');
+        let response: any[] = [];
 
-        return {
-          id: response.id,
-          userId: response.userId,
+        for (let i = 0; i < refresh.length; i++) {
+          const element = refresh[i];
 
-          user: {
-            id: responseUser.id,
-            username: responseUser.username,
-            firstName: responseUser.firstName,
-            lastName: responseUser.lastName,
-            email: responseUser.email,
-            whatsapp: responseUser.whatsapp,
-            kudosNo: responseUser.kudosNo,
-            createdAt: toTimeStamp(responseUser.createdAt),
-          },
+          const obj = {
+            id: element.id,
+            userId: element.userId,
 
-          date: toTimeStamp(response.date),
-        };
+            user: {
+              id: user.id,
+              username: user.username,
+              firstName: user.firstName,
+              lastName: user.lastName,
+              email: user.email,
+              whatsapp: user.whatsapp,
+              kudosNo: user.kudosNo,
+              createdAt: toTimeStamp(user.createdAt),
+            },
+
+            date: toTimeStamp(element.date),
+          };
+
+          response.push(obj);
+        }
+
+        return response;
       },
     });
   },
