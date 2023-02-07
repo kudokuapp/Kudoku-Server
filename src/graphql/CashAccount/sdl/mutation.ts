@@ -1,8 +1,7 @@
-import { arg, enumType, extendType, list, nonNull } from 'nexus';
+import { arg, extendType, list, nonNull } from 'nexus';
 import { MaybePromise } from 'nexus/dist/typegenTypeHelpers';
 import { toTimeStamp } from '../../../utils/date';
 import { updateBalance } from '../../../utils/transaction';
-import { CategoryInputType } from './type';
 import { Merchant } from '@prisma/client';
 
 export const CashAccountMutation = extendType({
@@ -319,14 +318,14 @@ export const CashTransactionMutation = extendType({
 
         category: nonNull(
           arg({
-            type: list(CategoryInputType),
+            type: list('CategoryInputType'),
             description: 'The category of the transaction',
           })
         ),
 
         transactionType: nonNull(
           arg({
-            type: ExpenseTypeEnum,
+            type: 'ExpenseTypeEnum',
             description:
               'The transaction type. Either INCOME for in transation, EXPENSE for outgoing transaction, and TRANSFER for internal transfer.',
           })
@@ -334,7 +333,7 @@ export const CashTransactionMutation = extendType({
 
         direction: nonNull(
           arg({
-            type: DirectionTypeEnum,
+            type: 'DirectionTypeEnum',
             description: 'The direction for this transaction. `IN` or `OUT`',
           })
         ),
