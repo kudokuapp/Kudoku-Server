@@ -164,8 +164,8 @@ model DebitTransaction {
   amount                          String            //Takut aneh kalo number
   onlineTransaction               Boolean           @default(false) // 1
   isReviewed                      Boolean           @default(false)
-  merchant                        Merchant          @relation(fields: [merchantId], references: [id]) //2
-  merchantId                      String            @db.ObjectId
+  merchant                        Merchant?         @relation(fields: [merchantId], references: [id]) //2
+  merchantId                      String?           @db.ObjectId
   category                        Json?             //3
   transactionType                 TransactionType   @default(EXPENSE) // 4
   direction                       DirectionType     @default(OUT)
@@ -219,8 +219,8 @@ model EMoneyTransaction {
   currency                        String
   amount                          String                      //Takut aneh kalo number
   isReviewed                      Boolean                     @default(false)
-  merchant                        Merchant                    @relation(fields: [merchantId], references: [id])
-  merchantId                      String                      @db.ObjectId
+  merchant                        Merchant?                   @relation(fields: [merchantId], references: [id])
+  merchantId                      String?                     @db.ObjectId
   category                        Json?
   transactionType                 TransactionTypeNoTransfer   @default(EXPENSE)
   direction                       DirectionType               @default(OUT)

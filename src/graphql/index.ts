@@ -7,3 +7,4 @@ export * from './DebitAccount';
 export * from './EMoney';
 export * from './Refresh';
 export * from './Merchant';
+export * from './Enum';

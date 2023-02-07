@@ -3,6 +3,7 @@ import { MaybePromise } from 'nexus/dist/typegenTypeHelpers';
 import { toTimeStamp } from '../../../utils/date';
 import { updateBalance } from '../../../utils/transaction';
 import { CategoryInputType } from './type';
+import { Merchant } from '@prisma/client';
 
 export const CashAccountMutation = extendType({
   type: 'Mutation',
@@ -57,7 +58,7 @@ export const CashAccountMutation = extendType({
         Avoid same cash account name duplication
         */
         const searchCashAccount = await prisma.cashAccount.findFirst({
-          where: { AND: [{ accountName }, { userId: id }] },
+          where: { AND: [{ accountName }, { userId: searchUser.id }] },
         });
 
         if (searchCashAccount)
@@ -100,12 +101,13 @@ export const CashAccountMutation = extendType({
             'The account name of the cash account that user created. Default to "Cash"',
           default: 'Cash',
         }),
+
         displayPicture: arg({
           type: 'String',
           description: 'The icon or display picture of that account',
         }),
 
-        id: nonNull(
+        cashAccountId: nonNull(
           arg({
             type: 'String',
             description: 'The id of that cash account',
@@ -114,11 +116,13 @@ export const CashAccountMutation = extendType({
       },
 
       async resolve(parent, args, context) {
-        const { accountName, displayPicture, id: cashId } = args;
+        const { accountName, displayPicture, cashAccountId } = args;
         const { userId: id, prisma } = context;
 
         if (!displayPicture && !accountName)
-          throw new Error('Cannot have displayPicture and accountName null');
+          throw new Error(
+            'Cannot have displayPicture and accountName both null'
+          );
 
         if (!id) throw new Error('Invalid token');
 
@@ -127,28 +131,19 @@ export const CashAccountMutation = extendType({
         if (!user) throw new Error('Cannot find user');
 
         const account = await prisma.cashAccount.findFirst({
-          where: { id: cashId },
+          where: { AND: [{ id: cashAccountId }, { userId: user.id }] },
         });
 
         if (!account)
           throw new Error('Cannot find the cash account of that id');
 
-        if (accountName !== null && accountName !== undefined) {
-          await prisma.cashAccount.update({
-            where: { id: cashId },
-            data: { accountName },
-          });
-        }
-
-        if (displayPicture !== null && displayPicture !== undefined) {
-          await prisma.cashAccount.update({
-            where: { id: cashId },
-            data: { displayPicture },
-          });
-        }
-
-        const response = await prisma.cashAccount.findFirst({
-          where: { id: cashId },
+        const response = await prisma.cashAccount.update({
+          where: { id: account.id },
+          data: {
+            accountName: accountName ?? account.accountName,
+            displayPicture: displayPicture ?? account.displayPicture,
+            lastUpdate: new Date(),
+          },
         });
 
         if (!response)
@@ -172,7 +167,7 @@ export const CashAccountMutation = extendType({
       description: 'Delete cash account',
 
       args: {
-        id: nonNull(
+        cashAccountId: nonNull(
           arg({
             type: 'String',
             description: 'The cash account id',
@@ -181,7 +176,7 @@ export const CashAccountMutation = extendType({
       },
 
       async resolve(parent, args, context, info) {
-        const { id: cashAccountId } = args;
+        const { cashAccountId } = args;
 
         const { userId, prisma } = context;
 
@@ -192,15 +187,19 @@ export const CashAccountMutation = extendType({
         if (!user) throw new Error('Cannot find user');
 
         const cashAccount = await prisma.cashAccount.findFirst({
-          where: { id: cashAccountId },
+          where: { AND: [{ id: cashAccountId }, { userId }] },
         });
 
         if (!cashAccount) throw new Error('Cannot find that cash account');
 
-        await prisma.cashAccount.delete({ where: { id: cashAccountId } });
+        await prisma.cashAccount.delete({ where: { id: cashAccount.id } });
+
+        const deletedTransaction = await prisma.cashTransaction.deleteMany({
+          where: { cashAccountId: cashAccount.id },
+        });
 
         return {
-          response: `Successfully delete cash account with id ${cashAccountId}`,
+          response: `Successfully delete cash account with id ${cashAccountId} and ${deletedTransaction.count} transactions associated with that account`,
         };
       },
     });
@@ -232,7 +231,7 @@ export const CashAccountMutation = extendType({
         if (!user) throw new Error('Cannot find user');
 
         const cashAccount = await prisma.cashAccount.findFirst({
-          where: { id: cashAccountId },
+          where: { AND: [{ id: cashAccountId }, { userId: user.id }] },
         });
 
         if (!cashAccount) throw new Error('Cannot find that cash account');
@@ -243,8 +242,8 @@ export const CashAccountMutation = extendType({
           );
 
         const response = await prisma.cashAccount.update({
-          where: { id: cashAccountId },
-          data: { balance: newBalance },
+          where: { id: cashAccount.id },
+          data: { balance: newBalance, lastUpdate: new Date() },
         });
 
         const bigger = Number(newBalance) > Number(cashAccount.balance);
@@ -255,7 +254,7 @@ export const CashAccountMutation = extendType({
 
         await prisma.cashTransaction.create({
           data: {
-            cashAccountId,
+            cashAccountId: cashAccount.id,
             dateTimestamp: new Date(),
             currency: cashAccount.currency,
             amount: transactionAmount.toString(),
@@ -295,6 +294,7 @@ export const CashTransactionMutation = extendType({
             description: 'The associated id of that cash account id',
           })
         ),
+
         currency: nonNull(
           arg({
             type: 'String',
@@ -303,6 +303,7 @@ export const CashTransactionMutation = extendType({
             default: 'IDR',
           })
         ),
+
         amount: nonNull(
           arg({
             type: 'String',
@@ -310,12 +311,11 @@ export const CashTransactionMutation = extendType({
               'The amount for this transaction. IMPORTANT: only number and commas allowed! E.g.: 50000 for Rp 50.000, or 1002350,89 for Rp 1.002.350,89',
           })
         ),
-        merchantId: nonNull(
-          arg({
-            type: 'String',
-            description: 'The merchant id for this transaction',
-          })
-        ),
+
+        merchantId: arg({
+          type: 'String',
+          description: 'The merchant id for this transaction',
+        }),
 
         category: nonNull(
           arg({
@@ -390,6 +390,15 @@ export const CashTransactionMutation = extendType({
             'Internal transfer account ID is required for Internal Transfer transaction'
           );
 
+        if (
+          transactionType !== 'TRANSFER' &&
+          internalTransferAccountId !== null &&
+          internalTransferAccountId !== undefined
+        )
+          throw new Error(
+            "It seems like you've put internalTransferAccountId even though it's not a `TRANSFER` type. This must be a mistake."
+          );
+
         const { userId, prisma } = context;
 
         if (!userId) throw new Error('Invalid token');
@@ -418,7 +427,7 @@ export const CashTransactionMutation = extendType({
           );
 
         const cashAccount = await prisma.cashAccount.findFirst({
-          where: { id: cashAccountId },
+          where: { AND: [{ userId: user.id }, { id: cashAccountId }] },
         });
 
         if (!cashAccount)
@@ -428,7 +437,7 @@ export const CashTransactionMutation = extendType({
         Update balance
         */
         await prisma.cashAccount.update({
-          where: { id: cashAccountId },
+          where: { id: cashAccount.id },
           data: {
             balance: updateBalance({
               balance: cashAccount.balance,
@@ -440,11 +449,13 @@ export const CashTransactionMutation = extendType({
           },
         });
 
-        const merchant = await prisma.merchant.findFirst({
-          where: { id: merchantId },
-        });
+        let merchant: Merchant | null = null;
 
-        if (!merchant) throw new Error('Cannot find merchant');
+        if (merchantId) {
+          merchant = await prisma.merchant.findFirst({
+            where: { id: merchantId },
+          });
+        }
 
         const response = await prisma.cashTransaction.create({
           data: { ...args, dateTimestamp: new Date() },
@@ -457,7 +468,7 @@ export const CashTransactionMutation = extendType({
           currency: response.currency,
           amount: response.amount,
           merchant: merchant,
-          merchantId: response.merchantId ?? '',
+          merchantId: response.merchantId,
           category: response.category as unknown as MaybePromise<
             ({ amount: string; name: string } | null)[] | null | undefined
           >,
@@ -477,13 +488,13 @@ export const CashTransactionMutation = extendType({
       type: 'ResponseMessage',
       description: 'Delete a cash transaction',
       args: {
-        id: nonNull(
+        transactionId: nonNull(
           arg({ type: 'String', description: 'The id of the transaction' })
         ),
       },
 
       async resolve(parent, args, context, info) {
-        const { id: transactionId } = args;
+        const { transactionId } = args;
         const { userId, prisma } = context;
 
         if (!userId) throw new Error('Invalid token');
@@ -505,13 +516,13 @@ export const CashTransactionMutation = extendType({
           where: { id: cashAccountId },
         });
 
-        if (!cashAccount) throw new Error('Cannot find the cast account');
+        if (!cashAccount) throw new Error('Cannot find the cash account');
 
         /*
         Update balance
         */
         await prisma.cashAccount.update({
-          where: { id: cashAccountId },
+          where: { id: cashAccount.id },
           data: {
             balance: updateBalance({
               balance: cashAccount.balance,
@@ -530,15 +541,255 @@ export const CashTransactionMutation = extendType({
         };
       },
     });
+
+    t.nonNull.field('editCashTransaction', {
+      type: 'CashTransaction',
+      description: 'Edit a cash transaction',
+      args: {
+        transactionId: nonNull(
+          arg({ type: 'String', description: 'The id of the transaction' })
+        ),
+
+        currency: arg({
+          type: 'String',
+          description:
+            'The currency of this transaction, according to ISO 4217',
+          default: 'IDR',
+        }),
+
+        amount: arg({
+          type: 'String',
+          description:
+            'The amount for this transaction. IMPORTANT: only number and commas allowed! E.g.: 50000 for Rp 50.000, or 1002350,89 for Rp 1.002.350,89',
+        }),
+
+        merchantId: arg({
+          type: 'String',
+          description: 'The merchant id for this transaction',
+        }),
+
+        category: arg({
+          type: list(CategoryInputType),
+          description: 'The category of the transaction',
+        }),
+
+        transactionType: arg({
+          type: ExpenseTypeEnum,
+          description:
+            'The transaction type. Either INCOME for in transation, EXPENSE for outgoing transaction, and TRANSFER for internal transfer.',
+        }),
+
+        direction: arg({
+          type: DirectionTypeEnum,
+          description: 'The direction for this transaction. `IN` or `OUT`',
+        }),
+
+        internalTransferAccountId: arg({
+          type: 'String',
+          description: 'The account id if internal transfer',
+        }),
+
+        notes: arg({
+          type: 'String',
+          description: 'Additional notes for this transaction',
+        }),
+
+        location: arg({
+          type: 'LocationInputType',
+          description: 'The location for this transaction',
+        }),
+
+        tags: arg({
+          type: list(nonNull('String')),
+          description: 'The tags for this transaction',
+        }),
+
+        isHideFromBudget: arg({
+          type: 'Boolean',
+          description:
+            'Whether or not this transaction is hide from budget. default: false',
+          default: false,
+        }),
+
+        isHideFromInsight: arg({
+          type: 'Boolean',
+          description:
+            'Whether or not this transaction is hide from insight. default: false',
+          default: false,
+        }),
+      },
+
+      async resolve(parent, args, context, info) {
+        const {
+          transactionId,
+          currency,
+          amount,
+          merchantId,
+          category,
+          transactionType,
+          direction,
+          internalTransferAccountId,
+          notes,
+          location,
+          tags,
+          isHideFromBudget,
+          isHideFromInsight,
+        } = args;
+        const { userId, prisma } = context;
+
+        if (
+          !currency &&
+          !merchantId &&
+          !category &&
+          !transactionType &&
+          !direction &&
+          !internalTransferAccountId &&
+          !notes &&
+          !location &&
+          !tags &&
+          !isHideFromBudget &&
+          !isHideFromInsight &&
+          !amount
+        )
+          throw new Error('Cannot have all value null');
+
+        if (amount && !category)
+          throw new Error(
+            'Please put the new category if you want to edit the amount'
+          );
+
+        if (!userId) throw new Error('Invalid token');
+
+        const user = await prisma.user.findFirst({ where: { id: userId } });
+
+        if (!user) throw new Error('Cannot find user');
+
+        const transaction = await prisma.cashTransaction.findFirst({
+          where: { id: transactionId },
+        });
+
+        if (!transaction)
+          throw new Error('Cannot find the transaction based on that id');
+
+        const { cashAccountId } = transaction;
+
+        if (
+          (transactionType === 'EXPENSE' ||
+            transaction.transactionType === 'EXPENSE') &&
+          !merchantId
+        )
+          throw new Error(
+            'Please insert merchant id if the transaction type is not income'
+          );
+
+        /*
+        Check if the category match the amount
+        */
+        if (amount && category) {
+          let categorySum: number = 0;
+
+          for (let i = 0; i < category.length; i++) {
+            const element = category[i];
+
+            if (!element) throw new Error('Object is null');
+
+            categorySum += Number(element.amount);
+          }
+
+          if (categorySum !== Number(amount))
+            throw new Error(
+              'The amount sum of categories need to be the same with the amount given'
+            );
+        }
+
+        /*
+          Update balance if amount is edited
+          */
+
+        if (amount && cashAccountId) {
+          const cashAccount = await prisma.cashAccount.findFirst({
+            where: { AND: [{ id: cashAccountId }, { userId: user.id }] },
+          });
+
+          if (!cashAccount) throw new Error('Cannot find cash account');
+
+          const first = await prisma.cashAccount.update({
+            where: { id: cashAccount.id },
+            data: {
+              balance: updateBalance({
+                balance: cashAccount.balance,
+                amount: transaction.amount,
+                direction: transaction.direction,
+                reverse: true,
+              }).toString(),
+              lastUpdate: new Date(),
+            },
+          });
+
+          await prisma.cashAccount.update({
+            where: { id: cashAccount.id },
+            data: {
+              balance: updateBalance({
+                balance: first.balance,
+                amount,
+                direction: direction ?? transaction.direction,
+                reverse: false,
+              }).toString(),
+              lastUpdate: new Date(),
+            },
+          });
+        }
+
+        const response = await prisma.cashTransaction.update({
+          where: { id: transaction.id },
+          data: {
+            currency: currency ?? transaction.currency,
+            amount: amount ?? transaction.amount,
+            merchantId: merchantId ?? transaction.merchantId,
+            category: category ?? transaction.category,
+            transactionType: transactionType ?? transaction.transactionType,
+            direction: direction ?? transaction.direction,
+            internalTransferAccountId:
+              internalTransferAccountId ??
+              transaction.internalTransferAccountId,
+            notes: notes ?? transaction.notes,
+            location: location ?? transaction.location,
+            tags: tags ?? transaction.tags,
+            isHideFromBudget: isHideFromBudget ?? transaction.isHideFromBudget,
+            isHideFromInsight:
+              isHideFromInsight ?? transaction.isHideFromInsight,
+          },
+        });
+
+        let merchant: Merchant | null = null;
+
+        if (response.merchantId) {
+          merchant = await prisma.merchant.findFirst({
+            where: { id: response.merchantId },
+          });
+        }
+
+        return {
+          id: response.id,
+          cashAccountId: response.cashAccountId,
+          dateTimestamp: toTimeStamp(response.dateTimestamp),
+          currency: response.currency,
+          amount: response.amount,
+          merchant,
+          merchantId: response.merchantId,
+          category: response.category as MaybePromise<
+            ({ amount: string; name: string } | null)[] | null | undefined
+          >,
+          transactionType: response.transactionType,
+          internalTransferAccountId: response.internalTransferAccountId,
+          direction: response.direction,
+          notes: response.notes,
+          location: response.location,
+          tags: response.tags,
+          isHideFromBudget: response.isHideFromBudget,
+          isHideFromInsight: response.isHideFromInsight,
+        };
+      },
+    });
   },
-});
-
-export const ExpenseTypeEnum = enumType({
-  name: 'ExpenseTypeEnum',
-  members: ['INCOME', 'EXPENSE', 'TRANSFER', 'RECONCILE'],
-});
-
-export const DirectionTypeEnum = enumType({
-  name: 'DirectionTypeEnum',
-  members: ['IN', 'OUT'],
 });
