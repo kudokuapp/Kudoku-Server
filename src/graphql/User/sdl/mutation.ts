@@ -25,7 +25,11 @@ export const UserMutation = extendType({
 
       async resolve(parent, args, context) {
         const { firstName, lastName } = args;
-        const { userId: id } = context;
+        const { userId: id, prisma } = context;
+
+        if (!lastName && !firstName) {
+          throw new Error('Cannot have both firstName and lastName null');
+        }
 
         if (!id) {
           throw new Error('Invalid token');
@@ -44,16 +48,17 @@ export const UserMutation = extendType({
           });
         }
 
-        if (!lastName && !firstName) {
-          throw new Error('Cannot have both firstName and lastName null');
-        }
+        const user = await prisma.user.findFirst({ where: { id } });
 
-        const response = await context.prisma.user.findFirst({ where: { id } });
+        if (!user) throw new Error('somehow cannot find user');
 
-        if (!response)
-          throw new Error('somehow cannot find user after updating');
-
-        if (!response.username) throw new Error('Username is null');
+        const response = await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            firstName: firstName ?? user.firstName,
+            lastName: lastName ?? user.lastName,
+          },
+        });
 
         return {
           id: response.id,
@@ -94,6 +99,10 @@ export const UserMutation = extendType({
         const { email, whatsapp, jwtToken } = args;
         const { userId: id, prisma } = context;
 
+        if (!email && !whatsapp) {
+          throw new Error('Cannot have both firstName and lastName null');
+        }
+
         const { userId: otpId } = jwt.verify(
           jwtToken,
           OTP_SECRET
@@ -105,29 +114,15 @@ export const UserMutation = extendType({
 
         if (!user) throw new Error('Cannot find user');
 
-        if (email !== null && email !== undefined) {
-          await context.prisma.user.update({
-            where: { id },
-            data: { email },
-          });
-        }
-        if (whatsapp !== null && whatsapp !== undefined) {
-          await context.prisma.user.update({
-            where: { id },
-            data: { whatsapp },
-          });
-        }
+        const response = await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            email: email ?? user.email,
+            whatsapp: whatsapp ?? user.whatsapp,
+          },
+        });
 
-        if (!email && !whatsapp) {
-          throw new Error('Cannot have both firstName and lastName null');
-        }
-
-        const response = await context.prisma.user.findFirst({ where: { id } });
-
-        if (!response)
-          throw new Error('somehow cannot find user after updating');
-
-        if (!response.username) throw new Error('Username is null');
+        if (!response) throw new Error('somehow cannot update user data');
 
         return {
           id: response.id,

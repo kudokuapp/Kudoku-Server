@@ -27,6 +27,8 @@ export interface NexusGenInputs {
 export interface NexusGenEnums {
   DirectionTypeEnum: "IN" | "OUT"
   ExpenseTypeEnum: "EXPENSE" | "INCOME" | "RECONCILE" | "TRANSFER"
+  ExpenseTypeNoTransferEnum: "EXPENSE" | "INCOME" | "RECONCILE"
+  TransactionMethodEnum: "Debit" | "QRIS" | "VirtualAccount" | "mPayment"
 }
 
 export interface NexusGenScalars {
@@ -311,8 +313,14 @@ export interface NexusGenFieldTypes {
     createEMoneyAccount: NexusGenRootTypes['EMoneyAccount']; // EMoneyAccount!
     deleteCashAccount: NexusGenRootTypes['ResponseMessage'] | null; // ResponseMessage
     deleteCashTransaction: NexusGenRootTypes['ResponseMessage'] | null; // ResponseMessage
+    deleteDebitAccount: NexusGenRootTypes['ResponseMessage'] | null; // ResponseMessage
+    deleteEMoneyTransaction: NexusGenRootTypes['ResponseMessage']; // ResponseMessage!
+    editBcaTransaction: NexusGenRootTypes['DebitTransaction']; // DebitTransaction!
     editCashAccount: NexusGenRootTypes['CashAccount']; // CashAccount!
+    editCashTransaction: NexusGenRootTypes['CashTransaction']; // CashTransaction!
+    editEMoneyTransaction: NexusGenRootTypes['EMoneyTransaction']; // EMoneyTransaction!
     reconcileCashBalance: NexusGenRootTypes['CashAccount']; // CashAccount!
+    reconcileEMoneyAccount: NexusGenRootTypes['EMoneyAccount']; // EMoneyAccount!
     refreshBcaTransactionViaBrick: Array<NexusGenRootTypes['DebitTransaction'] | null> | null; // [DebitTransaction]
     signup: NexusGenRootTypes['AuthPayLoad']; // AuthPayLoad!
     updateEmailOrWhatsapp: NexusGenRootTypes['User']; // User!
@@ -487,8 +495,14 @@ export interface NexusGenFieldTypeNames {
     createEMoneyAccount: 'EMoneyAccount'
     deleteCashAccount: 'ResponseMessage'
     deleteCashTransaction: 'ResponseMessage'
+    deleteDebitAccount: 'ResponseMessage'
+    deleteEMoneyTransaction: 'ResponseMessage'
+    editBcaTransaction: 'DebitTransaction'
     editCashAccount: 'CashAccount'
+    editCashTransaction: 'CashTransaction'
+    editEMoneyTransaction: 'EMoneyTransaction'
     reconcileCashBalance: 'CashAccount'
+    reconcileEMoneyAccount: 'EMoneyAccount'
     refreshBcaTransactionViaBrick: 'DebitTransaction'
     signup: 'AuthPayLoad'
     updateEmailOrWhatsapp: 'User'
@@ -559,7 +573,7 @@ export interface NexusGenArgTypes {
       isHideFromBudget: boolean; // Boolean!
       isHideFromInsight: boolean; // Boolean!
       location?: NexusGenInputs['LocationInputType'] | null; // LocationInputType
-      merchantId: string; // String!
+      merchantId?: string | null; // String
       notes?: string | null; // String
       tags: string[]; // [String!]!
       transactionType: NexusGenEnums['ExpenseTypeEnum']; // ExpenseTypeEnum!
@@ -604,18 +618,70 @@ export interface NexusGenArgTypes {
       institutionId: string; // String!
     }
     deleteCashAccount: { // args
-      id: string; // String!
+      cashAccountId: string; // String!
     }
     deleteCashTransaction: { // args
-      id: string; // String!
+      transactionId: string; // String!
+    }
+    deleteDebitAccount: { // args
+      debitAccountId: string; // String!
+    }
+    deleteEMoneyTransaction: { // args
+      transactionId: string; // String!
+    }
+    editBcaTransaction: { // args
+      category?: Array<NexusGenInputs['CategoryInputType'] | null> | null; // [CategoryInputType]
+      internalTransferAccountId?: string | null; // String
+      isHideFromBudget: boolean; // Boolean!
+      isHideFromInsight: boolean; // Boolean!
+      isSubscription?: boolean | null; // Boolean
+      location?: NexusGenInputs['LocationInputType'] | null; // LocationInputType
+      merchantId?: string | null; // String
+      notes?: string | null; // String
+      onlineTransaction?: boolean | null; // Boolean
+      tags: string[]; // [String!]!
+      transactionId: string; // String!
+      transactionMethod?: NexusGenEnums['TransactionMethodEnum'] | null; // TransactionMethodEnum
+      transactionType?: NexusGenEnums['ExpenseTypeEnum'] | null; // ExpenseTypeEnum
     }
     editCashAccount: { // args
       accountName: string | null; // String
+      cashAccountId: string; // String!
       displayPicture?: string | null; // String
-      id: string; // String!
+    }
+    editCashTransaction: { // args
+      amount?: string | null; // String
+      category?: Array<NexusGenInputs['CategoryInputType'] | null> | null; // [CategoryInputType]
+      currency: string | null; // String
+      direction?: NexusGenEnums['DirectionTypeEnum'] | null; // DirectionTypeEnum
+      internalTransferAccountId?: string | null; // String
+      isHideFromBudget?: boolean | null; // Boolean
+      isHideFromInsight?: boolean | null; // Boolean
+      location?: NexusGenInputs['LocationInputType'] | null; // LocationInputType
+      merchantId?: string | null; // String
+      notes?: string | null; // String
+      tags?: string[] | null; // [String!]
+      transactionId: string; // String!
+      transactionType?: NexusGenEnums['ExpenseTypeEnum'] | null; // ExpenseTypeEnum
+    }
+    editEMoneyTransaction: { // args
+      amount?: string | null; // String
+      category?: Array<NexusGenInputs['CategoryInputType'] | null> | null; // [CategoryInputType]
+      isHideFromBudget?: boolean | null; // Boolean
+      isHideFromInsight?: boolean | null; // Boolean
+      location?: NexusGenInputs['LocationInputType'] | null; // LocationInputType
+      merchantId?: string | null; // String
+      notes?: string | null; // String
+      tags?: string[] | null; // [String!]
+      transactionId: string; // String!
+      transactionType?: NexusGenEnums['ExpenseTypeNoTransferEnum'] | null; // ExpenseTypeNoTransferEnum
     }
     reconcileCashBalance: { // args
       cashAccountId: string; // String!
+      newBalance: string; // String!
+    }
+    reconcileEMoneyAccount: { // args
+      eMoneyAccountId: string; // String!
       newBalance: string; // String!
     }
     refreshBcaTransactionViaBrick: { // args

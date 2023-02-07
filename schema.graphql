@@ -281,6 +281,12 @@ enum ExpenseTypeEnum {
   TRANSFER
 }
 
+enum ExpenseTypeNoTransferEnum {
+  EXPENSE
+  INCOME
+  RECONCILE
+}
+
 type Location {
   latitude: String!
   longitude: String!
@@ -355,7 +361,7 @@ type Mutation {
     location: LocationInputType
 
     """The merchant id for this transaction"""
-    merchantId: String!
+    merchantId: String
 
     """Additional notes for this transaction"""
     notes: String
@@ -369,7 +375,7 @@ type Mutation {
     transactionType: ExpenseTypeEnum!
   ): CashTransaction!
 
-  """Update transaction and balance for a particular e-wallet account"""
+  """Update transaction and balance for a particular e-money account"""
   addEMoneyTransaction(
     """The amount for that transaction"""
     amount: String!
@@ -461,14 +467,70 @@ type Mutation {
   """Delete cash account"""
   deleteCashAccount(
     """The cash account id"""
-    id: String!
+    cashAccountId: String!
   ): ResponseMessage
 
   """Delete a cash transaction"""
   deleteCashTransaction(
     """The id of the transaction"""
-    id: String!
+    transactionId: String!
   ): ResponseMessage
+
+  """Delete debit account"""
+  deleteDebitAccount(
+    """The debit account id"""
+    debitAccountId: String!
+  ): ResponseMessage
+
+  """Delete a particular e-money transaction"""
+  deleteEMoneyTransaction(
+    """The associated id of that e-money transaction id"""
+    transactionId: String!
+  ): ResponseMessage!
+
+  """Edit a particular debit (BCA) transaction"""
+  editBcaTransaction(
+    """The category of the transaction"""
+    category: [CategoryInputType]
+
+    """The account id for internal transfer"""
+    internalTransferAccountId: String
+
+    """Whether or not this transaction is hide from budget. default: false"""
+    isHideFromBudget: Boolean! = false
+
+    """Whether or not this transaction is hide from insight. default: false"""
+    isHideFromInsight: Boolean! = false
+
+    """Wether or not this transaction is a subscription"""
+    isSubscription: Boolean
+
+    """The location for this transaction"""
+    location: LocationInputType
+
+    """The merchant id"""
+    merchantId: String
+
+    """Notes for this transaction"""
+    notes: String
+
+    """Wether or not this transaction is online"""
+    onlineTransaction: Boolean
+
+    """The tags for this transaction"""
+    tags: [String!]!
+
+    """The associated id of that transaction"""
+    transactionId: String!
+
+    """What transaction method is this."""
+    transactionMethod: TransactionMethodEnum
+
+    """
+    The transaction type. Either INCOME for in transation, EXPENSE for outgoing transaction, and TRANSFER for internal transfer.
+    """
+    transactionType: ExpenseTypeEnum
+  ): DebitTransaction!
 
   """Edit details on user's cash account"""
   editCashAccount(
@@ -477,12 +539,93 @@ type Mutation {
     """
     accountName: String = "Cash"
 
+    """The id of that cash account"""
+    cashAccountId: String!
+
     """The icon or display picture of that account"""
     displayPicture: String
-
-    """The id of that cash account"""
-    id: String!
   ): CashAccount!
+
+  """Edit a cash transaction"""
+  editCashTransaction(
+    """
+    The amount for this transaction. IMPORTANT: only number and commas allowed! E.g.: 50000 for Rp 50.000, or 1002350,89 for Rp 1.002.350,89
+    """
+    amount: String
+
+    """The category of the transaction"""
+    category: [CategoryInputType]
+
+    """The currency of this transaction, according to ISO 4217"""
+    currency: String = "IDR"
+
+    """The direction for this transaction. `IN` or `OUT`"""
+    direction: DirectionTypeEnum
+
+    """The account id if internal transfer"""
+    internalTransferAccountId: String
+
+    """Whether or not this transaction is hide from budget. default: false"""
+    isHideFromBudget: Boolean = false
+
+    """Whether or not this transaction is hide from insight. default: false"""
+    isHideFromInsight: Boolean = false
+
+    """The location for this transaction"""
+    location: LocationInputType
+
+    """The merchant id for this transaction"""
+    merchantId: String
+
+    """Additional notes for this transaction"""
+    notes: String
+
+    """The tags for this transaction"""
+    tags: [String!]
+
+    """The id of the transaction"""
+    transactionId: String!
+
+    """
+    The transaction type. Either INCOME for in transation, EXPENSE for outgoing transaction, and TRANSFER for internal transfer.
+    """
+    transactionType: ExpenseTypeEnum
+  ): CashTransaction!
+
+  """Edit a particular e-money transaction and update it's balance"""
+  editEMoneyTransaction(
+    """The amount for that transaction"""
+    amount: String
+
+    """The category of the transaction"""
+    category: [CategoryInputType]
+
+    """Whether or not this transaction is hide from budget. default: false"""
+    isHideFromBudget: Boolean = false
+
+    """Whether or not this transaction is hide from insight. default: false"""
+    isHideFromInsight: Boolean = false
+
+    """The location for this transaction"""
+    location: LocationInputType
+
+    """The merchant ID"""
+    merchantId: String
+
+    """Notes for the transaction"""
+    notes: String
+
+    """The tags for this transaction"""
+    tags: [String!]
+
+    """The associated id of that e-money transaction id"""
+    transactionId: String!
+
+    """
+    The transaction type. Either INCOME for in transation, and EXPENSE for outgoing transaction
+    """
+    transactionType: ExpenseTypeNoTransferEnum
+  ): EMoneyTransaction!
 
   """Reconcile cash balance"""
   reconcileCashBalance(
@@ -492,6 +635,15 @@ type Mutation {
     """The new balance"""
     newBalance: String!
   ): CashAccount!
+
+  """Reconcile e-money balance"""
+  reconcileEMoneyAccount(
+    """The cash account id"""
+    eMoneyAccountId: String!
+
+    """The new balance"""
+    newBalance: String!
+  ): EMoneyAccount!
 
   """Update transaction and balance for a particular debit account"""
   refreshBcaTransactionViaBrick(
@@ -677,6 +829,13 @@ type Refresh {
 type ResponseMessage {
   """Response message"""
   response: String
+}
+
+enum TransactionMethodEnum {
+  Debit
+  QRIS
+  VirtualAccount
+  mPayment
 }
 
 type User {

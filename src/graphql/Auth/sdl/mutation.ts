@@ -20,6 +20,7 @@ export const AuthMutation = extendType({
 
       async resolve(parent, args, context) {
         const { username, id, jwtToken } = args;
+        const { prisma } = context;
         const { userId } = jwt.verify(
           jwtToken,
           OTP_SECRET
@@ -34,7 +35,7 @@ export const AuthMutation = extendType({
 
         const pin = await bcrypt.hash(args.pin, 10);
 
-        const searchUser = await context.prisma.user.findFirst({
+        const searchUser = await prisma.user.findFirst({
           where: { id },
         });
 
@@ -42,8 +43,8 @@ export const AuthMutation = extendType({
           throw new Error('User have not registered through kudoku.id');
         }
 
-        const user = await context.prisma.user.update({
-          where: { id },
+        const user = await prisma.user.update({
+          where: { id: searchUser.id },
           data: { username, password, pin },
         });
 
@@ -64,6 +65,7 @@ export const AuthMutation = extendType({
 
       async resolve(parent, args, context) {
         const { jwtToken } = args;
+        const { prisma } = context;
 
         const { userId: id } = jwt.verify(
           jwtToken,
@@ -76,7 +78,7 @@ export const AuthMutation = extendType({
 
         const password = await bcrypt.hash(args.password, 10);
 
-        const user = await context.prisma.user.update({
+        const user = await prisma.user.update({
           where: { id },
           data: { password },
         });
@@ -102,6 +104,7 @@ export const AuthMutation = extendType({
 
       async resolve(parent, args, context) {
         const { jwtToken } = args;
+        const { prisma } = context;
 
         const { userId: id } = jwt.verify(
           jwtToken,
@@ -114,7 +117,7 @@ export const AuthMutation = extendType({
 
         const pin = await bcrypt.hash(args.pin, 10);
 
-        const user = await context.prisma.user.update({
+        const user = await prisma.user.update({
           where: { id },
           data: { pin },
         });
