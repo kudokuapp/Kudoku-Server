@@ -2,7 +2,7 @@ import { arg, extendType, nonNull, list, enumType } from 'nexus';
 import { toTimeStamp } from '../../../utils/date';
 import { Merchant, TransactionTypeNoTransfer } from '@prisma/client';
 import _ from 'lodash';
-import { CategoryInputType } from '../../CashAccount/sdl/type';
+import { CategoryInputType } from '../../ObjectType';
 import { updateBalance } from '../../../utils/transaction';
 import { MaybePromise } from 'nexus/dist/typegenTypeHelpers';
 
@@ -671,5 +671,3 @@ export const EMoneyTransactionMutation = extendType({
     });
   },
 });
-
-

@@ -17,6 +17,7 @@ import {
   Merchant,
 } from '@prisma/client';
 import _ from 'lodash';
+import { TransactionMethodEnum } from '../../Enum';
 
 export const DebitAccountMutation = extendType({
   type: 'Mutation',
@@ -684,5 +685,3 @@ export const DebitTransactionMutation = extendType({
     });
   },
 });
-
-
