@@ -79,6 +79,9 @@ type CashTransaction {
   """Additional tags for this transaction"""
   tags: [String]
 
+  """Transaction name"""
+  transactionName: String!
+
   """
   The transaction type for this transaction. It's either `INCOME`, `EXPENSE`, or `TRANSFER`
   """
@@ -369,6 +372,9 @@ type Mutation {
     """The tags for this transaction"""
     tags: [String!]!
 
+    """Transaction name"""
+    transactionName: String!
+
     """
     The transaction type. Either INCOME for in transation, EXPENSE for outgoing transaction, and TRANSFER for internal transfer.
     """
@@ -586,6 +592,9 @@ type Mutation {
     """The id of the transaction"""
     transactionId: String!
 
+    """Transaction name"""
+    transactionName: String!
+
     """
     The transaction type. Either INCOME for in transation, EXPENSE for outgoing transaction, and TRANSFER for internal transfer.
     """
@@ -634,6 +643,9 @@ type Mutation {
 
     """The new balance"""
     newBalance: String!
+
+    """Transaction name"""
+    transactionName: String!
   ): CashAccount!
 
   """Reconcile e-money balance"""

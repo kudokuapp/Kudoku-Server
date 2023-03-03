@@ -142,12 +142,9 @@ export const DebitAccountMutation = extendType({
 
         const transactionUrl = brickUrl(`/v1/transaction/list`);
 
-        const from = moment()
-          .startOf('M')
-          .subtract(1, 'day')
-          .format('YYYY-MM-DD');
+        const from = moment().subtract(2, 'M').startOf('M').format('YYYY-MM-DD');
 
-        const to = moment().add(1, 'day').format('YYYY-MM-DD');
+        const to = moment().subtract(1, 'M').endOf('M').format('YYYY-MM-DD');
 
         const transactionOptions = {
           method: 'GET',
@@ -303,10 +300,9 @@ export const DebitTransactionMutation = extendType({
 
         const { dateTimestamp, referenceId } = debitTransaction[0];
 
-        const from = moment(dateTimestamp)
-          .subtract(1, 'day')
-          .format('YYYY-MM-DD');
-        const to = moment().add(1, 'day').format('YYYY-MM-DD');
+        const from = moment(dateTimestamp).subtract(2, 'M').startOf('M').format('YYYY-MM-DD');
+
+        const to = moment().subtract(1, 'M').endOf('M').format('YYYY-MM-DD');
 
         const transactionUrl = brickUrl(`/v1/transaction/list`);
 

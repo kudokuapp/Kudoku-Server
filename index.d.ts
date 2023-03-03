@@ -21,6 +21,7 @@ declare global {
     date: string | Date;
     amount: number;
     description: string;
+    transactionName: string;
     status: 'CONFIRMED' | 'PENDING';
     direction: 'out' | 'in';
     reference_id: string;

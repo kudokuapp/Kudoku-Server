@@ -69,6 +69,7 @@ export interface NexusGenObjects {
     merchantId?: string | null; // String
     notes?: string | null; // String
     tags?: Array<string | null> | null; // [String]
+    transactionName: string; // String!
     transactionType: string; // String!
   }
   Category: { // root type
@@ -221,6 +222,7 @@ export interface NexusGenFieldTypes {
     merchantId: string | null; // String
     notes: string | null; // String
     tags: Array<string | null> | null; // [String]
+    transactionName: string; // String!
     transactionType: string; // String!
   }
   Category: { // field return type
@@ -403,6 +405,7 @@ export interface NexusGenFieldTypeNames {
     merchantId: 'String'
     notes: 'String'
     tags: 'String'
+    transactionName: 'String'
     transactionType: 'String'
   }
   Category: { // field return type name
@@ -576,6 +579,7 @@ export interface NexusGenArgTypes {
       merchantId?: string | null; // String
       notes?: string | null; // String
       tags: string[]; // [String!]!
+      transactionName: string; // String!
       transactionType: NexusGenEnums['ExpenseTypeEnum']; // ExpenseTypeEnum!
     }
     addEMoneyTransaction: { // args
@@ -662,6 +666,7 @@ export interface NexusGenArgTypes {
       notes?: string | null; // String
       tags?: string[] | null; // [String!]
       transactionId: string; // String!
+      transactionName: string; // String!
       transactionType?: NexusGenEnums['ExpenseTypeEnum'] | null; // ExpenseTypeEnum
     }
     editEMoneyTransaction: { // args
@@ -679,6 +684,7 @@ export interface NexusGenArgTypes {
     reconcileCashBalance: { // args
       cashAccountId: string; // String!
       newBalance: string; // String!
+      transactionName: string; // String!
     }
     reconcileEMoneyAccount: { // args
       eMoneyAccountId: string; // String!

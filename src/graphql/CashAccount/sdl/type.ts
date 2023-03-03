@@ -105,6 +105,11 @@ export const CashTransaction = objectType({
     t.nonNull.boolean('isHideFromInsight', {
       description: 'Whether or not this transaction is hidden from insight',
     });
+
+
+    t.nonNull.string('transactionName', {
+      description: 'Transaction name',
+    });
   },
 });
 

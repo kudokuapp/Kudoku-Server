@@ -115,6 +115,7 @@ model CashTransaction {
   cashAccountId                   String            @db.ObjectId
   dateTimestamp                   DateTime
   currency                        String
+  transactionName                 String
   amount                          String            //Takut aneh kalo number
   merchant                        Merchant?         @relation(fields: [merchantId], references: [id])
   merchantId                      String?           @db.ObjectId

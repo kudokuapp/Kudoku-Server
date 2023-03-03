@@ -54,6 +54,7 @@ export const CashAccountQuery = extendType({
             cashAccountId: element.cashAccountId,
             dateTimestamp: toTimeStamp(element.dateTimestamp),
             currency: element.currency,
+            transactionName: element["transactionName"],
             amount: element.amount,
             merchant: merchant ?? null,
             merchantId: element.merchantId ?? null,

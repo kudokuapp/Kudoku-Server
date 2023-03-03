@@ -218,6 +218,13 @@ export const CashAccountMutation = extendType({
         cashAccountId: nonNull(
           arg({ type: 'String', description: 'The cash account id' })
         ),
+        transactionName: nonNull(
+          arg({
+            type: 'String',
+            description:
+              'Transaction name',
+          })
+        ),
       },
 
       async resolve(parent, args, context, info) {
@@ -258,6 +265,7 @@ export const CashAccountMutation = extendType({
             cashAccountId: cashAccount.id,
             dateTimestamp: new Date(),
             currency: cashAccount.currency,
+            transactionName: 'Penyesuaian Cash',
             amount: transactionAmount.toString(),
             transactionType: 'RECONCILE',
             direction: bigger ? 'IN' : 'OUT',
@@ -302,6 +310,14 @@ export const CashTransactionMutation = extendType({
             description:
               'The currency of this transaction, according to ISO 4217',
             default: 'IDR',
+          })
+        ),
+
+        transactionName: nonNull(
+          arg({
+            type: 'String',
+            description:
+              'Transaction name',
           })
         ),
 
@@ -379,6 +395,7 @@ export const CashTransactionMutation = extendType({
         const {
           cashAccountId,
           amount,
+          transactionName,
           merchantId,
           transactionType,
           direction,
@@ -467,6 +484,7 @@ export const CashTransactionMutation = extendType({
           dateTimestamp: toTimeStamp(response.dateTimestamp),
           cashAccountId: response.cashAccountId,
           currency: response.currency,
+          transactionName: response.transactionName,
           amount: response.amount,
           merchant: merchant,
           merchantId: response.merchantId,
@@ -558,6 +576,14 @@ export const CashTransactionMutation = extendType({
           default: 'IDR',
         }),
 
+        transactionName: nonNull(
+          arg({
+            type: 'String',
+            description:
+              'Transaction name',
+          })
+        ),
+
         amount: arg({
           type: 'String',
           description:
@@ -625,6 +651,7 @@ export const CashTransactionMutation = extendType({
           transactionId,
           currency,
           amount,
+          transactionName,
           merchantId,
           category,
           transactionType,
@@ -642,6 +669,7 @@ export const CashTransactionMutation = extendType({
           !currency &&
           !merchantId &&
           !category &&
+          !transactionName &&
           !transactionType &&
           !direction &&
           !internalTransferAccountId &&
@@ -746,6 +774,7 @@ export const CashTransactionMutation = extendType({
           data: {
             currency: currency ?? transaction.currency,
             amount: amount ?? transaction.amount,
+            transactionName: transactionName ?? transaction.transactionName,
             merchantId: merchantId ?? transaction.merchantId,
             category: category ?? transaction.category,
             transactionType: transactionType ?? transaction.transactionType,
@@ -776,6 +805,7 @@ export const CashTransactionMutation = extendType({
           dateTimestamp: toTimeStamp(response.dateTimestamp),
           currency: response.currency,
           amount: response.amount,
+          transactionName: response.transactionName,
           merchant,
           merchantId: response.merchantId,
           category: response.category as MaybePromise<
