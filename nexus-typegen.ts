@@ -29,6 +29,7 @@ export interface NexusGenEnums {
   ExpenseTypeEnum: "EXPENSE" | "INCOME" | "RECONCILE" | "TRANSFER"
   ExpenseTypeNoTransferEnum: "EXPENSE" | "INCOME" | "RECONCILE"
   TransactionMethodEnum: "Debit" | "QRIS" | "VirtualAccount" | "mPayment"
+  typeOfAccount: "CASH" | "DEBIT" | "EMONEY" | "EWALLET"
 }
 
 export interface NexusGenScalars {
@@ -61,7 +62,7 @@ export interface NexusGenObjects {
     dateTimestamp: string; // String!
     direction: string; // String!
     id: string; // String!
-    internalTransferAccountId?: string | null; // String
+    internalTransferTransactionId?: string | null; // String
     isHideFromBudget: boolean; // Boolean!
     isHideFromInsight: boolean; // Boolean!
     location?: NexusGenRootTypes['Location'] | null; // Location
@@ -96,7 +97,7 @@ export interface NexusGenObjects {
     direction: string; // String!
     id: string; // String!
     institutionId: string; // String!
-    internalTransferAccountId?: string | null; // String
+    internalTransferTransactionId?: string | null; // String
     isHideFromBudget: boolean; // Boolean!
     isHideFromInsight: boolean; // Boolean!
     isReviewed: boolean; // Boolean!
@@ -109,6 +110,7 @@ export interface NexusGenObjects {
     referenceId: string; // String!
     tags?: Array<string | null> | null; // [String]
     transactionMethod: string; // String!
+    transactionName: string; // String!
     transactionType: string; // String!
   }
   EMoneyAccount: { // root type
@@ -131,6 +133,7 @@ export interface NexusGenObjects {
     eMoneyAccountId: string; // String!
     id: string; // String!
     institutionId: string; // String!
+    internalTransferTransactionId?: string | null; // String
     isHideFromBudget: boolean; // Boolean!
     isHideFromInsight: boolean; // Boolean!
     isReviewed: boolean; // Boolean!
@@ -139,6 +142,7 @@ export interface NexusGenObjects {
     merchantId?: string | null; // String
     notes?: string | null; // String
     tags?: Array<string | null> | null; // [String]
+    transactionName: string; // String!
     transactionType: string; // String!
   }
   Location: { // root type
@@ -214,7 +218,7 @@ export interface NexusGenFieldTypes {
     dateTimestamp: string; // String!
     direction: string; // String!
     id: string; // String!
-    internalTransferAccountId: string | null; // String
+    internalTransferTransactionId: string | null; // String
     isHideFromBudget: boolean; // Boolean!
     isHideFromInsight: boolean; // Boolean!
     location: NexusGenRootTypes['Location'] | null; // Location
@@ -249,7 +253,7 @@ export interface NexusGenFieldTypes {
     direction: string; // String!
     id: string; // String!
     institutionId: string; // String!
-    internalTransferAccountId: string | null; // String
+    internalTransferTransactionId: string | null; // String
     isHideFromBudget: boolean; // Boolean!
     isHideFromInsight: boolean; // Boolean!
     isReviewed: boolean; // Boolean!
@@ -262,6 +266,7 @@ export interface NexusGenFieldTypes {
     referenceId: string; // String!
     tags: Array<string | null> | null; // [String]
     transactionMethod: string; // String!
+    transactionName: string; // String!
     transactionType: string; // String!
   }
   EMoneyAccount: { // field return type
@@ -284,6 +289,7 @@ export interface NexusGenFieldTypes {
     eMoneyAccountId: string; // String!
     id: string; // String!
     institutionId: string; // String!
+    internalTransferTransactionId: string | null; // String
     isHideFromBudget: boolean; // Boolean!
     isHideFromInsight: boolean; // Boolean!
     isReviewed: boolean; // Boolean!
@@ -292,6 +298,7 @@ export interface NexusGenFieldTypes {
     merchantId: string | null; // String
     notes: string | null; // String
     tags: Array<string | null> | null; // [String]
+    transactionName: string; // String!
     transactionType: string; // String!
   }
   Location: { // field return type
@@ -397,7 +404,7 @@ export interface NexusGenFieldTypeNames {
     dateTimestamp: 'String'
     direction: 'String'
     id: 'String'
-    internalTransferAccountId: 'String'
+    internalTransferTransactionId: 'String'
     isHideFromBudget: 'Boolean'
     isHideFromInsight: 'Boolean'
     location: 'Location'
@@ -432,7 +439,7 @@ export interface NexusGenFieldTypeNames {
     direction: 'String'
     id: 'String'
     institutionId: 'String'
-    internalTransferAccountId: 'String'
+    internalTransferTransactionId: 'String'
     isHideFromBudget: 'Boolean'
     isHideFromInsight: 'Boolean'
     isReviewed: 'Boolean'
@@ -445,6 +452,7 @@ export interface NexusGenFieldTypeNames {
     referenceId: 'String'
     tags: 'String'
     transactionMethod: 'String'
+    transactionName: 'String'
     transactionType: 'String'
   }
   EMoneyAccount: { // field return type name
@@ -467,6 +475,7 @@ export interface NexusGenFieldTypeNames {
     eMoneyAccountId: 'String'
     id: 'String'
     institutionId: 'String'
+    internalTransferTransactionId: 'String'
     isHideFromBudget: 'Boolean'
     isHideFromInsight: 'Boolean'
     isReviewed: 'Boolean'
@@ -475,6 +484,7 @@ export interface NexusGenFieldTypeNames {
     merchantId: 'String'
     notes: 'String'
     tags: 'String'
+    transactionName: 'String'
     transactionType: 'String'
   }
   Location: { // field return type name
@@ -572,7 +582,7 @@ export interface NexusGenArgTypes {
       category: Array<NexusGenInputs['CategoryInputType'] | null>; // [CategoryInputType]!
       currency: string; // String!
       direction: NexusGenEnums['DirectionTypeEnum']; // DirectionTypeEnum!
-      internalTransferAccountId?: string | null; // String
+      internalTransferTransactionId?: string | null; // String
       isHideFromBudget: boolean; // Boolean!
       isHideFromInsight: boolean; // Boolean!
       location?: NexusGenInputs['LocationInputType'] | null; // LocationInputType
@@ -587,14 +597,17 @@ export interface NexusGenArgTypes {
       category: Array<NexusGenInputs['CategoryInputType'] | null>; // [CategoryInputType]!
       currency: string; // String!
       description?: string | null; // String
+      direction: NexusGenEnums['DirectionTypeEnum']; // DirectionTypeEnum!
       eMoneyAccountId: string; // String!
       institutionId: string; // String!
+      internalTransferTransactionId?: string | null; // String
       isHideFromBudget: boolean; // Boolean!
       isHideFromInsight: boolean; // Boolean!
       location?: NexusGenInputs['LocationInputType'] | null; // LocationInputType
       merchantId: string; // String!
       notes?: string | null; // String
       tags: string[]; // [String!]!
+      transactionName: string; // String!
       transactionType: string; // String!
     }
     addMerchant: { // args
@@ -635,7 +648,7 @@ export interface NexusGenArgTypes {
     }
     editBcaTransaction: { // args
       category?: Array<NexusGenInputs['CategoryInputType'] | null> | null; // [CategoryInputType]
-      internalTransferAccountId?: string | null; // String
+      internalTransferTransactionId?: string | null; // String
       isHideFromBudget: boolean; // Boolean!
       isHideFromInsight: boolean; // Boolean!
       isSubscription?: boolean | null; // Boolean
@@ -646,6 +659,7 @@ export interface NexusGenArgTypes {
       tags: string[]; // [String!]!
       transactionId: string; // String!
       transactionMethod?: NexusGenEnums['TransactionMethodEnum'] | null; // TransactionMethodEnum
+      transactionName?: string | null; // String
       transactionType?: NexusGenEnums['ExpenseTypeEnum'] | null; // ExpenseTypeEnum
     }
     editCashAccount: { // args
@@ -658,7 +672,7 @@ export interface NexusGenArgTypes {
       category?: Array<NexusGenInputs['CategoryInputType'] | null> | null; // [CategoryInputType]
       currency: string | null; // String
       direction?: NexusGenEnums['DirectionTypeEnum'] | null; // DirectionTypeEnum
-      internalTransferAccountId?: string | null; // String
+      internalTransferTransactionId?: string | null; // String
       isHideFromBudget?: boolean | null; // Boolean
       isHideFromInsight?: boolean | null; // Boolean
       location?: NexusGenInputs['LocationInputType'] | null; // LocationInputType
@@ -666,12 +680,13 @@ export interface NexusGenArgTypes {
       notes?: string | null; // String
       tags?: string[] | null; // [String!]
       transactionId: string; // String!
-      transactionName: string; // String!
+      transactionName?: string | null; // String
       transactionType?: NexusGenEnums['ExpenseTypeEnum'] | null; // ExpenseTypeEnum
     }
     editEMoneyTransaction: { // args
       amount?: string | null; // String
       category?: Array<NexusGenInputs['CategoryInputType'] | null> | null; // [CategoryInputType]
+      direction?: NexusGenEnums['DirectionTypeEnum'] | null; // DirectionTypeEnum
       isHideFromBudget?: boolean | null; // Boolean
       isHideFromInsight?: boolean | null; // Boolean
       location?: NexusGenInputs['LocationInputType'] | null; // LocationInputType
@@ -679,6 +694,7 @@ export interface NexusGenArgTypes {
       notes?: string | null; // String
       tags?: string[] | null; // [String!]
       transactionId: string; // String!
+      transactionName?: string | null; // String
       transactionType?: NexusGenEnums['ExpenseTypeNoTransferEnum'] | null; // ExpenseTypeNoTransferEnum
     }
     reconcileCashBalance: { // args

@@ -221,8 +221,7 @@ export const CashAccountMutation = extendType({
         transactionName: nonNull(
           arg({
             type: 'String',
-            description:
-              'Transaction name',
+            description: 'Transaction name',
           })
         ),
       },
@@ -316,8 +315,7 @@ export const CashTransactionMutation = extendType({
         transactionName: nonNull(
           arg({
             type: 'String',
-            description:
-              'Transaction name',
+            description: 'Transaction name',
           })
         ),
 
@@ -356,7 +354,7 @@ export const CashTransactionMutation = extendType({
           })
         ),
 
-        internalTransferAccountId: arg({
+        internalTransferTransactionId: arg({
           type: 'String',
           description: 'The account id if internal transfer',
         }),
@@ -395,26 +393,25 @@ export const CashTransactionMutation = extendType({
         const {
           cashAccountId,
           amount,
-          transactionName,
           merchantId,
           transactionType,
           direction,
-          internalTransferAccountId,
+          internalTransferTransactionId,
           category,
         } = args;
 
-        if (transactionType === 'TRANSFER' && !internalTransferAccountId)
+        if (transactionType === 'TRANSFER' && !internalTransferTransactionId)
           throw new Error(
             'Internal transfer account ID is required for Internal Transfer transaction'
           );
 
         if (
           transactionType !== 'TRANSFER' &&
-          internalTransferAccountId !== null &&
-          internalTransferAccountId !== undefined
+          internalTransferTransactionId !== null &&
+          internalTransferTransactionId !== undefined
         )
           throw new Error(
-            "It seems like you've put internalTransferAccountId even though it's not a `TRANSFER` type. This must be a mistake."
+            "It seems like you've put internalTransferTransactionId even though it's not a `TRANSFER` type. This must be a mistake."
           );
 
         const { userId, prisma } = context;
@@ -492,7 +489,7 @@ export const CashTransactionMutation = extendType({
             ({ amount: string; name: string } | null)[] | null | undefined
           >,
           transactionType: response.transactionType,
-          internalTransferAccountId: response.internalTransferAccountId,
+          internalTransferTransactionId: response.internalTransferTransactionId,
           direction: response.direction,
           notes: response.notes,
           location: response.location,
@@ -576,13 +573,10 @@ export const CashTransactionMutation = extendType({
           default: 'IDR',
         }),
 
-        transactionName: nonNull(
-          arg({
-            type: 'String',
-            description:
-              'Transaction name',
-          })
-        ),
+        transactionName: arg({
+          type: 'String',
+          description: 'Transaction name',
+        }),
 
         amount: arg({
           type: 'String',
@@ -611,7 +605,7 @@ export const CashTransactionMutation = extendType({
           description: 'The direction for this transaction. `IN` or `OUT`',
         }),
 
-        internalTransferAccountId: arg({
+        internalTransferTransactionId: arg({
           type: 'String',
           description: 'The account id if internal transfer',
         }),
@@ -656,7 +650,7 @@ export const CashTransactionMutation = extendType({
           category,
           transactionType,
           direction,
-          internalTransferAccountId,
+          internalTransferTransactionId,
           notes,
           location,
           tags,
@@ -672,7 +666,7 @@ export const CashTransactionMutation = extendType({
           !transactionName &&
           !transactionType &&
           !direction &&
-          !internalTransferAccountId &&
+          !internalTransferTransactionId &&
           !notes &&
           !location &&
           !tags &&
@@ -779,9 +773,9 @@ export const CashTransactionMutation = extendType({
             category: category ?? transaction.category,
             transactionType: transactionType ?? transaction.transactionType,
             direction: direction ?? transaction.direction,
-            internalTransferAccountId:
-              internalTransferAccountId ??
-              transaction.internalTransferAccountId,
+            internalTransferTransactionId:
+              internalTransferTransactionId ??
+              transaction.internalTransferTransactionId,
             notes: notes ?? transaction.notes,
             location: location ?? transaction.location,
             tags: tags ?? transaction.tags,
@@ -812,7 +806,7 @@ export const CashTransactionMutation = extendType({
             ({ amount: string; name: string } | null)[] | null | undefined
           >,
           transactionType: response.transactionType,
-          internalTransferAccountId: response.internalTransferAccountId,
+          internalTransferTransactionId: response.internalTransferTransactionId,
           direction: response.direction,
           notes: response.notes,
           location: response.location,

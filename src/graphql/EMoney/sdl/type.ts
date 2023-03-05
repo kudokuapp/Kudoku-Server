@@ -38,6 +38,10 @@ export const EMoneyTransaction = objectType({
       description: 'id generated automatically by MongoDB',
     });
 
+    t.nonNull.string('transactionName', {
+      description: 'The transaction display name',
+    });
+
     t.nonNull.string('eMoneyAccountId', {
       description: 'The E-Wallet account Id',
     });
@@ -79,7 +83,11 @@ export const EMoneyTransaction = objectType({
 
     t.nonNull.string('transactionType', {
       description:
-        "The transaction type for this transaction. It's either `INCOME`, or `EXPENSE`.",
+        "The transaction type for this transaction. It's either `INCOME`, `EXPENSE`, or `TRANSFER`.",
+    });
+
+    t.string('internalTransferTransactionId', {
+      description: 'The transaction id for internal transfer',
     });
 
     t.string('description', {

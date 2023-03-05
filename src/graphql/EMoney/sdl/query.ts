@@ -51,6 +51,7 @@ export const EMoneyQuery = extendType({
 
           const obj = {
             id: element.id,
+            transactionName: element.transactionName,
             eMoneyAccountId: element.eMoneyAccountId,
             dateTimestamp: toTimeStamp(element.dateTimestamp),
             currency: element.currency,

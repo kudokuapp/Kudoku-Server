@@ -25,6 +25,7 @@ model User {
   cashAccount       CashAccount[]
   eWalletAccount    EWalletAccount[]
   eMoneyAccount     EMoneyAccount[]
+  payLaterAccount   PayLaterAccount[]
 }
 
 model Profile {
@@ -59,6 +60,7 @@ model DebitAccount {
   institutionId          String                 @db.ObjectId
   accountNumber          String
   accessToken            String
+  expired                Boolean
   balance                String
   createdAt              DateTime        
   lastUpdate             DateTime
@@ -74,12 +76,28 @@ model EWalletAccount {
   institutionId          String                 @db.ObjectId
   accountNumber          String
   accessToken            String
+  expired                Boolean
   balance                String
   createdAt              DateTime        
   lastUpdate             DateTime
   currency               String
-  type                   EWalletAccountType
   eWalletTransaction     EWalletTransaction[]   
+}
+
+model PayLaterAccount {
+  id                     String                 @id @default(auto()) @map("_id") @db.ObjectId
+  user                   User                   @relation(fields: [userId], references: [id])
+  userId                 String                 @db.ObjectId
+  institution            Institution            @relation(fields: [institutionId], references: [id])
+  institutionId          String                 @db.ObjectId
+  accountNumber          String
+  accessToken            String
+  expired                Boolean
+  balance                String
+  createdAt              DateTime        
+  lastUpdate             DateTime
+  currency               String
+  payLaterTransaction    PayLaterTransaction[]   
 }
 
 model EMoneyAccount {
@@ -122,7 +140,7 @@ model CashTransaction {
   category                        Json?
   transactionType                 TransactionType   @default(EXPENSE)
   direction                       DirectionType     @default(OUT)
-  internalTransferAccountId       String?           @db.ObjectId
+  internalTransferTransactionId   String?           @db.ObjectId
   notes                           String?
   location                        Location?
   tags                            String[]
@@ -142,6 +160,8 @@ model Institution {
   eWalletTransaction    EWalletTransaction[]
   eMoneyAccount         EMoneyAccount[]
   eMoneyTransaction     EMoneyTransaction[]
+  payLaterAccount       PayLaterAccount[]
+  payLaterTransaction   PayLaterTransaction[]
 }
 
 model Merchant {
@@ -153,38 +173,41 @@ model Merchant {
   debitTransaction      DebitTransaction[]
   eWalletTransaction    EWalletTransaction[]
   eMoneyTransaction     EMoneyTransaction[]
+  payLaterTransaction   PayLaterTransaction[]
 }
 
 model DebitTransaction {
   id                              String            @id @default(auto()) @map("_id") @db.ObjectId
+  transactionName                 String
   debitAccount                    DebitAccount      @relation(fields: [debitAccountId], references: [id])
   debitAccountId                  String            @db.ObjectId
   dateTimestamp                   DateTime
   referenceId                     String
   currency                        String
   amount                          String            //Takut aneh kalo number
-  onlineTransaction               Boolean           @default(false) // 1
+  onlineTransaction               Boolean           @default(false)
   isReviewed                      Boolean           @default(false)
-  merchant                        Merchant?         @relation(fields: [merchantId], references: [id]) //2
+  merchant                        Merchant?         @relation(fields: [merchantId], references: [id])
   merchantId                      String?           @db.ObjectId
-  category                        Json?             //3
-  transactionType                 TransactionType   @default(EXPENSE) // 4
+  category                        Json?             
+  transactionType                 TransactionType   @default(EXPENSE)
   direction                       DirectionType     @default(OUT)
-  internalTransferAccountId       String?           @db.ObjectId //5
-  isSubscription                  Boolean           @default(false) //6
+  internalTransferTransactionId   String?           @db.ObjectId
+  isSubscription                  Boolean           @default(false)
   description                     String
   notes                           String?
   institution                     Institution       @relation(fields: [institutionId], references: [id])
   institutionId                   String            @db.ObjectId
-  location                        Location?         // 7
+  location                        Location?         
   tags                            String[]
   isHideFromBudget                Boolean           @default(false)
   isHideFromInsight               Boolean           @default(false)
-  transactionMethod               String            // 8
+  transactionMethod               String            
 }
 
 model EWalletTransaction {
   id                              String            @id @default(auto()) @map("_id") @db.ObjectId
+  transactionName                 String
   eWalletAccount                  EWalletAccount    @relation(fields: [eWalletAccountId], references: [id])
   eWalletAccountId                String            @db.ObjectId
   dateTimestamp                   DateTime
@@ -193,12 +216,12 @@ model EWalletTransaction {
   amount                          String            //Takut aneh kalo number
   onlineTransaction               Boolean           @default(false)
   isReviewed                      Boolean           @default(false)
-  merchant                        Merchant          @relation(fields: [merchantId], references: [id])
-  merchantId                      String            @db.ObjectId
+  merchant                        Merchant?         @relation(fields: [merchantId], references: [id])
+  merchantId                      String?           @db.ObjectId
   category                        Json?
   transactionType                 TransactionType   @default(EXPENSE)
   direction                       DirectionType     @default(OUT)
-  internalTransferAccountId       String?           @db.ObjectId
+  internalTransferTransactionId   String?           @db.ObjectId
   isSubscription                  Boolean           @default(false)
   description                     String
   notes                           String?
@@ -208,12 +231,40 @@ model EWalletTransaction {
   tags                            String[]
   isHideFromBudget                Boolean           @default(false)
   isHideFromInsight               Boolean           @default(false)
-  transactionMethod               String            
+}
+
+model PayLaterTransaction {
+  id                              String            @id @default(auto()) @map("_id") @db.ObjectId
+  transactionName                 String
+  payLaterAccount                 PayLaterAccount   @relation(fields: [payLaterAccountId], references: [id])
+  payLaterAccountId               String            @db.ObjectId
+  dateTimestamp                   DateTime
+  referenceId                     String
+  currency                        String
+  amount                          String            //Takut aneh kalo number
+  onlineTransaction               Boolean           @default(false)
+  isReviewed                      Boolean           @default(false)
+  merchant                        Merchant?         @relation(fields: [merchantId], references: [id])
+  merchantId                      String?           @db.ObjectId
+  category                        Json?
+  transactionType                 TransactionType   @default(EXPENSE)
+  direction                       DirectionType     @default(OUT)
+  internalTransferTransactionId   String?           @db.ObjectId
+  isSubscription                  Boolean           @default(false)
+  description                     String
+  notes                           String?
+  institution                     Institution       @relation(fields: [institutionId], references: [id])
+  institutionId                   String            @db.ObjectId
+  location                        Location?
+  tags                            String[]
+  isHideFromBudget                Boolean           @default(false)
+  isHideFromInsight               Boolean           @default(false)
 }
 
 
 model EMoneyTransaction {
   id                              String                      @id @default(auto()) @map("_id") @db.ObjectId
+  transactionName                 String
   eMoneyAccount                   EMoneyAccount               @relation(fields: [eMoneyAccountId], references: [id])
   eMoneyAccountId                 String                      @db.ObjectId
   dateTimestamp                   DateTime
@@ -223,7 +274,8 @@ model EMoneyTransaction {
   merchant                        Merchant?                   @relation(fields: [merchantId], references: [id])
   merchantId                      String?                     @db.ObjectId
   category                        Json?
-  transactionType                 TransactionTypeNoTransfer   @default(EXPENSE)
+  transactionType                 TransactionType             @default(EXPENSE)
+  internalTransferTransactionId   String?                     @db.ObjectId
   direction                       DirectionType               @default(OUT)
   description                     String?
   notes                           String?

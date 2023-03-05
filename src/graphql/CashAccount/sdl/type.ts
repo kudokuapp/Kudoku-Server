@@ -1,4 +1,4 @@
-import { inputObjectType, objectType } from 'nexus';
+import { objectType } from 'nexus';
 
 export const CashAccount = objectType({
   name: 'CashAccount',
@@ -41,6 +41,10 @@ export const CashTransaction = objectType({
       description: 'id generated automatically by MongoDB',
     });
 
+    t.nonNull.string('transactionName', {
+      description: 'The display name of the transaction',
+    });
+
     t.nonNull.string('cashAccountId', {
       description: 'The cash account Id',
     });
@@ -76,8 +80,8 @@ export const CashTransaction = objectType({
         "The transaction type for this transaction. It's either `INCOME`, `EXPENSE`, or `TRANSFER`",
     });
 
-    t.string('internalTransferAccountId', {
-      description: 'The account id for internal transfer',
+    t.string('internalTransferTransactionId', {
+      description: 'The tranaction id for internal transfer',
     });
 
     t.nonNull.string('direction', {
@@ -106,11 +110,8 @@ export const CashTransaction = objectType({
       description: 'Whether or not this transaction is hidden from insight',
     });
 
-
     t.nonNull.string('transactionName', {
       description: 'Transaction name',
     });
   },
 });
-
-

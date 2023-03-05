@@ -1,4 +1,4 @@
-import { inputObjectType, objectType } from 'nexus';
+import { inputObjectType, objectType, enumType } from 'nexus';
 
 export const Location = objectType({
   name: 'Location',
@@ -30,4 +30,9 @@ export const CategoryInputType = inputObjectType({
     t.nonNull.string('name');
     t.nonNull.string('amount');
   },
+});
+
+export const typeOfAccount = enumType({
+  name: 'typeOfAccount',
+  members: ['CASH', 'DEBIT', 'EWALLET', 'EMONEY'],
 });

@@ -45,12 +45,13 @@ export const DebitAccountQuery = extendType({
         for (let i = 0; i < response.length; i++) {
           const element = response[i];
 
-          const merchant = await prisma.merchant.findFirst({
+          const merchant = await prisma.merchant.findFirstOrThrow({
             where: { id: element.merchantId ?? '63d3be20009767d5eb7e7410' },
           });
 
           const obj = {
             id: element.id,
+            transactionName: element.transactionName,
             debitAccountId: element.debitAccountId,
             dateTimestamp: toTimeStamp(element.dateTimestamp),
             currency: element.currency,
@@ -60,7 +61,8 @@ export const DebitAccountQuery = extendType({
             category: element.category,
             direction: element.direction,
             transactionType: element.transactionType,
-            internalTransferAccountId: element.internalTransferAccountId,
+            internalTransferTransactionId:
+              element.internalTransferTransactionId,
             notes: element.notes,
             location: element.location,
             tags: element.tags,

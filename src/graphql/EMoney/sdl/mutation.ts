@@ -1,6 +1,7 @@
 import { arg, extendType, nonNull, list, enumType } from 'nexus';
 import { toTimeStamp } from '../../../utils/date';
-import { Merchant, TransactionTypeNoTransfer } from '@prisma/client';
+import { Merchant, TransactionType } from '@prisma/client';
+import { DirectionTypeEnum } from '../../Enum';
 import _ from 'lodash';
 import { CategoryInputType } from '../../ObjectType';
 import { updateBalance } from '../../../utils/transaction';
@@ -192,6 +193,13 @@ export const EMoneyTransactionMutation = extendType({
           })
         ),
 
+        transactionName: nonNull(
+          arg({
+            type: 'String',
+            description: 'The transaction name',
+          })
+        ),
+
         currency: nonNull(
           arg({
             type: 'String',
@@ -225,9 +233,21 @@ export const EMoneyTransactionMutation = extendType({
           arg({
             type: 'String',
             description:
-              "The transaction type. It's either `INCOME` or `EXPENSE`",
+              "The transaction type. It's either `INCOME`, `EXPENSE`, or `INTERNAL TRANSFER`",
           })
         ),
+
+        direction: nonNull(
+          arg({
+            type: DirectionTypeEnum,
+            description: 'The direction for this transaction. `IN` or `OUT`',
+          })
+        ),
+
+        internalTransferTransactionId: arg({
+          type: 'String',
+          description: 'The account id if internal transfer',
+        }),
 
         notes: arg({
           type: 'String',
@@ -274,11 +294,14 @@ export const EMoneyTransactionMutation = extendType({
       async resolve(parent, args, context, info) {
         const {
           eMoneyAccountId,
+          transactionName,
           currency,
           amount,
           merchantId,
           category,
           transactionType,
+          direction,
+          internalTransferTransactionId,
           notes,
           description,
           institutionId,
@@ -292,6 +315,15 @@ export const EMoneyTransactionMutation = extendType({
 
         if (!userId) throw new Error('Invalid token');
 
+        if (
+          transactionType !== 'TRANSFER' &&
+          internalTransferTransactionId !== null &&
+          internalTransferTransactionId !== undefined
+        )
+          throw new Error(
+            "It seems like you've put internalTransferAccountId even though it's not a `TRANSFER` type. This must be a mistake."
+          );
+
         const user = await prisma.user.findFirst({ where: { id: userId } });
 
         if (!user) throw new Error('Cannot find user');
@@ -304,6 +336,8 @@ export const EMoneyTransactionMutation = extendType({
 
         const response = await prisma.eMoneyTransaction.create({
           data: {
+            transactionName,
+            internalTransferTransactionId,
             dateTimestamp: new Date(),
             isReviewed: true,
             eMoneyAccountId: eMoneyAccount.id,
@@ -311,7 +345,7 @@ export const EMoneyTransactionMutation = extendType({
             amount,
             merchantId,
             category,
-            transactionType: transactionType as TransactionTypeNoTransfer,
+            transactionType: transactionType as TransactionType,
             notes,
             description,
             institutionId,
@@ -319,7 +353,7 @@ export const EMoneyTransactionMutation = extendType({
             tags,
             isHideFromBudget,
             isHideFromInsight,
-            direction: transactionType === 'INCOME' ? 'IN' : 'OUT',
+            direction,
           },
         });
 
@@ -350,6 +384,7 @@ export const EMoneyTransactionMutation = extendType({
 
         return {
           id: response.id,
+          transactionName: response.transactionName,
           eMoneyAccountId: response.eMoneyAccountId,
           dateTimestamp: toTimeStamp(response.dateTimestamp),
           institutionId: response.institutionId,
@@ -385,6 +420,11 @@ export const EMoneyTransactionMutation = extendType({
             description: 'The associated id of that e-money transaction id',
           })
         ),
+
+        transactionName: arg({
+          type: 'String',
+          description: 'The transaction name',
+        }),
 
         amount: arg({
           type: 'String',
@@ -435,11 +475,18 @@ export const EMoneyTransactionMutation = extendType({
           description:
             'The transaction type. Either INCOME for in transation, and EXPENSE for outgoing transaction',
         }),
+
+        direction: arg({
+          type: DirectionTypeEnum,
+          description: 'The direction for this transaction. `IN` or `OUT`',
+        }),
       },
 
       async resolve(parent, args, context, info) {
         const {
           transactionId,
+          transactionName,
+          direction,
           amount,
           merchantId,
           category,
@@ -453,7 +500,9 @@ export const EMoneyTransactionMutation = extendType({
 
         if (
           !merchantId &&
+          !transactionName &&
           !category &&
+          !direction &&
           !notes &&
           !location &&
           !tags &&
@@ -550,12 +599,6 @@ export const EMoneyTransactionMutation = extendType({
           });
         }
 
-        let direction = transaction.direction;
-
-        if (transactionType) {
-          direction = transactionType === 'INCOME' ? 'IN' : 'OUT';
-        }
-
         const response = await prisma.eMoneyTransaction.update({
           where: { id: transactionId },
           data: {
@@ -584,6 +627,7 @@ export const EMoneyTransactionMutation = extendType({
 
         return {
           id: response.id,
+          transactionName: response.transactionName,
           eMoneyAccountId: response.eMoneyAccountId,
           dateTimestamp: toTimeStamp(response.dateTimestamp),
           institutionId: response.institutionId,
@@ -602,6 +646,7 @@ export const EMoneyTransactionMutation = extendType({
           location: response.location,
           tags: response.tags,
           isHideFromBudget: response.isHideFromBudget,
+          internalTransferTransactionId: response.internalTransferTransactionId,
           isHideFromInsight: response.isHideFromInsight,
         };
       },

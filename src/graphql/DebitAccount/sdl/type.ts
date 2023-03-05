@@ -38,6 +38,10 @@ export const DebitTransaction = objectType({
       description: 'id generated automatically by MongoDB',
     });
 
+    t.nonNull.string('transactionName', {
+      description: 'The transaction display name',
+    });
+
     t.nonNull.string('debitAccountId', {
       description: 'The debit account Id',
     });
@@ -95,8 +99,8 @@ export const DebitTransaction = objectType({
       description: 'The description given by the Banks API',
     });
 
-    t.string('internalTransferAccountId', {
-      description: 'The account id for internal transfer',
+    t.string('internalTransferTransactionId', {
+      description: 'The transaction id for internal transfer',
     });
 
     t.nonNull.string('direction', {
