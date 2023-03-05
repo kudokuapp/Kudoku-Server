@@ -614,7 +614,7 @@ export const EMoneyTransactionMutation = extendType({
             isHideFromInsight:
               isHideFromInsight ?? transaction.isHideFromInsight,
             transactionType: transactionType ?? transaction.transactionType,
-            direction,
+            direction: direction ?? transaction.direction,
           },
         });
 

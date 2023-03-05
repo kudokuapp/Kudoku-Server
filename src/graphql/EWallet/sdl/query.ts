@@ -81,7 +81,6 @@ export const EWalletQuery = extendType({
             onlineTransaction: element.onlineTransaction,
             isReviewed: element.isReviewed,
             isSubscription: element.isSubscription,
-            transactionMethod: element.transactionMethod,
           };
 
           responseArray.push(obj);
@@ -121,7 +120,6 @@ export const EWalletQuery = extendType({
             currency: element.currency,
             institutionId: element.institutionId,
             accountNumber: element.accountNumber,
-            type: element.type,
           };
 
           response.push(obj);
