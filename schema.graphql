@@ -286,6 +286,105 @@ type EMoneyTransaction {
   transactionType: String!
 }
 
+type EWalletAccount {
+  accountNumber: String!
+
+  """The balance of that cash account"""
+  balance: String!
+
+  """When this account is created"""
+  createdAt: String!
+
+  """The ISO currency of this account"""
+  currency: String!
+
+  """id generated automatically by MongoDB"""
+  id: String!
+  institutionId: String!
+
+  """When this account is last updated"""
+  lastUpdate: String!
+  userId: String!
+}
+
+type EWalletTransaction {
+  """The transaction amount"""
+  amount: String!
+
+  """The category for this transaction"""
+  category: [Category]
+
+  """ISO 4217 Currency"""
+  currency: String!
+
+  """Date and Timestamp for this transaction"""
+  dateTimestamp: String!
+
+  """The description given by the Banks API"""
+  description: String!
+
+  """The direction of the transaction. It's either `IN`, or `OUT`"""
+  direction: String!
+
+  """The E-Wallet account Id"""
+  eWalletAccountId: String!
+
+  """id generated automatically by MongoDB"""
+  id: String!
+
+  """The institution id"""
+  institutionId: String!
+
+  """The transaction id for internal transfer"""
+  internalTransferTransactionId: String
+
+  """Whether or not this transaction is hidden from budget"""
+  isHideFromBudget: Boolean!
+
+  """Whether or not this transaction is hidden from insight"""
+  isHideFromInsight: Boolean!
+
+  """Whether or not this transaction is reviewed by the user on the client"""
+  isReviewed: Boolean!
+
+  """Whether or not this transaction is a subscription"""
+  isSubscription: Boolean!
+
+  """The location of the transaction"""
+  location: Location
+
+  """The merchant"""
+  merchant: Merchant
+
+  """The merchant Id"""
+  merchantId: String
+
+  """Additional notes for this transaction"""
+  notes: String
+
+  """Whether or not this transaction is online"""
+  onlineTransaction: Boolean!
+
+  """
+  The reference id. The reference id is to check on what number is the transaction for the day
+  """
+  referenceId: String!
+
+  """Additional tags for this transaction"""
+  tags: [String]
+
+  """The transaction method. `Virtual Account`, `Debit`"""
+  transactionMethod: String!
+
+  """The transaction display name"""
+  transactionName: String!
+
+  """
+  The transaction type for this transaction. It's either `INCOME`, `EXPENSE`, or `TRANSFER`
+  """
+  transactionType: String!
+}
+
 enum ExpenseTypeEnum {
   EXPENSE
   INCOME
@@ -474,6 +573,30 @@ type Mutation {
     """The username for the particular bank details"""
     username: String!
   ): DebitAccount!
+
+  """Connect Gopay account via BRICK."""
+  connectGopayViaBrick(
+    """clientId after running `sendOtpGopayViaBrick` query"""
+    clientId: Int!
+
+    """otp after running `sendOtpGopayViaBrick` query"""
+    otp: String!
+
+    """otpToken after running `sendOtpGopayViaBrick` query"""
+    otpToken: String!
+
+    """redirectRefId after running `sendOtpGopayViaBrick` query"""
+    redirectRefId: Int!
+
+    """sessionId after running `sendOtpGopayViaBrick` query"""
+    sessionId: String!
+
+    """uniqueId after running `sendOtpGopayViaBrick` query"""
+    uniqueId: String!
+
+    """Nomor HP Gopay"""
+    username: String!
+  ): [EWalletAccount!]!
 
   """Create an E-Money account"""
   createEMoneyAccount(
@@ -692,6 +815,15 @@ type Mutation {
     debitAccountId: String!
   ): [DebitTransaction]
 
+  """Update transaction and balance for gopay account"""
+  refreshGopayTransactionViaBrick(
+    """The associated id of that e-wallet account id"""
+    eWalletAccountId: String!
+
+    """The associated id of that e-wallet account id"""
+    payLaterAccountId: String!
+  ): ResponseMessage!
+
   """
   This is the API where user can sign up after they got invited. This means that the user's data is already in our MongoDB database.
   """
@@ -743,6 +875,15 @@ type Mutation {
   ): User!
 }
 
+type OTPData {
+  clientId: Int!
+  otpToken: String!
+  redirectRefId: Int!
+  sessionId: String!
+  uniqueId: String!
+  username: String!
+}
+
 type Profile {
   bio: String
   birthday: String
@@ -783,6 +924,15 @@ type Query {
     """Fill this with e-money account id"""
     eMoneyAccountId: String!
   ): [EMoneyTransaction]
+
+  """Get all e-wallet account for a particular user."""
+  getAllEWalletAccount: [EWalletAccount]
+
+  """Get all the e-wallet transaction from their eWalletAccountId"""
+  getAllEWalletTransaction(
+    """Fill this with e-wallet account id"""
+    eWalletAccountId: String!
+  ): [EWalletTransaction]
 
   """This API is to get every merchant's data"""
   getAllMerchant: [Merchant!]!
@@ -839,6 +989,12 @@ type Query {
     username: String!
   ): User
   login(password: String!, username: String!): AuthPayLoad!
+
+  """Send OTP Gopay for connecting via Brick"""
+  sendOtpGopayViaBrick(
+    """Nomor hp gopay"""
+    nomorHp: String!
+  ): OTPData
 
   """
   Get JWT Token from email/whatsapp OTP that has been requested from the client. We then verified the OTP in this server. WhatsApp needs to have "+62" prefix.
