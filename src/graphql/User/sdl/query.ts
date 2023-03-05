@@ -4,7 +4,7 @@ import { toTimeStamp } from '../../../utils/date';
 export const UserQuery = extendType({
   type: 'Query',
   definition(t) {
-    t.nonNull.list.nonNull.field('getAllUser', {
+    t.nonNull.list.field('getAllUser', {
       type: 'User',
       description:
         "This API is to get every user's data in our database. Useful for checking if username is already taken or not.",
@@ -12,7 +12,7 @@ export const UserQuery = extendType({
       async resolve(parent, args, context, info) {
         const user = await context.prisma.user.findMany();
 
-        let arrayOfUsers = new Array(user.length);
+        let arrayOfUsers: any[] = [];
 
         for (let i = 0; i < user.length; i++) {
           const element = user[i];

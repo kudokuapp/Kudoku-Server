@@ -940,7 +940,7 @@ type Query {
   """
   This API is to get every user's data in our database. Useful for checking if username is already taken or not.
   """
-  getAllUser: [User!]!
+  getAllUser: [User]!
 
   """Get OTP to user email/whatsapp. WhatsApp needs to have "+62" prefix."""
   getOtp(

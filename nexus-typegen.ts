@@ -444,7 +444,7 @@ export interface NexusGenFieldTypes {
     getAllEWalletAccount: Array<NexusGenRootTypes['EWalletAccount'] | null> | null; // [EWalletAccount]
     getAllEWalletTransaction: Array<NexusGenRootTypes['EWalletTransaction'] | null> | null; // [EWalletTransaction]
     getAllMerchant: NexusGenRootTypes['Merchant'][]; // [Merchant!]!
-    getAllUser: NexusGenRootTypes['User'][]; // [User!]!
+    getAllUser: Array<NexusGenRootTypes['User'] | null>; // [User]!
     getOtp: NexusGenRootTypes['ResponseMessage'] | null; // ResponseMessage
     getProfile: NexusGenRootTypes['Profile'] | null; // Profile
     getRefresh: Array<NexusGenRootTypes['Refresh'] | null> | null; // [Refresh]
