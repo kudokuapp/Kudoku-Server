@@ -1,4 +1,5 @@
-import axios from 'axios';
+import { prisma } from '@prisma/client';
+import axios, { AxiosError } from 'axios';
 
 export function brickUrl(endpoint: string) {
   const host =
@@ -95,5 +96,23 @@ export async function getAccountDetail(
         reject(e);
       }
     })();
+  });
+}
+
+export async function accessTokenIsExpired(
+  accessToken: string
+): Promise<Boolean> {
+  return new Promise(async (resolve, reject) => {
+    await getAccountDetail(accessToken).catch(async (e) => {
+      const error = e as AxiosError;
+
+      if (error.response?.status === 401) {
+        resolve(true);
+      } else {
+        reject();
+      }
+    });
+
+    resolve(false);
   });
 }

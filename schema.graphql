@@ -55,8 +55,8 @@ type CashTransaction {
   """id generated automatically by MongoDB"""
   id: String!
 
-  """The account id for internal transfer"""
-  internalTransferAccountId: String
+  """The tranaction id for internal transfer"""
+  internalTransferTransactionId: String
 
   """Whether or not this transaction is hidden from budget"""
   isHideFromBudget: Boolean!
@@ -147,8 +147,8 @@ type DebitTransaction {
   """The institution id"""
   institutionId: String!
 
-  """The account id for internal transfer"""
-  internalTransferAccountId: String
+  """The transaction id for internal transfer"""
+  internalTransferTransactionId: String
 
   """Whether or not this transaction is hidden from budget"""
   isHideFromBudget: Boolean!
@@ -187,6 +187,9 @@ type DebitTransaction {
 
   """The transaction method. `Virtual Account`, `Debit`"""
   transactionMethod: String!
+
+  """The transaction display name"""
+  transactionName: String!
 
   """
   The transaction type for this transaction. It's either `INCOME`, `EXPENSE`, or `TRANSFER`
@@ -247,6 +250,9 @@ type EMoneyTransaction {
   """The institution id"""
   institutionId: String!
 
+  """The transaction id for internal transfer"""
+  internalTransferTransactionId: String
+
   """Whether or not this transaction is hidden from budget"""
   isHideFromBudget: Boolean!
 
@@ -271,8 +277,11 @@ type EMoneyTransaction {
   """Additional tags for this transaction"""
   tags: [String]
 
+  """The transaction display name"""
+  transactionName: String!
+
   """
-  The transaction type for this transaction. It's either `INCOME`, or `EXPENSE`.
+  The transaction type for this transaction. It's either `INCOME`, `EXPENSE`, or `TRANSFER`.
   """
   transactionType: String!
 }
@@ -352,7 +361,7 @@ type Mutation {
     direction: DirectionTypeEnum!
 
     """The account id if internal transfer"""
-    internalTransferAccountId: String
+    internalTransferTransactionId: String
 
     """Whether or not this transaction is hide from budget. default: false"""
     isHideFromBudget: Boolean! = false
@@ -395,11 +404,17 @@ type Mutation {
     """Description for the transaction"""
     description: String
 
+    """The direction for this transaction. `IN` or `OUT`"""
+    direction: DirectionTypeEnum!
+
     """The associated id of that e-money account id"""
     eMoneyAccountId: String!
 
     """The institution ID"""
     institutionId: String!
+
+    """The account id if internal transfer"""
+    internalTransferTransactionId: String
 
     """Whether or not this transaction is hide from budget. default: false"""
     isHideFromBudget: Boolean! = false
@@ -419,7 +434,12 @@ type Mutation {
     """The tags for this transaction"""
     tags: [String!]!
 
-    """The transaction type. It's either `INCOME` or `EXPENSE`"""
+    """The transaction name"""
+    transactionName: String!
+
+    """
+    The transaction type. It's either `INCOME`, `EXPENSE`, or `INTERNAL TRANSFER`
+    """
     transactionType: String!
   ): EMoneyTransaction!
 
@@ -500,7 +520,7 @@ type Mutation {
     category: [CategoryInputType]
 
     """The account id for internal transfer"""
-    internalTransferAccountId: String
+    internalTransferTransactionId: String
 
     """Whether or not this transaction is hide from budget. default: false"""
     isHideFromBudget: Boolean! = false
@@ -531,6 +551,9 @@ type Mutation {
 
     """What transaction method is this."""
     transactionMethod: TransactionMethodEnum
+
+    """The transaction name"""
+    transactionName: String
 
     """
     The transaction type. Either INCOME for in transation, EXPENSE for outgoing transaction, and TRANSFER for internal transfer.
@@ -569,7 +592,7 @@ type Mutation {
     direction: DirectionTypeEnum
 
     """The account id if internal transfer"""
-    internalTransferAccountId: String
+    internalTransferTransactionId: String
 
     """Whether or not this transaction is hide from budget. default: false"""
     isHideFromBudget: Boolean = false
@@ -593,7 +616,7 @@ type Mutation {
     transactionId: String!
 
     """Transaction name"""
-    transactionName: String!
+    transactionName: String
 
     """
     The transaction type. Either INCOME for in transation, EXPENSE for outgoing transaction, and TRANSFER for internal transfer.
@@ -608,6 +631,9 @@ type Mutation {
 
     """The category of the transaction"""
     category: [CategoryInputType]
+
+    """The direction for this transaction. `IN` or `OUT`"""
+    direction: DirectionTypeEnum
 
     """Whether or not this transaction is hide from budget. default: false"""
     isHideFromBudget: Boolean = false
@@ -629,6 +655,9 @@ type Mutation {
 
     """The associated id of that e-money transaction id"""
     transactionId: String!
+
+    """The transaction name"""
+    transactionName: String
 
     """
     The transaction type. Either INCOME for in transation, and EXPENSE for outgoing transaction
@@ -863,4 +892,11 @@ type User {
   lastName: String!
   username: String!
   whatsapp: String!
+}
+
+enum typeOfAccount {
+  CASH
+  DEBIT
+  EMONEY
+  EWALLET
 }

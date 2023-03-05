@@ -1,4 +1,4 @@
-import { arg, enumType, extendType, list, nonNull } from 'nexus';
+import { arg, extendType, list, nonNull } from 'nexus';
 import { toTimeStamp } from '../../../utils/date';
 import { findBrickTransactionIndex } from '../../../utils/transaction';
 import {
@@ -7,6 +7,7 @@ import {
   brickPublicAccessToken,
   mapBrickInstitutionIdToKudoku,
   getAccountDetail,
+  accessTokenIsExpired,
 } from '../../../utils/brick';
 import axios from 'axios';
 import moment from 'moment';
@@ -133,6 +134,7 @@ export const DebitAccountMutation = extendType({
             createdAt: new Date(),
             lastUpdate: new Date(),
             currency: accountDetail[0].currency,
+            expired: false,
           },
         });
 
@@ -142,9 +144,9 @@ export const DebitAccountMutation = extendType({
 
         const transactionUrl = brickUrl(`/v1/transaction/list`);
 
-        const from = moment().subtract(2, 'M').startOf('M').format('YYYY-MM-DD');
+        const from = moment().subtract(7, 'days').format('YYYY-MM-DD');
 
-        const to = moment().subtract(1, 'M').endOf('M').format('YYYY-MM-DD');
+        const to = moment().format('YYYY-MM-DD');
 
         const transactionOptions = {
           method: 'GET',
@@ -171,6 +173,7 @@ export const DebitAccountMutation = extendType({
 
           const obj = {
             debitAccountId: debitAccount.id,
+            transactionName: element.description,
             dateTimestamp: new Date(
               moment(element.dateTimestamp).add(1, 'day') as unknown as Date
             ),
@@ -293,6 +296,16 @@ export const DebitTransactionMutation = extendType({
 
         if (!debitAccount) throw new Error('Cannot find the debit account');
 
+        const expired = await accessTokenIsExpired(debitAccount.accessToken);
+
+        if (expired) {
+          await prisma.debitAccount.update({
+            where: { id: debitAccount.id },
+            data: { expired: true },
+          });
+          throw new Error('Access token is expired');
+        }
+
         const debitTransaction = await prisma.debitTransaction.findMany({
           where: { debitAccountId: debitAccount.id },
           orderBy: [{ dateTimestamp: 'desc' }, { referenceId: 'desc' }],
@@ -300,9 +313,11 @@ export const DebitTransactionMutation = extendType({
 
         const { dateTimestamp, referenceId } = debitTransaction[0];
 
-        const from = moment(dateTimestamp).subtract(2, 'M').startOf('M').format('YYYY-MM-DD');
+        const from = moment(dateTimestamp)
+          .subtract(1, 'day')
+          .format('YYYY-MM-DD');
 
-        const to = moment().subtract(1, 'M').endOf('M').format('YYYY-MM-DD');
+        const to = moment().format('YYYY-MM-DD');
 
         const transactionUrl = brickUrl(`/v1/transaction/list`);
 
@@ -348,6 +363,7 @@ export const DebitTransactionMutation = extendType({
           const trans = await prisma.debitTransaction.create({
             data: {
               debitAccountId: debitAccount.id,
+              transactionName: element.description,
               dateTimestamp: new Date(
                 moment(element.dateTimestamp).add(1, 'day') as unknown as Date
               ),
@@ -428,6 +444,7 @@ export const DebitTransactionMutation = extendType({
 
             const obj = {
               id: element.id,
+              transactionName: element.transactionName,
               debitAccountId: element.debitAccountId,
               dateTimestamp: toTimeStamp(element.dateTimestamp),
               referenceId: element.referenceId,
@@ -441,7 +458,8 @@ export const DebitTransactionMutation = extendType({
               category: element.category,
               transactionType: element.transactionType,
               description: element.description,
-              internalTransferAccountId: element.internalTransferAccountId,
+              internalTransferTransactionId:
+                element.internalTransferTransactionId,
               direction: element.direction,
               notes: element.notes,
               location: element.location,
@@ -471,6 +489,11 @@ export const DebitTransactionMutation = extendType({
           })
         ),
 
+        transactionName: arg({
+          type: 'String',
+          description: 'The transaction name',
+        }),
+
         onlineTransaction: arg({
           type: 'Boolean',
           description: 'Wether or not this transaction is online',
@@ -492,7 +515,7 @@ export const DebitTransactionMutation = extendType({
             'The transaction type. Either INCOME for in transation, EXPENSE for outgoing transaction, and TRANSFER for internal transfer.',
         }),
 
-        internalTransferAccountId: arg({
+        internalTransferTransactionId: arg({
           type: 'String',
           description: 'The account id for internal transfer',
         }),
@@ -544,7 +567,8 @@ export const DebitTransactionMutation = extendType({
           merchantId,
           category,
           transactionType,
-          internalTransferAccountId,
+          transactionName,
+          internalTransferTransactionId,
           isSubscription,
           notes,
           location,
@@ -558,8 +582,9 @@ export const DebitTransactionMutation = extendType({
           !onlineTransaction &&
           !merchantId &&
           !category &&
+          !transactionName &&
           !transactionType &&
-          !internalTransferAccountId &&
+          !internalTransferTransactionId &&
           !isSubscription &&
           !notes &&
           !location &&
@@ -586,9 +611,9 @@ export const DebitTransactionMutation = extendType({
 
         const { amount } = transaction;
 
-        if (transactionType === 'TRANSFER' && !internalTransferAccountId)
+        if (transactionType === 'TRANSFER' && !internalTransferTransactionId)
           throw new Error(
-            'Please insert internalTransferAccountId if this is a `TRANSFER` type'
+            'Please insert internalTransferTransactionId if this is a `TRANSFER` type'
           );
 
         if (
@@ -622,12 +647,13 @@ export const DebitTransactionMutation = extendType({
           data: {
             onlineTransaction:
               onlineTransaction ?? transaction.onlineTransaction,
+            transactionName: transactionName ?? transaction.transactionName,
             merchantId: merchantId ?? transaction.merchantId,
             category: category ?? transaction.category,
             transactionType: transactionType ?? transaction.transactionType,
-            internalTransferAccountId:
-              internalTransferAccountId ??
-              transaction.internalTransferAccountId,
+            internalTransferTransactionId:
+              internalTransferTransactionId ??
+              transaction.internalTransferTransactionId,
             isSubscription: isSubscription ?? transaction.isSubscription,
             notes: notes ?? transaction.notes,
             location: location ?? transaction.location,
@@ -651,6 +677,7 @@ export const DebitTransactionMutation = extendType({
 
         return {
           id: response.id,
+          transactionName: response.transactionName,
           debitAccountId: response.debitAccountId,
           dateTimestamp: toTimeStamp(response.dateTimestamp),
           referenceId: response.referenceId,
@@ -667,7 +694,7 @@ export const DebitTransactionMutation = extendType({
             | undefined,
           transactionType: response.transactionType,
           description: response.description,
-          internalTransferAccountId: response.internalTransferAccountId,
+          internalTransferTransactionId: response.internalTransferTransactionId,
           direction: response.direction,
           notes: response.notes,
           location: response.location,
