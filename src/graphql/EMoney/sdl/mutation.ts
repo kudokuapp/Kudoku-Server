@@ -149,6 +149,7 @@ export const EMoneyAccountMutation = extendType({
         await prisma.eMoneyTransaction.create({
           data: {
             eMoneyAccountId,
+            transactionName: 'RECONCILE',
             dateTimestamp: new Date(),
             currency: eMoneyAccount.currency,
             amount: transactionAmount.toString(),
