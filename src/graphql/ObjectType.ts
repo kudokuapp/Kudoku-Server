@@ -8,8 +8,8 @@ export const Location = objectType({
   },
 });
 
-export const Category = objectType({
-  name: 'Category',
+export const NameAmountJson = objectType({
+  name: 'NameAmountJson',
   definition(t) {
     t.nonNull.string('name');
     t.nonNull.string('amount');
@@ -24,8 +24,8 @@ export const LocationInputType = inputObjectType({
   },
 });
 
-export const CategoryInputType = inputObjectType({
-  name: 'CategoryInputType',
+export const NameAmountJsonInput = inputObjectType({
+  name: 'NameAmountJsonInput',
   definition(t) {
     t.nonNull.string('name');
     t.nonNull.string('amount');

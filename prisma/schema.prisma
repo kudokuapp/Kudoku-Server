@@ -135,15 +135,15 @@ model CashTransaction {
   currency                        String
   transactionName                 String
   amount                          String            //Takut aneh kalo number
-  merchant                        Merchant?         @relation(fields: [merchantId], references: [id])
-  merchantId                      String?           @db.ObjectId
+  merchant                        Merchant          @relation(fields: [merchantId], references: [id])
+  merchantId                      String            @db.ObjectId
   category                        Json?
   transactionType                 TransactionType   @default(EXPENSE)
   direction                       DirectionType     @default(OUT)
   internalTransferTransactionId   String?           @db.ObjectId
   notes                           String?
   location                        Location?
-  tags                            String[]
+  tags                            Json?
   isHideFromBudget                Boolean           @default(false)
   isHideFromInsight               Boolean           @default(false) 
 }
@@ -187,8 +187,8 @@ model DebitTransaction {
   amount                          String            //Takut aneh kalo number
   onlineTransaction               Boolean           @default(false)
   isReviewed                      Boolean           @default(false)
-  merchant                        Merchant?         @relation(fields: [merchantId], references: [id])
-  merchantId                      String?           @db.ObjectId
+  merchant                        Merchant          @relation(fields: [merchantId], references: [id])
+  merchantId                      String            @db.ObjectId
   category                        Json?             
   transactionType                 TransactionType   @default(EXPENSE)
   direction                       DirectionType     @default(OUT)
@@ -199,7 +199,7 @@ model DebitTransaction {
   institution                     Institution       @relation(fields: [institutionId], references: [id])
   institutionId                   String            @db.ObjectId
   location                        Location?         
-  tags                            String[]
+  tags                            Json?
   isHideFromBudget                Boolean           @default(false)
   isHideFromInsight               Boolean           @default(false)
   transactionMethod               String            
@@ -216,8 +216,8 @@ model EWalletTransaction {
   amount                          String            //Takut aneh kalo number
   onlineTransaction               Boolean           @default(false)
   isReviewed                      Boolean           @default(false)
-  merchant                        Merchant?         @relation(fields: [merchantId], references: [id])
-  merchantId                      String?           @db.ObjectId
+  merchant                        Merchant          @relation(fields: [merchantId], references: [id])
+  merchantId                      String            @db.ObjectId
   category                        Json?
   transactionType                 TransactionType   @default(EXPENSE)
   direction                       DirectionType     @default(OUT)
@@ -228,7 +228,7 @@ model EWalletTransaction {
   institution                     Institution       @relation(fields: [institutionId], references: [id])
   institutionId                   String            @db.ObjectId
   location                        Location?
-  tags                            String[]
+  tags                            Json?
   isHideFromBudget                Boolean           @default(false)
   isHideFromInsight               Boolean           @default(false)
 }
@@ -244,8 +244,8 @@ model PayLaterTransaction {
   amount                          String            //Takut aneh kalo number
   onlineTransaction               Boolean           @default(false)
   isReviewed                      Boolean           @default(false)
-  merchant                        Merchant?         @relation(fields: [merchantId], references: [id])
-  merchantId                      String?           @db.ObjectId
+  merchant                        Merchant          @relation(fields: [merchantId], references: [id])
+  merchantId                      String            @db.ObjectId
   category                        Json?
   transactionType                 TransactionType   @default(EXPENSE)
   direction                       DirectionType     @default(OUT)
@@ -256,7 +256,7 @@ model PayLaterTransaction {
   institution                     Institution       @relation(fields: [institutionId], references: [id])
   institutionId                   String            @db.ObjectId
   location                        Location?
-  tags                            String[]
+  tags                            Json?
   isHideFromBudget                Boolean           @default(false)
   isHideFromInsight               Boolean           @default(false)
 }
@@ -271,8 +271,8 @@ model EMoneyTransaction {
   currency                        String
   amount                          String                      //Takut aneh kalo number
   isReviewed                      Boolean                     @default(false)
-  merchant                        Merchant?                   @relation(fields: [merchantId], references: [id])
-  merchantId                      String?                     @db.ObjectId
+  merchant                        Merchant                    @relation(fields: [merchantId], references: [id])
+  merchantId                      String                      @db.ObjectId
   category                        Json?
   transactionType                 TransactionType             @default(EXPENSE)
   internalTransferTransactionId   String?                     @db.ObjectId
@@ -282,7 +282,7 @@ model EMoneyTransaction {
   institution                     Institution                 @relation(fields: [institutionId], references: [id])
   institutionId                   String                      @db.ObjectId
   location                        Location?
-  tags                            String[]
+  tags                            Json?
   isHideFromBudget                Boolean                     @default(false)
   isHideFromInsight               Boolean                     @default(false)
 }
@@ -291,12 +291,6 @@ enum TransactionType {
   INCOME
   EXPENSE
   TRANSFER
-  RECONCILE
-}
-
-enum TransactionTypeNoTransfer {
-  INCOME
-  EXPENSE
   RECONCILE
 }
 
