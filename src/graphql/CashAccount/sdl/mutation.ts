@@ -3,7 +3,7 @@ import { MaybePromise } from 'nexus/dist/typegenTypeHelpers';
 import { toTimeStamp } from '../../../utils/date';
 import { updateBalance } from '../../../utils/transaction';
 import { Merchant } from '@prisma/client';
-import { CategoryInputType } from '../../ObjectType';
+import { NameAmountJsonInput } from '../../ObjectType';
 import { DirectionTypeEnum, ExpenseTypeEnum } from '../../Enum';
 
 export const CashAccountMutation = extendType({
@@ -45,14 +45,14 @@ export const CashAccountMutation = extendType({
         const { accountName, displayPicture, startingBalance, currency } = args;
         const { userId: id, prisma } = context;
 
-        if (!id) throw new Error('Invalid token');
+        if (!id) throw { status: 1100, message: 'Token tidak valid.' };
 
         const searchUser = await prisma.user.findFirst({
           where: { id },
         });
 
         if (!searchUser) {
-          throw new Error('User does not exist');
+          throw { status: 1000, message: 'User tidak ditemukan.' };
         }
 
         /*
@@ -63,7 +63,7 @@ export const CashAccountMutation = extendType({
         });
 
         if (searchCashAccount)
-          throw new Error('The same account has already been created');
+          throw { status: 3100, message: 'Akun cash sudah ada.' };
 
         const response = await prisma.cashAccount.create({
           data: {
@@ -121,22 +121,23 @@ export const CashAccountMutation = extendType({
         const { userId: id, prisma } = context;
 
         if (!displayPicture && !accountName)
-          throw new Error(
-            'Cannot have displayPicture and accountName both null'
-          );
+          throw {
+            status: 2001,
+            message: 'Gambar dan nama akun tidak boleh kosong dua-duanya.',
+          };
 
-        if (!id) throw new Error('Invalid token');
+        if (!id) throw { status: 1100, message: 'Token tidak valid.' };
 
         const user = await prisma.user.findFirst({ where: { id } });
 
-        if (!user) throw new Error('Cannot find user');
+        if (!user) throw { status: 1000, message: 'User tidak ditemukan.' };
 
         const account = await prisma.cashAccount.findFirst({
           where: { AND: [{ id: cashAccountId }, { userId: user.id }] },
         });
 
         if (!account)
-          throw new Error('Cannot find the cash account of that id');
+          throw { status: 3000, message: 'Akun cash tidak ditemukan' };
 
         const response = await prisma.cashAccount.update({
           where: { id: account.id },
@@ -146,9 +147,6 @@ export const CashAccountMutation = extendType({
             lastUpdate: new Date(),
           },
         });
-
-        if (!response)
-          throw new Error('Somehow cannot find the updated response');
 
         return {
           id: response.id,
@@ -181,17 +179,18 @@ export const CashAccountMutation = extendType({
 
         const { userId, prisma } = context;
 
-        if (!userId) throw new Error('Invalid token');
+        if (!userId) throw { status: 1100, message: 'Token tidak valid.' };
 
         const user = await prisma.user.findFirst({ where: { id: userId } });
 
-        if (!user) throw new Error('Cannot find user');
+        if (!user) throw { status: 1000, message: 'User tidak ditemukan.' };
 
         const cashAccount = await prisma.cashAccount.findFirst({
           where: { AND: [{ id: cashAccountId }, { userId }] },
         });
 
-        if (!cashAccount) throw new Error('Cannot find that cash account');
+        if (!cashAccount)
+          throw { status: 3000, message: 'Akun cash tidak ditemukan' };
 
         await prisma.cashAccount.delete({ where: { id: cashAccount.id } });
 
@@ -231,22 +230,25 @@ export const CashAccountMutation = extendType({
 
         const { userId, prisma } = context;
 
-        if (!userId) throw new Error('Invalid token');
+        if (!userId) throw { status: 1100, message: 'Token tidak valid.' };
 
         const user = await prisma.user.findFirst({ where: { id: userId } });
 
-        if (!user) throw new Error('Cannot find user');
+        if (!user) throw { status: 1000, message: 'User tidak ditemukan.' };
 
         const cashAccount = await prisma.cashAccount.findFirst({
           where: { AND: [{ id: cashAccountId }, { userId: user.id }] },
         });
 
-        if (!cashAccount) throw new Error('Cannot find that cash account');
+        if (!cashAccount)
+          throw { status: 3000, message: 'Akun cash tidak ditemukan' };
 
         if (Number(newBalance) === Number(cashAccount.balance))
-          throw new Error(
-            'New balance cannot be the same as the current balance'
-          );
+          throw {
+            status: 2000,
+            message:
+              'Untuk reconcile, balance baru tidak boleh sama dengan balance yang sekarang.',
+          };
 
         const response = await prisma.cashAccount.update({
           where: { id: cashAccount.id },
@@ -268,7 +270,7 @@ export const CashAccountMutation = extendType({
             amount: transactionAmount.toString(),
             transactionType: 'RECONCILE',
             direction: bigger ? 'IN' : 'OUT',
-            tags: [],
+            merchantId: '63d8b775d3e050940af0caf1',
             isHideFromBudget: true,
             isHideFromInsight: true,
           },
@@ -327,14 +329,16 @@ export const CashTransactionMutation = extendType({
           })
         ),
 
-        merchantId: arg({
-          type: 'String',
-          description: 'The merchant id for this transaction',
-        }),
+        merchantId: nonNull(
+          arg({
+            type: 'String',
+            description: 'The merchant id for this transaction',
+          })
+        ),
 
         category: nonNull(
           arg({
-            type: list(CategoryInputType),
+            type: list(NameAmountJsonInput),
             description: 'The category of the transaction',
           })
         ),
@@ -370,7 +374,7 @@ export const CashTransactionMutation = extendType({
         }),
 
         tags: arg({
-          type: nonNull(list(nonNull('String'))),
+          type: list(NameAmountJsonInput),
           description: 'The tags for this transaction',
         }),
 
@@ -389,7 +393,7 @@ export const CashTransactionMutation = extendType({
         }),
       },
 
-      async resolve(parent, args, context) {
+      async resolve(parent, args, context, info) {
         const {
           cashAccountId,
           amount,
@@ -401,26 +405,30 @@ export const CashTransactionMutation = extendType({
         } = args;
 
         if (transactionType === 'TRANSFER' && !internalTransferTransactionId)
-          throw new Error(
-            'Internal transfer account ID is required for Internal Transfer transaction'
-          );
+          throw {
+            status: 2100,
+            message:
+              'internalTransferTransactionId harus diisi ketika tipe transaksi TRANSFER.',
+          };
 
         if (
           transactionType !== 'TRANSFER' &&
           internalTransferTransactionId !== null &&
           internalTransferTransactionId !== undefined
         )
-          throw new Error(
-            "It seems like you've put internalTransferTransactionId even though it's not a `TRANSFER` type. This must be a mistake."
-          );
+          throw {
+            status: 2101,
+            message:
+              'Tidak perlu mengisi internalTransferTransactionId ketika tipe transaksi bukan TRANSFER.',
+          };
 
         const { userId, prisma } = context;
 
-        if (!userId) throw new Error('Invalid token');
+        if (!userId) throw { status: 1100, message: 'Token tidak valid.' };
 
         const user = await prisma.user.findFirst({ where: { id: userId } });
 
-        if (!user) throw new Error('Cannot find user');
+        if (!user) throw { status: 1000, message: 'User tidak ditemukan.' };
 
         /*
         Check if the category match the amount
@@ -431,22 +439,33 @@ export const CashTransactionMutation = extendType({
         for (let i = 0; i < category.length; i++) {
           const element = category[i];
 
-          if (!element) throw new Error('Object is null');
+          if (
+            !element ||
+            !element.hasOwnProperty('name') ||
+            !element.hasOwnProperty('amount')
+          )
+            throw {
+              status: 2300,
+              message:
+                'Category/tags tidak boleh kosong. Dan harus dalam format {name, amount} untuk tiap category/tags.',
+            };
 
           categorySum += Number(element.amount);
         }
 
         if (categorySum !== Number(amount))
-          throw new Error(
-            'The amount sum of categories need to be the same with the amount given'
-          );
+          throw {
+            status: 2200,
+            message:
+              'Total amount kategori harus sama dengan amount transaksi.',
+          };
 
         const cashAccount = await prisma.cashAccount.findFirst({
           where: { AND: [{ userId: user.id }, { id: cashAccountId }] },
         });
 
         if (!cashAccount)
-          throw new Error('Cannot find the associated cash account');
+          throw { status: 3000, message: 'Akun cash tidak ditemukan' };
 
         /*
         Update balance
@@ -493,7 +512,9 @@ export const CashTransactionMutation = extendType({
           direction: response.direction,
           notes: response.notes,
           location: response.location,
-          tags: response.tags,
+          tags: response.tags as unknown as MaybePromise<
+            ({ amount: string; name: string } | null)[] | null | undefined
+          >,
           isHideFromBudget: response.isHideFromBudget,
           isHideFromInsight: response.isHideFromInsight,
         };

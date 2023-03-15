@@ -2,6 +2,7 @@ import { extendType, arg, nonNull, stringArg } from 'nexus';
 import * as jwt from 'jsonwebtoken';
 import * as bcrypt from 'bcryptjs';
 import { APP_SECRET, OTP_SECRET } from '../../../utils/auth';
+import { TwilioError } from 'twilio';
 
 export const AuthQuery = extendType({
   type: 'Query',
@@ -15,12 +16,14 @@ export const AuthQuery = extendType({
 
       async resolve(parent, args, context) {
         const { username } = args;
-        const user = await context.prisma.user.findUnique({
+        const {prisma} = context
+        
+        const user = await prisma.user.findFirst({
           where: { username },
         });
 
         if (!user) {
-          throw new Error('No such user found');
+          throw ({status: 1000, message: 'User tidak ditemukan.'})
         }
 
         const valid = await bcrypt.compare(
@@ -29,7 +32,7 @@ export const AuthQuery = extendType({
         );
 
         if (!valid) {
-          throw new Error('Invalid password');
+          throw ({status: 1300, message: 'Password salah.'})
         }
         const token = jwt.sign({ userId: user.id }, APP_SECRET);
         return { token };
@@ -51,11 +54,11 @@ export const AuthQuery = extendType({
 
         const user = await prisma.user.findFirst({ where: { username } });
 
-        if (!user) throw new Error('Cannot find user');
+        if (!user) throw ({status: 1000, message: 'User tidak ditemukan.'})
 
         const valid = await bcrypt.compare(args.pin, user.pin as string);
 
-        if (!valid) throw new Error('Wrong PIN');
+        if (!valid) throw ({status: 1400, message: 'PIN salah.'})
 
         const token = jwt.sign({ userId: user.id }, OTP_SECRET, {
           expiresIn: '15m',
@@ -89,49 +92,49 @@ export const AuthQuery = extendType({
         const { twilioClient, prisma } = context;
 
         if (email !== null && email !== undefined) {
-          try {
+
             const response = await twilioClient.verify.v2
               .services(process.env.TWILIO_SERVICE_SID as string)
-              .verificationChecks.create({ to: email, code: otp });
+              .verificationChecks.create({ to: email, code: otp }).catch((e: TwilioError) => {
+                throw ({status: Number(`7${e.status}`), message: e.message})
+              });
 
-            if (!response.valid) throw new Error('Wrong OTP');
+            if (!response.valid) throw ({status: 1500, message: 'OTP salah.'})
 
             const user = await prisma.user.findFirst({ where: { email } });
 
-            if (!user) throw new Error('Cannot find user with the given email');
+            if (!user) throw ({status: 1000, message: 'User tidak ditemukan.'})
 
             const token = jwt.sign({ userId: user.id }, OTP_SECRET, {
               expiresIn: '15m',
             });
 
             return { token };
-          } catch (e: any) {
-            throw new Error(e);
-          }
+            
         } else if (whatsapp !== null && whatsapp !== undefined) {
-          try {
+
             const response = await twilioClient.verify.v2
               .services(process.env.TWILIO_SERVICE_SID as string)
-              .verificationChecks.create({ to: whatsapp, code: otp });
-            if (!response.valid) throw new Error('Wrong OTP');
+              .verificationChecks.create({ to: whatsapp, code: otp }).catch((e: TwilioError) => {
+                throw ({status: Number(`7${e.status}`), message: e.message})
+              });
+              
+              
+            if (!response.valid) throw ({status: 1500, message: 'OTP salah.'})
 
             const user = await prisma.user.findFirst({ where: { whatsapp } });
 
             if (!user)
-              throw new Error('Cannot find user with the given whatsapp');
+              throw ({status: 1000, message: 'User tidak ditemukan.'})
 
             const token = jwt.sign({ userId: user.id }, OTP_SECRET, {
               expiresIn: '15m',
             });
 
             return { token };
-          } catch (e: any) {
-            throw new Error(e);
-          }
+            
         } else {
-          throw new Error(
-            'Cannot have both whatsapp and email null or undefined'
-          );
+          throw ({status: 2002, message: 'WhatsApp dan Email tidak boleh kosong dua-duanya.'})
         }
       },
     });
@@ -153,42 +156,40 @@ export const AuthQuery = extendType({
         }),
       },
 
-      async resolve(parent, args, context) {
+      async resolve(parent, args, context, info) {
         const { email, whatsapp } = args;
 
         const { twilioClient } = context;
 
         if (email !== null && email !== undefined) {
-          try {
             const response = await twilioClient.verify
               .services(process.env.TWILIO_SERVICE_SID as string)
               .verifications.create({
                 to: email,
                 channel: 'email',
                 locale: 'id',
+              }).catch((e: TwilioError) => {
+                throw ({status: Number(`7${e.status}`), message: e.message})
               });
-            return { response: JSON.stringify(response) };
-          } catch (e: any) {
-            throw new Error(e);
-          }
+              
+            return { response: JSON.stringify(response)};
+            
+            
         } else if (whatsapp !== null && whatsapp !== undefined) {
-          try {
+
             const response = await twilioClient.verify
               .services(process.env.TWILIO_SERVICE_SID as string)
               .verifications.create({
                 to: whatsapp,
                 channel: 'sms',
                 locale: 'id',
+              }).catch((e: TwilioError) => {
+                throw ({status: Number(`7${e.status}`), message: e.message})
               });
 
             return { response: JSON.stringify(response) };
-          } catch (e: any) {
-            throw new Error(e);
-          }
         } else {
-          throw new Error(
-            'Cannot have both whatsapp and email null or undefined'
-          );
+          throw ({status: 2002, message: 'WhatsApp dan Email tidak boleh kosong dua-duanya.'})
         }
       },
     });
