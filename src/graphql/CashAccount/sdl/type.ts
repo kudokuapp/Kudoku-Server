@@ -1,4 +1,5 @@
 import { objectType } from 'nexus';
+import { NameAmountJson } from '../../ObjectType';
 
 export const CashAccount = objectType({
   name: 'CashAccount',
@@ -61,23 +62,23 @@ export const CashTransaction = objectType({
       description: 'The transaction amount',
     });
 
-    t.field('merchant', {
+    t.nonNull.field('merchant', {
       type: 'Merchant',
       description: 'The merchant',
     });
 
-    t.string('merchantId', {
+    t.nonNull.string('merchantId', {
       description: 'The merchant Id',
     });
 
     t.list.field('category', {
-      type: 'Category',
+      type: NameAmountJson,
       description: 'The category for this transaction',
     });
 
     t.nonNull.string('transactionType', {
       description:
-        "The transaction type for this transaction. It's either `INCOME`, `EXPENSE`, or `TRANSFER`",
+        "The transaction type for this transaction. It's either `INCOME`, `EXPENSE`, `TRANSFER`, or `RECONCILE`",
     });
 
     t.string('internalTransferTransactionId', {
@@ -98,7 +99,8 @@ export const CashTransaction = objectType({
       description: 'The location of the transaction',
     });
 
-    t.list.string('tags', {
+    t.list.field('tags', {
+      type: NameAmountJson,
       description: 'Additional tags for this transaction',
     });
 
@@ -108,10 +110,6 @@ export const CashTransaction = objectType({
 
     t.nonNull.boolean('isHideFromInsight', {
       description: 'Whether or not this transaction is hidden from insight',
-    });
-
-    t.nonNull.string('transactionName', {
-      description: 'Transaction name',
     });
   },
 });

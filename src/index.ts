@@ -16,6 +16,18 @@ export const server = new ApolloServer({
       ? ApolloServerPluginLandingPageDisabled()
       : ApolloServerPluginLandingPageLocalDefault(),
   ],
+  formatError: (error) => {
+    const { extensions = {}, message } = error;
+    const { status } = extensions;
+    return {
+      message,
+      status,
+      extensions: {
+        ...extensions,
+        code: status || 500,
+      },
+    };
+  },
 });
 
 const port = (process.env.PORT as unknown as number) || 8080;

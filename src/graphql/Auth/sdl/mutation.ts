@@ -27,9 +27,7 @@ export const AuthMutation = extendType({
         ) as unknown as AuthTokenPayload;
 
         if (id !== userId)
-          throw new Error(
-            'ID mismatch between the token and the given id. It seems like the token is wrong.'
-          );
+        throw ({status: 1200, message: 'Ada ketidakcocokan antara token dan userId.'})
 
         const password = await bcrypt.hash(args.password, 10);
 
@@ -40,7 +38,7 @@ export const AuthMutation = extendType({
         });
 
         if (!searchUser) {
-          throw new Error('User have not registered through kudoku.id');
+          throw ({status: 1001, message: 'User belum diundang untuk masuk aplikasi Kudoku.'})
         }
 
         const user = await prisma.user.update({
@@ -73,7 +71,7 @@ export const AuthMutation = extendType({
         ) as unknown as AuthTokenPayload;
 
         if (!id) {
-          throw new Error('Invalid token');
+          throw ({status: 1100, message: 'Token tidak valid.'})
         }
 
         const password = await bcrypt.hash(args.password, 10);
@@ -84,7 +82,7 @@ export const AuthMutation = extendType({
         });
 
         if (!user) {
-          throw new Error('Cannot find user!');
+          throw ({status: 1000, message: 'User tidak ditemukan.'})
         }
 
         const token = jwt.sign({ userId: user.id }, APP_SECRET);
@@ -112,19 +110,23 @@ export const AuthMutation = extendType({
         ) as unknown as AuthTokenPayload;
 
         if (!id) {
-          throw new Error('Invalid token');
+          throw ({status: 1100, message: 'Token tidak valid.'})
         }
 
         const pin = await bcrypt.hash(args.pin, 10);
+        
+        const searchUser = await prisma.user.findFirst({where: {id}})
+        
+        if (!searchUser) {
+          throw ({status: 1000, message: 'User tidak ditemukan.'})
+        }
 
         const user = await prisma.user.update({
-          where: { id },
+          where: { id: searchUser.id },
           data: { pin },
         });
 
-        if (!user) {
-          throw new Error('Cannot find user!');
-        }
+        
 
         const token = jwt.sign({ userId: user.id }, APP_SECRET);
 
