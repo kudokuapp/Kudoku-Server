@@ -400,17 +400,8 @@ export const CashTransactionMutation = extendType({
       },
 
       async resolve(parent, args, context, info) {
-        const {
-          cashAccountId: _cashAccountId,
-          amount,
-          merchantId,
-          transactionType,
-          direction,
-          category,
-          tags,
-        } = args;
-
-        const cashAccountId = encodeCashAccountId(_cashAccountId);
+        const { cashAccountId, amount, merchantId, direction, category, tags } =
+          args;
 
         const { userId, prisma } = context;
 
@@ -511,15 +502,28 @@ export const CashTransactionMutation = extendType({
           throw { status: 2400, message: 'Merchant tidak ditemukan.' };
 
         const response = await prisma.cashTransaction.create({
-          data: { ...args, dateTimestamp: new Date() },
+          data: {
+            cashAccountId: encodeCashAccountId(cashAccountId),
+            dateTimestamp: new Date(),
+            currency: args.currency,
+            transactionName: args.transactionName,
+            amount: args.amount,
+            merchantId: args.merchantId,
+            category: args.category,
+            transactionType: args.transactionType,
+            direction: args.direction,
+            notes: args.notes,
+            location: args.location,
+            tags: args.tags,
+            isHideFromBudget: args.isHideFromBudget,
+            isHideFromInsight: args.isHideFromInsight,
+          },
         });
 
         return {
           id: response.id,
           dateTimestamp: toTimeStamp(response.dateTimestamp),
-          cashAccountId: decodeCashAccountId(
-            response.cashAccountId
-          ) as unknown as string,
+          cashAccountId: decodeCashAccountId(response.cashAccountId),
           currency: response.currency,
           transactionName: response.transactionName,
           amount: response.amount,
