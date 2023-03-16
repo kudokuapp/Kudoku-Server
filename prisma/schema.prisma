@@ -65,7 +65,7 @@ model DebitAccount {
   createdAt              DateTime        
   lastUpdate             DateTime
   currency               String
-  debitTransaction       DebitTransaction[]   
+  // debitTransaction       DebitTransaction[]   
 }
 
 model EWalletAccount {
@@ -81,7 +81,7 @@ model EWalletAccount {
   createdAt              DateTime        
   lastUpdate             DateTime
   currency               String
-  eWalletTransaction     EWalletTransaction[]   
+  // eWalletTransaction     EWalletTransaction[]   
 }
 
 model PayLaterAccount {
@@ -97,7 +97,7 @@ model PayLaterAccount {
   createdAt              DateTime        
   lastUpdate             DateTime
   currency               String
-  payLaterTransaction    PayLaterTransaction[]   
+  // payLaterTransaction    PayLaterTransaction[]   
 }
 
 model EMoneyAccount {
@@ -111,7 +111,7 @@ model EMoneyAccount {
   createdAt              DateTime        
   lastUpdate             DateTime
   currency               String
-  eMoneyTransaction      EMoneyTransaction[]   
+  // eMoneyTransaction      EMoneyTransaction[]   
 }
 
 model CashAccount {
@@ -120,7 +120,7 @@ model CashAccount {
   userId            String                @db.ObjectId
   createdAt         DateTime              
   lastUpdate        DateTime
-  cashTransaction   CashTransaction[]   
+  // cashTransaction   CashTransaction[]   
   accountName       String
   displayPicture    String?
   balance           String
@@ -129,8 +129,8 @@ model CashAccount {
 
 model CashTransaction {
   id                              String            @id @default(auto()) @map("_id") @db.ObjectId
-  cashAccount                     CashAccount       @relation(fields: [cashAccountId], references: [id])
-  cashAccountId                   String            @db.ObjectId
+  // cashAccount                     CashAccount       @relation(fields: [cashAccountId], references: [id])
+  cashAccountId                   String
   dateTimestamp                   DateTime
   currency                        String
   transactionName                 String
@@ -179,8 +179,8 @@ model Merchant {
 model DebitTransaction {
   id                              String            @id @default(auto()) @map("_id") @db.ObjectId
   transactionName                 String
-  debitAccount                    DebitAccount      @relation(fields: [debitAccountId], references: [id])
-  debitAccountId                  String            @db.ObjectId
+  // debitAccount                    DebitAccount      @relation(fields: [debitAccountId], references: [id])
+  debitAccountId                  String            
   dateTimestamp                   DateTime
   referenceId                     String
   currency                        String
@@ -208,8 +208,8 @@ model DebitTransaction {
 model EWalletTransaction {
   id                              String            @id @default(auto()) @map("_id") @db.ObjectId
   transactionName                 String
-  eWalletAccount                  EWalletAccount    @relation(fields: [eWalletAccountId], references: [id])
-  eWalletAccountId                String            @db.ObjectId
+  // eWalletAccount                  EWalletAccount    @relation(fields: [eWalletAccountId], references: [id])
+  eWalletAccountId                String            
   dateTimestamp                   DateTime
   referenceId                     String
   currency                        String
@@ -236,8 +236,8 @@ model EWalletTransaction {
 model PayLaterTransaction {
   id                              String            @id @default(auto()) @map("_id") @db.ObjectId
   transactionName                 String
-  payLaterAccount                 PayLaterAccount   @relation(fields: [payLaterAccountId], references: [id])
-  payLaterAccountId               String            @db.ObjectId
+  // payLaterAccount                 PayLaterAccount   @relation(fields: [payLaterAccountId], references: [id])
+  payLaterAccountId               String            
   dateTimestamp                   DateTime
   referenceId                     String
   currency                        String
@@ -265,8 +265,8 @@ model PayLaterTransaction {
 model EMoneyTransaction {
   id                              String                      @id @default(auto()) @map("_id") @db.ObjectId
   transactionName                 String
-  eMoneyAccount                   EMoneyAccount               @relation(fields: [eMoneyAccountId], references: [id])
-  eMoneyAccountId                 String                      @db.ObjectId
+  // eMoneyAccount                   EMoneyAccount               @relation(fields: [eMoneyAccountId], references: [id])
+  eMoneyAccountId                 String                      
   dateTimestamp                   DateTime
   currency                        String
   amount                          String                      //Takut aneh kalo number
