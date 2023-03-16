@@ -102,7 +102,7 @@ export const CashTransactionQuery = extendType({
 
             const obj = {
               id: element.id,
-              cashAccountId: element.cashAccountId,
+              cashAccountId: decodeCashAccountId(element.cashAccountId),
               dateTimestamp: toTimeStamp(element.dateTimestamp),
               currency: element.currency,
               transactionName: element['transactionName'],
