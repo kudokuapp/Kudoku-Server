@@ -41,7 +41,7 @@ type CashTransaction {
   cashAccountId: String!
 
   """The category for this transaction"""
-  category: [Category]
+  category: [NameAmountJson!]!
 
   """ISO 4217 Currency"""
   currency: String!
@@ -68,34 +68,24 @@ type CashTransaction {
   location: Location
 
   """The merchant"""
-  merchant: Merchant
+  merchant: Merchant!
 
   """The merchant Id"""
-  merchantId: String
+  merchantId: String!
 
   """Additional notes for this transaction"""
   notes: String
 
   """Additional tags for this transaction"""
-  tags: [String]
+  tags: [NameAmountJson]
 
-  """Transaction name"""
+  """The display name of the transaction"""
   transactionName: String!
 
   """
-  The transaction type for this transaction. It's either `INCOME`, `EXPENSE`, or `TRANSFER`
+  The transaction type for this transaction. It's either `INCOME`, `EXPENSE`, `TRANSFER`, or `RECONCILE`
   """
   transactionType: String!
-}
-
-type Category {
-  amount: String!
-  name: String!
-}
-
-input CategoryInputType {
-  amount: String!
-  name: String!
 }
 
 type DebitAccount {
@@ -124,7 +114,7 @@ type DebitTransaction {
   amount: String!
 
   """The category for this transaction"""
-  category: [Category]
+  category: [NameAmountJson!]!
 
   """ISO 4217 Currency"""
   currency: String!
@@ -166,10 +156,10 @@ type DebitTransaction {
   location: Location
 
   """The merchant"""
-  merchant: Merchant
+  merchant: Merchant!
 
   """The merchant Id"""
-  merchantId: String
+  merchantId: String!
 
   """Additional notes for this transaction"""
   notes: String
@@ -183,7 +173,7 @@ type DebitTransaction {
   referenceId: String!
 
   """Additional tags for this transaction"""
-  tags: [String]
+  tags: [NameAmountJson]
 
   """The transaction method. `Virtual Account`, `Debit`"""
   transactionMethod: String!
@@ -227,7 +217,7 @@ type EMoneyTransaction {
   amount: String!
 
   """The category for this transaction"""
-  category: [Category]
+  category: [NameAmountJson!]!
 
   """ISO 4217 Currency"""
   currency: String!
@@ -266,16 +256,16 @@ type EMoneyTransaction {
   location: Location
 
   """The merchant"""
-  merchant: Merchant
+  merchant: Merchant!
 
   """The merchant Id"""
-  merchantId: String
+  merchantId: String!
 
   """Additional notes for this transaction"""
   notes: String
 
   """Additional tags for this transaction"""
-  tags: [String]
+  tags: [NameAmountJson]
 
   """The transaction display name"""
   transactionName: String!
@@ -312,7 +302,7 @@ type EWalletTransaction {
   amount: String!
 
   """The category for this transaction"""
-  category: [Category]
+  category: [NameAmountJson!]!
 
   """ISO 4217 Currency"""
   currency: String!
@@ -354,10 +344,10 @@ type EWalletTransaction {
   location: Location
 
   """The merchant"""
-  merchant: Merchant
+  merchant: Merchant!
 
   """The merchant Id"""
-  merchantId: String
+  merchantId: String!
 
   """Additional notes for this transaction"""
   notes: String
@@ -371,10 +361,7 @@ type EWalletTransaction {
   referenceId: String!
 
   """Additional tags for this transaction"""
-  tags: [String]
-
-  """The transaction method. `Virtual Account`, `Debit`"""
-  transactionMethod: String!
+  tags: [NameAmountJson]
 
   """The transaction display name"""
   transactionName: String!
@@ -388,14 +375,6 @@ type EWalletTransaction {
 enum ExpenseTypeEnum {
   EXPENSE
   INCOME
-  RECONCILE
-  TRANSFER
-}
-
-enum ExpenseTypeNoTransferEnum {
-  EXPENSE
-  INCOME
-  RECONCILE
 }
 
 type Location {
@@ -451,16 +430,13 @@ type Mutation {
     cashAccountId: String!
 
     """The category of the transaction"""
-    category: [CategoryInputType]!
+    category: [NameAmountJsonInput]!
 
     """The currency of this transaction, according to ISO 4217"""
     currency: String! = "IDR"
 
     """The direction for this transaction. `IN` or `OUT`"""
     direction: DirectionTypeEnum!
-
-    """The account id if internal transfer"""
-    internalTransferTransactionId: String
 
     """Whether or not this transaction is hide from budget. default: false"""
     isHideFromBudget: Boolean! = false
@@ -472,13 +448,13 @@ type Mutation {
     location: LocationInputType
 
     """The merchant id for this transaction"""
-    merchantId: String
+    merchantId: String!
 
     """Additional notes for this transaction"""
     notes: String
 
     """The tags for this transaction"""
-    tags: [String!]!
+    tags: [NameAmountJsonInput]
 
     """Transaction name"""
     transactionName: String!
@@ -489,13 +465,13 @@ type Mutation {
     transactionType: ExpenseTypeEnum!
   ): CashTransaction!
 
-  """Update transaction and balance for a particular e-money account"""
+  """Add transaction and balance for a particular e-money account"""
   addEMoneyTransaction(
     """The amount for that transaction"""
     amount: String!
 
     """The category of the transaction"""
-    category: [CategoryInputType]!
+    category: [NameAmountJsonInput]!
 
     """The ISO currency"""
     currency: String! = "IDR"
@@ -511,9 +487,6 @@ type Mutation {
 
     """The institution ID"""
     institutionId: String!
-
-    """The account id if internal transfer"""
-    internalTransferTransactionId: String
 
     """Whether or not this transaction is hide from budget. default: false"""
     isHideFromBudget: Boolean! = false
@@ -531,14 +504,12 @@ type Mutation {
     notes: String
 
     """The tags for this transaction"""
-    tags: [String!]!
+    tags: [NameAmountJsonInput]
 
     """The transaction name"""
     transactionName: String!
 
-    """
-    The transaction type. It's either `INCOME`, `EXPENSE`, or `INTERNAL TRANSFER`
-    """
+    """The transaction type. It's either `INCOME`, `EXPENSE`, or `TRANSFER`"""
     transactionType: String!
   ): EMoneyTransaction!
 
@@ -606,7 +577,7 @@ type Mutation {
     """The currency according to ISO standard"""
     currency: String! = "IDR"
 
-    """sessionId after running `sendOtpGopayViaBrick` query"""
+    """The initial balance for that e-money"""
     initialBalance: String!
 
     """The institution ID"""
@@ -631,58 +602,25 @@ type Mutation {
     debitAccountId: String!
   ): ResponseMessage
 
+  """Delete e-money account"""
+  deleteEMoneyAccount(
+    """The e-money account id"""
+    eMoneyAccountId: String!
+  ): ResponseMessage
+
   """Delete a particular e-money transaction"""
   deleteEMoneyTransaction(
     """The associated id of that e-money transaction id"""
     transactionId: String!
   ): ResponseMessage!
 
-  """Edit a particular debit (BCA) transaction"""
-  editBcaTransaction(
-    """The category of the transaction"""
-    category: [CategoryInputType]
-
-    """The account id for internal transfer"""
-    internalTransferTransactionId: String
-
-    """Whether or not this transaction is hide from budget. default: false"""
-    isHideFromBudget: Boolean! = false
-
-    """Whether or not this transaction is hide from insight. default: false"""
-    isHideFromInsight: Boolean! = false
-
-    """Wether or not this transaction is a subscription"""
-    isSubscription: Boolean
-
-    """The location for this transaction"""
-    location: LocationInputType
-
-    """The merchant id"""
-    merchantId: String
-
-    """Notes for this transaction"""
-    notes: String
-
-    """Wether or not this transaction is online"""
-    onlineTransaction: Boolean
-
-    """The tags for this transaction"""
-    tags: [String!]!
-
-    """The associated id of that transaction"""
-    transactionId: String!
-
-    """What transaction method is this."""
-    transactionMethod: TransactionMethodEnum
-
-    """The transaction name"""
-    transactionName: String
-
-    """
-    The transaction type. Either INCOME for in transation, EXPENSE for outgoing transaction, and TRANSFER for internal transfer.
-    """
-    transactionType: ExpenseTypeEnum
-  ): DebitTransaction!
+  """
+  Delete e-wallet account. Specifically, delete gopay account. Because gopay has two type, ewallet and paylater account
+  """
+  deleteGopayAccount(
+    """The e-wallet account id"""
+    eWalletAccountId: String!
+  ): ResponseMessage
 
   """Edit details on user's cash account"""
   editCashAccount(
@@ -706,16 +644,13 @@ type Mutation {
     amount: String
 
     """The category of the transaction"""
-    category: [CategoryInputType]
+    category: [NameAmountJsonInput]
 
     """The currency of this transaction, according to ISO 4217"""
     currency: String = "IDR"
 
     """The direction for this transaction. `IN` or `OUT`"""
     direction: DirectionTypeEnum
-
-    """The account id if internal transfer"""
-    internalTransferTransactionId: String
 
     """Whether or not this transaction is hide from budget. default: false"""
     isHideFromBudget: Boolean = false
@@ -733,7 +668,7 @@ type Mutation {
     notes: String
 
     """The tags for this transaction"""
-    tags: [String!]
+    tags: [NameAmountJsonInput]
 
     """The id of the transaction"""
     transactionId: String!
@@ -747,13 +682,57 @@ type Mutation {
     transactionType: ExpenseTypeEnum
   ): CashTransaction!
 
+  """Edit a particular debit transaction"""
+  editDebitTransaction(
+    """The category of the transaction"""
+    category: [NameAmountJsonInput]
+
+    """Whether or not this transaction is hide from budget. default: false"""
+    isHideFromBudget: Boolean! = false
+
+    """Whether or not this transaction is hide from insight. default: false"""
+    isHideFromInsight: Boolean! = false
+
+    """Wether or not this transaction is a subscription"""
+    isSubscription: Boolean
+
+    """The location for this transaction"""
+    location: LocationInputType
+
+    """The merchant id"""
+    merchantId: String
+
+    """Notes for this transaction"""
+    notes: String
+
+    """Wether or not this transaction is online"""
+    onlineTransaction: Boolean
+
+    """The tags for this transaction"""
+    tags: [NameAmountJsonInput]
+
+    """The associated id of that transaction"""
+    transactionId: String!
+
+    """What transaction method is this."""
+    transactionMethod: TransactionMethodEnum
+
+    """The transaction name"""
+    transactionName: String
+
+    """
+    The transaction type. Either INCOME for in transation, EXPENSE for outgoing transaction, and TRANSFER for internal transfer.
+    """
+    transactionType: ExpenseTypeEnum
+  ): DebitTransaction!
+
   """Edit a particular e-money transaction and update it's balance"""
   editEMoneyTransaction(
     """The amount for that transaction"""
     amount: String
 
     """The category of the transaction"""
-    category: [CategoryInputType]
+    category: [NameAmountJsonInput]
 
     """The direction for this transaction. `IN` or `OUT`"""
     direction: DirectionTypeEnum
@@ -774,7 +753,7 @@ type Mutation {
     notes: String
 
     """The tags for this transaction"""
-    tags: [String!]
+    tags: [NameAmountJsonInput]
 
     """The associated id of that e-money transaction id"""
     transactionId: String!
@@ -785,8 +764,90 @@ type Mutation {
     """
     The transaction type. Either INCOME for in transation, and EXPENSE for outgoing transaction
     """
-    transactionType: ExpenseTypeNoTransferEnum
+    transactionType: ExpenseTypeEnum
   ): EMoneyTransaction!
+
+  """Edit a particular e-wallet transaction"""
+  editEWalletTransaction(
+    """The category of the transaction"""
+    category: [NameAmountJsonInput]
+
+    """Whether or not this transaction is hide from budget. default: false"""
+    isHideFromBudget: Boolean! = false
+
+    """Whether or not this transaction is hide from insight. default: false"""
+    isHideFromInsight: Boolean! = false
+
+    """Wether or not this transaction is a subscription"""
+    isSubscription: Boolean
+
+    """The location for this transaction"""
+    location: LocationInputType
+
+    """The merchant id"""
+    merchantId: String
+
+    """Notes for this transaction"""
+    notes: String
+
+    """Wether or not this transaction is online"""
+    onlineTransaction: Boolean
+
+    """The tags for this transaction"""
+    tags: [NameAmountJsonInput]
+
+    """The associated id of that transaction"""
+    transactionId: String!
+
+    """The transaction name"""
+    transactionName: String
+
+    """
+    The transaction type. Either INCOME for in transation, EXPENSE for outgoing transaction.
+    """
+    transactionType: ExpenseTypeEnum
+  ): EWalletTransaction!
+
+  """Edit a particular pay later transaction"""
+  editPayLaterTransaction(
+    """The category of the transaction"""
+    category: [NameAmountJsonInput]
+
+    """Whether or not this transaction is hide from budget. default: false"""
+    isHideFromBudget: Boolean! = false
+
+    """Whether or not this transaction is hide from insight. default: false"""
+    isHideFromInsight: Boolean! = false
+
+    """Wether or not this transaction is a subscription"""
+    isSubscription: Boolean
+
+    """The location for this transaction"""
+    location: LocationInputType
+
+    """The merchant id"""
+    merchantId: String
+
+    """Notes for this transaction"""
+    notes: String
+
+    """Wether or not this transaction is online"""
+    onlineTransaction: Boolean
+
+    """The tags for this transaction"""
+    tags: [NameAmountJsonInput]
+
+    """The associated id of that transaction"""
+    transactionId: String!
+
+    """The transaction name"""
+    transactionName: String
+
+    """
+    The transaction type. Either INCOME for in transation, EXPENSE for outgoing transaction.
+    """
+    transactionType: ExpenseTypeEnum
+  ): PayLaterTransaction!
 
   """Reconcile cash balance"""
   reconcileCashBalance(
@@ -818,10 +879,10 @@ type Mutation {
   """Update transaction and balance for gopay account"""
   refreshGopayTransactionViaBrick(
     """The associated id of that e-wallet account id"""
-    eWalletAccountId: String!
+    eWalletAccountId: String
 
-    """The associated id of that e-wallet account id"""
-    payLaterAccountId: String!
+    """The associated id of that paylater account id"""
+    payLaterAccountId: String
   ): ResponseMessage!
 
   """
@@ -875,6 +936,16 @@ type Mutation {
   ): User!
 }
 
+type NameAmountJson {
+  amount: String!
+  name: String!
+}
+
+input NameAmountJsonInput {
+  amount: String!
+  name: String!
+}
+
 type OTPData {
   clientId: Int!
   otpToken: String!
@@ -882,6 +953,102 @@ type OTPData {
   sessionId: String!
   uniqueId: String!
   username: String!
+}
+
+type PayLaterAccount {
+  accountNumber: String!
+
+  """The balance of that cash account"""
+  balance: String!
+
+  """When this account is created"""
+  createdAt: String!
+
+  """The ISO currency of this account"""
+  currency: String!
+
+  """id generated automatically by MongoDB"""
+  id: String!
+  institutionId: String!
+
+  """When this account is last updated"""
+  lastUpdate: String!
+  userId: String!
+}
+
+type PayLaterTransaction {
+  """The transaction amount"""
+  amount: String!
+
+  """The category for this transaction"""
+  category: [NameAmountJson!]!
+
+  """ISO 4217 Currency"""
+  currency: String!
+
+  """Date and Timestamp for this transaction"""
+  dateTimestamp: String!
+
+  """The description given by the Banks API"""
+  description: String!
+
+  """The direction of the transaction. It's either `IN`, or `OUT`"""
+  direction: String!
+
+  """id generated automatically by MongoDB"""
+  id: String!
+
+  """The institution id"""
+  institutionId: String!
+
+  """The transaction id for internal transfer"""
+  internalTransferTransactionId: String
+
+  """Whether or not this transaction is hidden from budget"""
+  isHideFromBudget: Boolean!
+
+  """Whether or not this transaction is hidden from insight"""
+  isHideFromInsight: Boolean!
+
+  """Whether or not this transaction is reviewed by the user on the client"""
+  isReviewed: Boolean!
+
+  """Whether or not this transaction is a subscription"""
+  isSubscription: Boolean!
+
+  """The location of the transaction"""
+  location: Location
+
+  """The merchant"""
+  merchant: Merchant!
+
+  """The merchant Id"""
+  merchantId: String!
+
+  """Additional notes for this transaction"""
+  notes: String
+
+  """Whether or not this transaction is online"""
+  onlineTransaction: Boolean!
+
+  """The pay later account Id"""
+  payLaterAccountId: String!
+
+  """
+  The reference id. The reference id is to check on what number is the transaction for the day
+  """
+  referenceId: String!
+
+  """Additional tags for this transaction"""
+  tags: [NameAmountJson]
+
+  """The transaction display name"""
+  transactionName: String!
+
+  """
+  The transaction type for this transaction. It's either `INCOME`, `EXPENSE`, or `TRANSFER`
+  """
+  transactionType: String!
 }
 
 type Profile {
@@ -936,6 +1103,15 @@ type Query {
 
   """This API is to get every merchant's data"""
   getAllMerchant: [Merchant!]!
+
+  """Get all pay later account for a particular user."""
+  getAllPayLaterAccount: [PayLaterAccount]
+
+  """Get all the pay later transaction from their payLaterAccountId"""
+  getAllPayLaterTransaction(
+    """Fill this with pay later account id"""
+    payLaterAccountId: String!
+  ): [PayLaterTransaction]
 
   """
   This API is to get every user's data in our database. Useful for checking if username is already taken or not.
@@ -1055,4 +1231,5 @@ enum typeOfAccount {
   DEBIT
   EMONEY
   EWALLET
+  PAYLATER
 }

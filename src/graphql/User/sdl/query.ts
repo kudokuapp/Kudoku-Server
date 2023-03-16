@@ -10,7 +10,9 @@ export const UserQuery = extendType({
         "This API is to get every user's data in our database. Useful for checking if username is already taken or not.",
 
       async resolve(parent, args, context, info) {
-        const user = await context.prisma.user.findMany();
+        const { prisma } = context;
+
+        const user = await prisma.user.findMany();
 
         let arrayOfUsers: any[] = [];
 
@@ -51,12 +53,9 @@ export const UserQuery = extendType({
 
         const { prisma } = context;
 
-        if (!username)
-          throw new Error('cannot have username null or undefined');
-
         const user = await prisma.user.findFirst({ where: { username } });
 
-        if (!user) throw new Error('cannot find user with that username');
+        if (!user) throw { status: 1000, message: 'User tidak ditemukan.' };
 
         return {
           id: user.id,

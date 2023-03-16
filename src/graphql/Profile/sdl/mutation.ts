@@ -27,19 +27,22 @@ export const ProfileMutation = extendType({
         const { bio, profilePicture, birthday } = args;
 
         if (!bio && !profilePicture && !birthday)
-          throw new Error('One value must be not null or undefined');
+          throw {
+            status: 2003,
+            message: 'Semua value tidak boleh null atau undefined.',
+          };
 
         const { userId: id, prisma } = context;
 
         if (!id) {
-          throw new Error('Invalid token');
+          throw { status: 1100, message: 'Token tidak valid.' };
         }
 
         const date = birthday ? new Date(birthday) : null;
 
         const user = await prisma.user.findFirst({ where: { id } });
 
-        if (!user) throw new Error('Cannot find user');
+        if (!user) throw { status: 1000, message: 'User tidak ditemukan.' };
 
         const profile = await prisma.profile.findFirst({
           where: { userId: user.id },
@@ -48,33 +51,17 @@ export const ProfileMutation = extendType({
         if (!profile)
           await prisma.profile.create({ data: { userId: user.id } });
 
-        if (bio !== null && bio !== undefined) {
-          await prisma.profile.update({
-            where: { userId: user.id },
-            data: { bio },
-          });
-        }
-        if (profilePicture !== null && profilePicture !== undefined) {
-          await prisma.profile.update({
-            where: { userId: user.id },
-            data: { profilePicture },
-          });
-        }
-        if (date !== null && date !== undefined) {
-          await prisma.profile.update({
-            where: { userId: user.id },
-            data: { birthday: date },
-          });
-        }
-
-        const response = await prisma.profile.findFirst({
+        const response = await prisma.profile.update({
           where: { userId: user.id },
+          data: {
+            bio: bio ?? null,
+            profilePicture: profilePicture ?? null,
+            birthday: date,
+          },
         });
 
-        if (!response) throw new Error('Unable to reach the server');
-
-        if (user.username === null || user.username === undefined)
-          throw new Error('username is null or undefined');
+        if (!user.username)
+          throw { status: 1600, message: 'Tidak ada username.' };
 
         return {
           id: response.id,

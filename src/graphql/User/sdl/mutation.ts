@@ -28,29 +28,19 @@ export const UserMutation = extendType({
         const { userId: id, prisma } = context;
 
         if (!lastName && !firstName) {
-          throw new Error('Cannot have both firstName and lastName null');
+          throw {
+            status: 2003,
+            message: 'Semua value tidak boleh null atau undefined.',
+          };
         }
 
         if (!id) {
-          throw new Error('Invalid token');
-        }
-
-        if (firstName !== null && firstName !== undefined) {
-          await context.prisma.user.update({
-            where: { id },
-            data: { firstName },
-          });
-        }
-        if (lastName !== null && lastName !== undefined) {
-          await context.prisma.user.update({
-            where: { id },
-            data: { lastName },
-          });
+          throw { status: 1100, message: 'Token tidak valid.' };
         }
 
         const user = await prisma.user.findFirst({ where: { id } });
 
-        if (!user) throw new Error('somehow cannot find user');
+        if (!user) throw { status: 1000, message: 'User tidak ditemukan.' };
 
         const response = await prisma.user.update({
           where: { id: user.id },
@@ -100,7 +90,10 @@ export const UserMutation = extendType({
         const { userId: id, prisma } = context;
 
         if (!email && !whatsapp) {
-          throw new Error('Cannot have both firstName and lastName null');
+          throw {
+            status: 2003,
+            message: 'Semua value tidak boleh null atau undefined.',
+          };
         }
 
         const { userId: otpId } = jwt.verify(
@@ -108,11 +101,12 @@ export const UserMutation = extendType({
           OTP_SECRET
         ) as unknown as AuthTokenPayload;
 
-        if (otpId !== id || !id) throw new Error('Invalid token');
+        if (otpId !== id || !id)
+          throw { status: 1100, message: 'Token tidak valid.' };
 
         const user = await prisma.user.findFirst({ where: { id } });
 
-        if (!user) throw new Error('Cannot find user');
+        if (!user) throw { status: 1000, message: 'User tidak ditemukan.' };
 
         const response = await prisma.user.update({
           where: { id: user.id },
@@ -121,8 +115,6 @@ export const UserMutation = extendType({
             whatsapp: whatsapp ?? user.whatsapp,
           },
         });
-
-        if (!response) throw new Error('somehow cannot update user data');
 
         return {
           id: response.id,

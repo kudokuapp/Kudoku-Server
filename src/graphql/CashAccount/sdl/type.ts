@@ -1,5 +1,4 @@
 import { objectType } from 'nexus';
-import { NameAmountJson } from '../../ObjectType';
 
 export const CashAccount = objectType({
   name: 'CashAccount',
@@ -71,8 +70,8 @@ export const CashTransaction = objectType({
       description: 'The merchant Id',
     });
 
-    t.list.field('category', {
-      type: NameAmountJson,
+    t.nonNull.list.nonNull.field('category', {
+      type: 'NameAmountJson',
       description: 'The category for this transaction',
     });
 
@@ -100,7 +99,7 @@ export const CashTransaction = objectType({
     });
 
     t.list.field('tags', {
-      type: NameAmountJson,
+      type: 'NameAmountJson',
       description: 'Additional tags for this transaction',
     });
 

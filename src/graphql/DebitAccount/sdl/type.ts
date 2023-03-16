@@ -76,17 +76,17 @@ export const DebitTransaction = objectType({
         'Whether or not this transaction is reviewed by the user on the client',
     });
 
-    t.field('merchant', {
+    t.nonNull.field('merchant', {
       type: 'Merchant',
       description: 'The merchant',
     });
 
-    t.string('merchantId', {
+    t.nonNull.string('merchantId', {
       description: 'The merchant Id',
     });
 
-    t.list.field('category', {
-      type: 'Category',
+    t.nonNull.list.nonNull.field('category', {
+      type: 'NameAmountJson',
       description: 'The category for this transaction',
     });
 
@@ -121,7 +121,8 @@ export const DebitTransaction = objectType({
       description: 'The location of the transaction',
     });
 
-    t.list.string('tags', {
+    t.list.field('tags', {
+      type: 'NameAmountJson',
       description: 'Additional tags for this transaction',
     });
 

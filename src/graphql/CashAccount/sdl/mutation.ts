@@ -1,10 +1,8 @@
+import { decodeCashAccountId, encodeCashAccountId } from '../../../utils/auth';
 import { arg, extendType, list, nonNull } from 'nexus';
 import { MaybePromise } from 'nexus/dist/typegenTypeHelpers';
 import { toTimeStamp } from '../../../utils/date';
 import { updateBalance } from '../../../utils/transaction';
-import { Merchant } from '@prisma/client';
-import { NameAmountJsonInput } from '../../ObjectType';
-import { DirectionTypeEnum, ExpenseTypeEnum } from '../../Enum';
 
 export const CashAccountMutation = extendType({
   type: 'Mutation',
@@ -194,12 +192,25 @@ export const CashAccountMutation = extendType({
 
         await prisma.cashAccount.delete({ where: { id: cashAccount.id } });
 
-        const deletedTransaction = await prisma.cashTransaction.deleteMany({
-          where: { cashAccountId: cashAccount.id },
-        });
+        const transaction = await prisma.cashTransaction.findMany();
+
+        let count = 0;
+
+        for (let i = 0; i < transaction.length; i++) {
+          const element = transaction[i];
+
+          const decodedCashAccountId = decodeCashAccountId(
+            element.cashAccountId
+          ) as unknown as string;
+
+          if (decodedCashAccountId === cashAccount.id) {
+            await prisma.cashTransaction.delete({ where: { id: element.id } });
+            count += 1;
+          }
+        }
 
         return {
-          response: `Successfully delete cash account with id ${cashAccountId} and ${deletedTransaction.count} transactions associated with that account`,
+          response: `Successfully delete cash account with id ${cashAccountId} and ${count} transactions associated with that account`,
         };
       },
     });
@@ -263,14 +274,14 @@ export const CashAccountMutation = extendType({
 
         await prisma.cashTransaction.create({
           data: {
-            cashAccountId: cashAccount.id,
+            cashAccountId: encodeCashAccountId(cashAccount.id),
             dateTimestamp: new Date(),
             currency: cashAccount.currency,
             transactionName: 'Penyesuaian Cash',
             amount: transactionAmount.toString(),
             transactionType: 'RECONCILE',
             direction: bigger ? 'IN' : 'OUT',
-            merchantId: '63d8b775d3e050940af0caf1',
+            merchantId: '640ff9450ce7b9e3754d332c',
             isHideFromBudget: true,
             isHideFromInsight: true,
           },
@@ -338,14 +349,14 @@ export const CashTransactionMutation = extendType({
 
         category: nonNull(
           arg({
-            type: list(NameAmountJsonInput),
+            type: list('NameAmountJsonInput'),
             description: 'The category of the transaction',
           })
         ),
 
         transactionType: nonNull(
           arg({
-            type: ExpenseTypeEnum,
+            type: 'ExpenseTypeEnum',
             description:
               'The transaction type. Either INCOME for in transation, EXPENSE for outgoing transaction, and TRANSFER for internal transfer.',
           })
@@ -353,15 +364,10 @@ export const CashTransactionMutation = extendType({
 
         direction: nonNull(
           arg({
-            type: DirectionTypeEnum,
+            type: 'DirectionTypeEnum',
             description: 'The direction for this transaction. `IN` or `OUT`',
           })
         ),
-
-        internalTransferTransactionId: arg({
-          type: 'String',
-          description: 'The account id if internal transfer',
-        }),
 
         notes: arg({
           type: 'String',
@@ -374,7 +380,7 @@ export const CashTransactionMutation = extendType({
         }),
 
         tags: arg({
-          type: list(NameAmountJsonInput),
+          type: list('NameAmountJsonInput'),
           description: 'The tags for this transaction',
         }),
 
@@ -395,32 +401,16 @@ export const CashTransactionMutation = extendType({
 
       async resolve(parent, args, context, info) {
         const {
-          cashAccountId,
+          cashAccountId: _cashAccountId,
           amount,
           merchantId,
           transactionType,
           direction,
-          internalTransferTransactionId,
           category,
+          tags,
         } = args;
 
-        if (transactionType === 'TRANSFER' && !internalTransferTransactionId)
-          throw {
-            status: 2100,
-            message:
-              'internalTransferTransactionId harus diisi ketika tipe transaksi TRANSFER.',
-          };
-
-        if (
-          transactionType !== 'TRANSFER' &&
-          internalTransferTransactionId !== null &&
-          internalTransferTransactionId !== undefined
-        )
-          throw {
-            status: 2101,
-            message:
-              'Tidak perlu mengisi internalTransferTransactionId ketika tipe transaksi bukan TRANSFER.',
-          };
+        const cashAccountId = encodeCashAccountId(_cashAccountId);
 
         const { userId, prisma } = context;
 
@@ -447,7 +437,7 @@ export const CashTransactionMutation = extendType({
             throw {
               status: 2300,
               message:
-                'Category/tags tidak boleh kosong. Dan harus dalam format {name, amount} untuk tiap category/tags.',
+                'Category tidak boleh kosong. Dan harus dalam format {name, amount} untuk tiap category.',
             };
 
           categorySum += Number(element.amount);
@@ -459,6 +449,36 @@ export const CashTransactionMutation = extendType({
             message:
               'Total amount kategori harus sama dengan amount transaksi.',
           };
+
+        /**
+         * Check if the tags match the amount
+         */
+        if (tags) {
+          let tagsSum: number = 0;
+
+          for (let i = 0; i < tags.length; i++) {
+            const element = tags[i];
+
+            if (
+              !element ||
+              !element.hasOwnProperty('name') ||
+              !element.hasOwnProperty('amount')
+            )
+              throw {
+                status: 2301,
+                message:
+                  'Tags harus dalam format {name, amount} untuk tiap tags.',
+              };
+
+            tagsSum += Number(element.amount);
+          }
+
+          if (tagsSum !== Number(amount))
+            throw {
+              status: 2201,
+              message: 'Total amount tags harus sama dengan amount transaksi.',
+            };
+        }
 
         const cashAccount = await prisma.cashAccount.findFirst({
           where: { AND: [{ userId: user.id }, { id: cashAccountId }] },
@@ -483,13 +503,12 @@ export const CashTransactionMutation = extendType({
           },
         });
 
-        let merchant: Merchant | null = null;
+        const merchant = await prisma.merchant.findFirst({
+          where: { id: merchantId },
+        });
 
-        if (merchantId) {
-          merchant = await prisma.merchant.findFirst({
-            where: { id: merchantId },
-          });
-        }
+        if (!merchant)
+          throw { status: 2400, message: 'Merchant tidak ditemukan.' };
 
         const response = await prisma.cashTransaction.create({
           data: { ...args, dateTimestamp: new Date() },
@@ -498,14 +517,19 @@ export const CashTransactionMutation = extendType({
         return {
           id: response.id,
           dateTimestamp: toTimeStamp(response.dateTimestamp),
-          cashAccountId: response.cashAccountId,
+          cashAccountId: decodeCashAccountId(
+            response.cashAccountId
+          ) as unknown as string,
           currency: response.currency,
           transactionName: response.transactionName,
           amount: response.amount,
           merchant: merchant,
           merchantId: response.merchantId,
           category: response.category as unknown as MaybePromise<
-            ({ amount: string; name: string } | null)[] | null | undefined
+            MaybePromise<
+              | { amount: string; name: string }
+              | { amount: MaybePromise<string>; name: MaybePromise<string> }
+            >[]
           >,
           transactionType: response.transactionType,
           internalTransferTransactionId: response.internalTransferTransactionId,
@@ -534,26 +558,29 @@ export const CashTransactionMutation = extendType({
         const { transactionId } = args;
         const { userId, prisma } = context;
 
-        if (!userId) throw new Error('Invalid token');
+        if (!userId) throw { status: 1100, message: 'Token tidak valid.' };
 
         const user = await prisma.user.findFirst({ where: { id: userId } });
 
-        if (!user) throw new Error('Cannot find user');
+        if (!user) throw { status: 1000, message: 'User tidak ditemukan.' };
 
         const transaction = await prisma.cashTransaction.findFirst({
           where: { id: transactionId },
         });
 
         if (!transaction)
-          throw new Error('Cannot find the transaction based on that id');
+          throw { status: 2500, message: 'Transaksi tidak ditemukan.' };
 
-        const { cashAccountId } = transaction;
+        const { cashAccountId: _cashAccountId } = transaction;
+
+        const cashAccountId = decodeCashAccountId(_cashAccountId);
 
         const cashAccount = await prisma.cashAccount.findFirst({
-          where: { id: cashAccountId },
+          where: { id: cashAccountId as unknown as string },
         });
 
-        if (!cashAccount) throw new Error('Cannot find the cash account');
+        if (!cashAccount)
+          throw { status: 3000, message: 'Akun cash tidak ditemukan' };
 
         /*
         Update balance
@@ -611,24 +638,19 @@ export const CashTransactionMutation = extendType({
         }),
 
         category: arg({
-          type: list(CategoryInputType),
+          type: list('NameAmountJsonInput'),
           description: 'The category of the transaction',
         }),
 
         transactionType: arg({
-          type: ExpenseTypeEnum,
+          type: 'ExpenseTypeEnum',
           description:
             'The transaction type. Either INCOME for in transation, EXPENSE for outgoing transaction, and TRANSFER for internal transfer.',
         }),
 
         direction: arg({
-          type: DirectionTypeEnum,
+          type: 'DirectionTypeEnum',
           description: 'The direction for this transaction. `IN` or `OUT`',
-        }),
-
-        internalTransferTransactionId: arg({
-          type: 'String',
-          description: 'The account id if internal transfer',
         }),
 
         notes: arg({
@@ -642,7 +664,7 @@ export const CashTransactionMutation = extendType({
         }),
 
         tags: arg({
-          type: list(nonNull('String')),
+          type: list('NameAmountJsonInput'),
           description: 'The tags for this transaction',
         }),
 
@@ -671,7 +693,6 @@ export const CashTransactionMutation = extendType({
           category,
           transactionType,
           direction,
-          internalTransferTransactionId,
           notes,
           location,
           tags,
@@ -687,7 +708,6 @@ export const CashTransactionMutation = extendType({
           !transactionName &&
           !transactionType &&
           !direction &&
-          !internalTransferTransactionId &&
           !notes &&
           !location &&
           !tags &&
@@ -695,36 +715,33 @@ export const CashTransactionMutation = extendType({
           !isHideFromInsight &&
           !amount
         )
-          throw new Error('Cannot have all value null');
+          throw {
+            status: 2003,
+            message: 'Semua value tidak boleh null atau undefined.',
+          };
 
         if (amount && !category)
-          throw new Error(
-            'Please put the new category if you want to edit the amount'
-          );
+          throw {
+            status: 2004,
+            message: 'Amount baru harus disertai dengan category baru.',
+          };
 
-        if (!userId) throw new Error('Invalid token');
+        if (!userId) throw { status: 1100, message: 'Token tidak valid.' };
 
         const user = await prisma.user.findFirst({ where: { id: userId } });
 
-        if (!user) throw new Error('Cannot find user');
+        if (!user) throw { status: 1000, message: 'User tidak ditemukan.' };
 
         const transaction = await prisma.cashTransaction.findFirst({
           where: { id: transactionId },
         });
 
         if (!transaction)
-          throw new Error('Cannot find the transaction based on that id');
+          throw { status: 2500, message: 'Transaksi tidak ditemukan.' };
 
-        const { cashAccountId } = transaction;
+        const { cashAccountId: _cashAccountId } = transaction;
 
-        if (
-          (transactionType === 'EXPENSE' ||
-            transaction.transactionType === 'EXPENSE') &&
-          !merchantId
-        )
-          throw new Error(
-            'Please insert merchant id if the transaction type is not income'
-          );
+        const cashAccountId = decodeCashAccountId(_cashAccountId);
 
         /*
         Check if the category match the amount
@@ -735,15 +752,56 @@ export const CashTransactionMutation = extendType({
           for (let i = 0; i < category.length; i++) {
             const element = category[i];
 
-            if (!element) throw new Error('Object is null');
+            if (
+              !element ||
+              !element.hasOwnProperty('name') ||
+              !element.hasOwnProperty('amount')
+            )
+              throw {
+                status: 2300,
+                message:
+                  'Category tidak boleh kosong. Dan harus dalam format {name, amount} untuk tiap category.',
+              };
 
             categorySum += Number(element.amount);
           }
 
           if (categorySum !== Number(amount))
-            throw new Error(
-              'The amount sum of categories need to be the same with the amount given'
-            );
+            throw {
+              status: 2200,
+              message:
+                'Total amount kategori harus sama dengan amount transaksi.',
+            };
+        }
+
+        /*
+        Check if the tags match the amount
+        */
+        if (amount && tags) {
+          let tagsSum: number = 0;
+
+          for (let i = 0; i < tags.length; i++) {
+            const element = tags[i];
+
+            if (
+              !element ||
+              !element.hasOwnProperty('name') ||
+              !element.hasOwnProperty('amount')
+            )
+              throw {
+                status: 2301,
+                message:
+                  'Tags harus dalam format {name, amount} untuk tiap tags.',
+              };
+
+            tagsSum += Number(element.amount);
+          }
+
+          if (tagsSum !== Number(amount))
+            throw {
+              status: 2201,
+              message: 'Total amount tags harus sama dengan amount transaksi.',
+            };
         }
 
         /*
@@ -752,10 +810,16 @@ export const CashTransactionMutation = extendType({
 
         if (amount && cashAccountId) {
           const cashAccount = await prisma.cashAccount.findFirst({
-            where: { AND: [{ id: cashAccountId }, { userId: user.id }] },
+            where: {
+              AND: [
+                { id: cashAccountId as unknown as string },
+                { userId: user.id },
+              ],
+            },
           });
 
-          if (!cashAccount) throw new Error('Cannot find cash account');
+          if (!cashAccount)
+            throw { status: 3000, message: 'Akun cash tidak ditemukan.' };
 
           const first = await prisma.cashAccount.update({
             where: { id: cashAccount.id },
@@ -794,9 +858,6 @@ export const CashTransactionMutation = extendType({
             category: category ?? transaction.category,
             transactionType: transactionType ?? transaction.transactionType,
             direction: direction ?? transaction.direction,
-            internalTransferTransactionId:
-              internalTransferTransactionId ??
-              transaction.internalTransferTransactionId,
             notes: notes ?? transaction.notes,
             location: location ?? transaction.location,
             tags: tags ?? transaction.tags,
@@ -806,32 +867,38 @@ export const CashTransactionMutation = extendType({
           },
         });
 
-        let merchant: Merchant | null = null;
+        const merchant = await prisma.merchant.findFirst({
+          where: { id: response.merchantId },
+        });
 
-        if (response.merchantId) {
-          merchant = await prisma.merchant.findFirst({
-            where: { id: response.merchantId },
-          });
-        }
+        if (!merchant)
+          throw { status: 2400, message: 'Merchant tidak ditemukan.' };
 
         return {
           id: response.id,
-          cashAccountId: response.cashAccountId,
+          cashAccountId: decodeCashAccountId(
+            response.cashAccountId
+          ) as unknown as string,
           dateTimestamp: toTimeStamp(response.dateTimestamp),
           currency: response.currency,
           amount: response.amount,
           transactionName: response.transactionName,
           merchant,
           merchantId: response.merchantId,
-          category: response.category as MaybePromise<
-            ({ amount: string; name: string } | null)[] | null | undefined
+          category: response.category as unknown as MaybePromise<
+            MaybePromise<
+              | { amount: string; name: string }
+              | { amount: MaybePromise<string>; name: MaybePromise<string> }
+            >[]
           >,
           transactionType: response.transactionType,
           internalTransferTransactionId: response.internalTransferTransactionId,
           direction: response.direction,
           notes: response.notes,
           location: response.location,
-          tags: response.tags,
+          tags: response.tags as MaybePromise<
+            ({ amount: string; name: string } | null)[] | null | undefined
+          >,
           isHideFromBudget: response.isHideFromBudget,
           isHideFromInsight: response.isHideFromInsight,
         };

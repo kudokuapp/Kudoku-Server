@@ -33,7 +33,8 @@ export const RefreshQuery = extendType({
           const response = await prisma.user.findFirst({
             where: { id: userId },
           });
-          if (!response) throw new Error('Cannot find user');
+          if (!response)
+            throw { status: 1000, message: 'User tidak ditemukan.' };
 
           user = response;
 
@@ -45,7 +46,8 @@ export const RefreshQuery = extendType({
           const response = await prisma.user.findFirst({
             where: { username },
           });
-          if (!response) throw new Error('Cannot find user');
+          if (!response)
+            throw { status: 1000, message: 'User tidak ditemukan.' };
           user = response;
 
           refresh = await prisma.refresh.findMany({
@@ -53,9 +55,10 @@ export const RefreshQuery = extendType({
             orderBy: [{ date: 'desc' }],
           });
         } else {
-          throw new Error(
-            'Cannot find have all id, username, and token null or undefined'
-          );
+          throw {
+            status: 2003,
+            message: 'Semua value tidak boleh null atau undefined.',
+          };
         }
 
         let response: any[] = [];

@@ -9,16 +9,19 @@ import {
   getAccountDetail,
   accessTokenIsExpired,
 } from '../../../utils/brick';
-import axios from 'axios';
+import axios, { Axios, AxiosError } from 'axios';
 import moment from 'moment';
 import {
   DebitTransaction,
   DirectionType,
   TransactionType,
-  Merchant,
 } from '@prisma/client';
 import _ from 'lodash';
-import { TransactionMethodEnum } from '../../Enum';
+import {
+  decodeDebitAccountId,
+  encodeDebitAccountId,
+} from '../../../utils/auth';
+import { MaybePromise } from 'nexus/dist/typegenTypeHelpers';
 
 export const DebitAccountMutation = extendType({
   type: 'Mutation',
@@ -56,23 +59,25 @@ export const DebitAccountMutation = extendType({
           brickInstitutionId !== 37 &&
           brickInstitutionId !== 38
         )
-          throw new Error('Invalid brick institution id for BCA');
+          throw {
+            status: 4001,
+            message: 'Brick Institution ID yang tidak valid untuk BCA.',
+          };
 
-        if (!userId) throw new Error('Invalid token');
+        if (!userId) throw { status: 1100, message: 'Token tidak valid.' };
 
         const searchUser = await prisma.user.findFirst({
           where: { id: userId },
         });
 
         if (!searchUser) {
-          throw new Error('User does not exist');
+          throw { status: 1000, message: 'User tidak ditemukan.' };
         }
 
         const { clientId, redirectRefId } = await getClientIdandRedirectRefId(
           userId
-        ).catch((e) => {
-          console.error(e);
-          throw new Error(e);
+        ).catch((e: AxiosError) => {
+          throw { status: Number(`8${e.code}`), message: e.message };
         });
 
         const url = brickUrl(`/v1/auth/${clientId}`);
@@ -97,15 +102,13 @@ export const DebitAccountMutation = extendType({
           data: { data },
         }: { data: { data: BrickTokenData } } = await axios
           .request(options)
-          .catch((e) => {
-            console.error(e);
-            throw new Error(e);
+          .catch((e: AxiosError) => {
+            throw { status: Number(`8${e.code}`), message: e.message };
           });
 
         const accountDetail = await getAccountDetail(data.accessToken).catch(
-          (e) => {
-            console.error(e);
-            throw new Error(e);
+          (e: AxiosError) => {
+            throw { status: Number(`8${e.code}`), message: e.message };
           }
         );
 
@@ -122,7 +125,7 @@ export const DebitAccountMutation = extendType({
         });
 
         if (searchDebitAccount)
-          throw new Error('The same account has already been created');
+          throw { status: 4000, message: 'Akun debit sudah ada.' };
 
         const debitAccount = await prisma.debitAccount.create({
           data: {
@@ -163,16 +166,15 @@ export const DebitAccountMutation = extendType({
           data: { data: transactionData },
         }: { data: { data: BrickTransactionData[] } } = await axios
           .request(transactionOptions)
-          .catch((e) => {
-            console.error(e);
-            throw new Error(e);
+          .catch((e: AxiosError) => {
+            throw { status: Number(`8${e.code}`), message: e.message };
           });
 
         for (let i = 0; i < transactionData.length; i++) {
           const element = transactionData[i];
 
           const obj = {
-            debitAccountId: debitAccount.id,
+            debitAccountId: encodeDebitAccountId(debitAccount.id),
             transactionName: element.description,
             dateTimestamp: new Date(
               moment(element.dateTimestamp).add(1, 'day') as unknown as Date
@@ -182,8 +184,7 @@ export const DebitAccountMutation = extendType({
             amount: element.amount.toString(),
             onlineTransaction: false,
             isReviewed: false,
-            merchantId:
-              element.direction === 'out' ? '63d8b775d3e050940af0caf1' : null,
+            merchantId: '63d8b775d3e050940af0caf1',
             category: [
               { name: 'UNDEFINED', amount: element.amount.toString() },
             ],
@@ -196,7 +197,6 @@ export const DebitAccountMutation = extendType({
             isSubscription: false,
             description: element.description,
             institutionId: mapBrickInstitutionIdToKudoku(brickInstitutionId),
-            tags: [],
             isHideFromBudget: false,
             isHideFromInsight: false,
             transactionMethod: 'UNDEFINED',
@@ -237,26 +237,40 @@ export const DebitAccountMutation = extendType({
 
         const { userId, prisma } = context;
 
-        if (!userId) throw new Error('Invalid token');
+        if (!userId) throw { status: 1100, message: 'Token tidak valid.' };
 
         const user = await prisma.user.findFirst({ where: { id: userId } });
 
-        if (!user) throw new Error('Cannot find user');
+        if (!user) throw { status: 1000, message: 'User tidak ditemukan.' };
 
         const debitAccount = await prisma.debitAccount.findFirst({
           where: { AND: [{ id: debitAccountId }, { userId }] },
         });
 
-        if (!debitAccount) throw new Error('Cannot find that cash account');
+        if (!debitAccount)
+          throw { status: 4000, message: 'Akun debit tidak ditemukan.' };
 
         await prisma.debitAccount.delete({ where: { id: debitAccount.id } });
 
-        const deletedTransaction = await prisma.debitTransaction.deleteMany({
-          where: { debitAccountId: debitAccount.id },
-        });
+        const transaction = await prisma.debitTransaction.findMany();
+
+        let count = 0;
+
+        for (let i = 0; i < transaction.length; i++) {
+          const element = transaction[i];
+
+          const decodedDebitAccountId = decodeDebitAccountId(
+            element.debitAccountId
+          ) as unknown as string;
+
+          if (decodedDebitAccountId === debitAccount.id) {
+            await prisma.debitTransaction.delete({ where: { id: element.id } });
+            count += 1;
+          }
+        }
 
         return {
-          response: `Successfully delete debit account with id ${debitAccountId} and all ${deletedTransaction.count} transaction`,
+          response: `Successfully delete debit account with id ${debitAccountId} and all ${count} transaction`,
         };
       },
     });
@@ -284,17 +298,18 @@ export const DebitTransactionMutation = extendType({
 
         const { userId, prisma } = context;
 
-        if (!userId) throw new Error('Invalid token');
+        if (!userId) throw { status: 1100, message: 'Token tidak valid.' };
 
         const user = await prisma.user.findFirst({ where: { id: userId } });
 
-        if (!user) throw new Error('Cannot find user');
+        if (!user) throw { status: 1000, message: 'User tidak ditemukan.' };
 
         const debitAccount = await prisma.debitAccount.findFirst({
           where: { AND: [{ id: debitAccountId }, { userId: user.id }] },
         });
 
-        if (!debitAccount) throw new Error('Cannot find the debit account');
+        if (!debitAccount)
+          throw { status: 4000, message: 'Akun debit tidak ditemukan.' };
 
         const expired = await accessTokenIsExpired(debitAccount.accessToken);
 
@@ -303,13 +318,37 @@ export const DebitTransactionMutation = extendType({
             where: { id: debitAccount.id },
             data: { expired: true },
           });
-          throw new Error('Access token is expired');
+          throw {
+            status: 4200,
+            message: 'Access token Brick untuk debit akun sudah expired.',
+          };
         }
 
-        const debitTransaction = await prisma.debitTransaction.findMany({
-          where: { debitAccountId: debitAccount.id },
+        /**
+         * First, we find All Transactions
+         */
+        const allTransactions = await prisma.debitTransaction.findMany({
           orderBy: [{ dateTimestamp: 'desc' }, { referenceId: 'desc' }],
         });
+
+        /**
+         * Then, we loop over to find the transactions that has
+         * matching DebitAccountId.
+         */
+
+        const debitTransaction: DebitTransaction[] = [];
+
+        for (let i = 0; i < allTransactions.length; i++) {
+          const element = allTransactions[i];
+
+          const decodedDebitAccountId = decodeDebitAccountId(
+            element.debitAccountId
+          ) as unknown as string;
+
+          if (debitAccount.id === decodedDebitAccountId) {
+            debitTransaction.push(element);
+          }
+        }
 
         const { dateTimestamp, referenceId } = debitTransaction[0];
 
@@ -336,8 +375,8 @@ export const DebitTransactionMutation = extendType({
           data: { data },
         }: { data: { data: BrickTransactionData[] } } = await axios
           .request(transactionOptions)
-          .catch((e) => {
-            throw new Error(e);
+          .catch((e: AxiosError) => {
+            throw { status: Number(`8${e.code}`), message: e.message };
           });
 
         const transactionData = _.sortBy(data, [
@@ -353,7 +392,10 @@ export const DebitTransactionMutation = extendType({
         );
 
         if (newTransaction.length === 0)
-          throw new Error('There is no new transaction');
+          throw {
+            status: 4300,
+            message: 'Tidak ada transaksi baru untuk debit akun tersebut.',
+          };
 
         let responseToIterate: DebitTransaction[] = [];
 
@@ -362,7 +404,7 @@ export const DebitTransactionMutation = extendType({
 
           const trans = await prisma.debitTransaction.create({
             data: {
-              debitAccountId: debitAccount.id,
+              debitAccountId: encodeDebitAccountId(debitAccount.id),
               transactionName: element.description,
               dateTimestamp: new Date(
                 moment(element.dateTimestamp).add(1, 'day') as unknown as Date
@@ -372,8 +414,7 @@ export const DebitTransactionMutation = extendType({
               amount: element.amount.toString(),
               onlineTransaction: false,
               isReviewed: false,
-              merchantId:
-                element.direction === 'out' ? '63d8b775d3e050940af0caf1' : null,
+              merchantId: '63d8b775d3e050940af0caf1',
               category: [
                 { name: 'UNDEFINED', amount: element.amount.toString() },
               ],
@@ -386,7 +427,6 @@ export const DebitTransactionMutation = extendType({
               isSubscription: false,
               description: element.description,
               institutionId: debitAccount.institutionId,
-              tags: [],
               isHideFromBudget: false,
               isHideFromInsight: false,
               transactionMethod: 'UNDEFINED',
@@ -401,12 +441,12 @@ export const DebitTransactionMutation = extendType({
         */
         const accountDetail = await getAccountDetail(
           debitAccount.accessToken
-        ).catch((e) => {
-          throw new Error(e);
+        ).catch((e: AxiosError) => {
+          throw { status: Number(`8${e.code}`), message: e.message };
         });
 
         await prisma.debitAccount.update({
-          where: { id: debitAccountId },
+          where: { id: debitAccount.id },
           data: {
             balance: accountDetail[0].balances.current.toString(),
             lastUpdate: new Date(),
@@ -434,18 +474,16 @@ export const DebitTransactionMutation = extendType({
           for (let i = 0; i < responseToIterate.length; i++) {
             const element = responseToIterate[i];
 
-            let merchant: Merchant | null = null;
-
-            if (element.merchantId) {
-              merchant = await prisma.merchant.findFirst({
-                where: { id: element.merchantId ?? '63d3be20009767d5eb7e7410' },
-              });
-            }
+            const merchant = await prisma.merchant.findFirst({
+              where: { id: element.merchantId },
+            });
 
             const obj = {
               id: element.id,
               transactionName: element.transactionName,
-              debitAccountId: element.debitAccountId,
+              debitAccountId: decodeDebitAccountId(
+                element.debitAccountId
+              ) as unknown as string,
               dateTimestamp: toTimeStamp(element.dateTimestamp),
               referenceId: element.referenceId,
               institutionId: element.institutionId,
@@ -478,9 +516,9 @@ export const DebitTransactionMutation = extendType({
       },
     });
 
-    t.nonNull.field('editBcaTransaction', {
+    t.nonNull.field('editDebitTransaction', {
       type: 'DebitTransaction',
-      description: 'Edit a particular debit (BCA) transaction',
+      description: 'Edit a particular debit transaction',
       args: {
         transactionId: nonNull(
           arg({
@@ -505,7 +543,7 @@ export const DebitTransactionMutation = extendType({
         }),
 
         category: arg({
-          type: list('CategoryInputType'),
+          type: list('NameAmountJsonInput'),
           description: 'The category of the transaction',
         }),
 
@@ -513,11 +551,6 @@ export const DebitTransactionMutation = extendType({
           type: 'ExpenseTypeEnum',
           description:
             'The transaction type. Either INCOME for in transation, EXPENSE for outgoing transaction, and TRANSFER for internal transfer.',
-        }),
-
-        internalTransferTransactionId: arg({
-          type: 'String',
-          description: 'The account id for internal transfer',
         }),
 
         isSubscription: arg({
@@ -536,7 +569,7 @@ export const DebitTransactionMutation = extendType({
         }),
 
         tags: arg({
-          type: nonNull(list(nonNull('String'))),
+          type: list('NameAmountJsonInput'),
           description: 'The tags for this transaction',
         }),
 
@@ -555,7 +588,7 @@ export const DebitTransactionMutation = extendType({
         }),
 
         transactionMethod: arg({
-          type: TransactionMethodEnum,
+          type: 'TransactionMethodEnum',
           description: 'What transaction method is this.',
         }),
       },
@@ -568,7 +601,6 @@ export const DebitTransactionMutation = extendType({
           category,
           transactionType,
           transactionName,
-          internalTransferTransactionId,
           isSubscription,
           notes,
           location,
@@ -584,7 +616,6 @@ export const DebitTransactionMutation = extendType({
           !category &&
           !transactionName &&
           !transactionType &&
-          !internalTransferTransactionId &&
           !isSubscription &&
           !notes &&
           !location &&
@@ -593,37 +624,26 @@ export const DebitTransactionMutation = extendType({
           !isHideFromInsight &&
           !transactionMethod
         )
-          throw new Error('Cannot have all value as null');
-
+          throw {
+            status: 2003,
+            message: 'Semua value tidak boleh null atau undefined.',
+          };
         const { userId, prisma } = context;
 
-        if (!userId) throw new Error('Invalid token');
+        if (!userId) throw { status: 1100, message: 'Token tidak valid.' };
 
         const user = await prisma.user.findFirst({ where: { id: userId } });
 
-        if (!user) throw new Error('Cannot find user');
+        if (!user) throw { status: 1000, message: 'User tidak ditemukan.' };
 
         const transaction = await prisma.debitTransaction.findFirst({
           where: { id: transactionId },
         });
 
-        if (!transaction) throw new Error('Cannot find transaction');
+        if (!transaction)
+          throw { status: 2500, message: 'Transaksi tidak ditemukan.' };
 
         const { amount } = transaction;
-
-        if (transactionType === 'TRANSFER' && !internalTransferTransactionId)
-          throw new Error(
-            'Please insert internalTransferTransactionId if this is a `TRANSFER` type'
-          );
-
-        if (
-          (transactionType === 'EXPENSE' ||
-            transaction.transactionType === 'EXPENSE') &&
-          !merchantId
-        )
-          throw new Error(
-            'Please insert merchant id if the transaction type is not income'
-          );
 
         if (category) {
           let categorySum: number = 0;
@@ -631,15 +651,53 @@ export const DebitTransactionMutation = extendType({
           for (let i = 0; i < category.length; i++) {
             const element = category[i];
 
-            if (!element) throw new Error('Object is null');
+            if (
+              !element ||
+              !element.hasOwnProperty('name') ||
+              !element.hasOwnProperty('amount')
+            )
+              throw {
+                status: 2300,
+                message:
+                  'Category tidak boleh kosong. Dan harus dalam format {name, amount} untuk tiap category.',
+              };
 
             categorySum += Number(element.amount);
           }
 
           if (categorySum !== Number(amount))
-            throw new Error(
-              'The amount sum of categories need to be the same with the amount given'
-            );
+            throw {
+              status: 2200,
+              message:
+                'Total amount kategori harus sama dengan amount transaksi.',
+            };
+        }
+
+        if (tags) {
+          let tagsSum: number = 0;
+
+          for (let i = 0; i < tags.length; i++) {
+            const element = tags[i];
+
+            if (
+              !element ||
+              !element.hasOwnProperty('name') ||
+              !element.hasOwnProperty('amount')
+            )
+              throw {
+                status: 2301,
+                message:
+                  'Tags harus dalam format {name, amount} untuk tiap tags.',
+              };
+
+            tagsSum += Number(element.amount);
+          }
+
+          if (tagsSum !== Number(amount))
+            throw {
+              status: 2201,
+              message: 'Total amount tags harus sama dengan amount transaksi.',
+            };
         }
 
         const response = await prisma.debitTransaction.update({
@@ -651,9 +709,6 @@ export const DebitTransactionMutation = extendType({
             merchantId: merchantId ?? transaction.merchantId,
             category: category ?? transaction.category,
             transactionType: transactionType ?? transaction.transactionType,
-            internalTransferTransactionId:
-              internalTransferTransactionId ??
-              transaction.internalTransferTransactionId,
             isSubscription: isSubscription ?? transaction.isSubscription,
             notes: notes ?? transaction.notes,
             location: location ?? transaction.location,
@@ -667,18 +722,19 @@ export const DebitTransactionMutation = extendType({
           },
         });
 
-        let merchant: Merchant | null = null;
+        const merchant = await prisma.merchant.findFirst({
+          where: { id: response.merchantId },
+        });
 
-        if (response.merchantId) {
-          merchant = await prisma.merchant.findFirst({
-            where: { id: response.merchantId },
-          });
-        }
+        if (!merchant)
+          throw { status: 2400, message: 'Merchant tidak ditemukan.' };
 
         return {
           id: response.id,
           transactionName: response.transactionName,
-          debitAccountId: response.debitAccountId,
+          debitAccountId: decodeDebitAccountId(
+            response.debitAccountId
+          ) as unknown as string,
           dateTimestamp: toTimeStamp(response.dateTimestamp),
           referenceId: response.referenceId,
           institutionId: response.institutionId,
@@ -688,17 +744,21 @@ export const DebitTransactionMutation = extendType({
           isReviewed: response.isReviewed,
           merchant: merchant,
           merchantId: response.merchantId,
-          category: response.category as
-            | ({ amount: string; name: string } | null)[]
-            | null
-            | undefined,
+          category: response.category as unknown as MaybePromise<
+            MaybePromise<
+              | { amount: string; name: string }
+              | { amount: MaybePromise<string>; name: MaybePromise<string> }
+            >[]
+          >,
           transactionType: response.transactionType,
           description: response.description,
           internalTransferTransactionId: response.internalTransferTransactionId,
           direction: response.direction,
           notes: response.notes,
           location: response.location,
-          tags: response.tags,
+          tags: response.tags as unknown as MaybePromise<
+            ({ amount: string; name: string } | null)[] | null | undefined
+          >,
           isSubscription: response.isSubscription,
           isHideFromBudget: response.isHideFromBudget,
           isHideFromInsight: response.isHideFromInsight,

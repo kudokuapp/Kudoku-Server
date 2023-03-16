@@ -4,6 +4,7 @@ import {
   DebitTransaction,
   EMoneyTransaction,
   EWalletTransaction,
+  PayLaterTransaction,
 } from '@prisma/client';
 
 export const InternalTransferMutation = extendType({
@@ -56,18 +57,28 @@ export const InternalTransferMutation = extendType({
          * Since we are 'selecting a transaction' that already exist
          */
         if (toAccount === 'CASH' || toAccount === 'EMONEY') {
-          throw new Error('The `toAccount` cannot be a manual account');
+          throw {
+            status: 2600,
+            message:
+              'Untuk internal transfer tipe select, tujuan akun tidak boleh akun manual.',
+          };
         }
 
         if (!userId) {
-          throw new Error('Invalid token');
+          throw { status: 1100, message: 'Token tidak valid.' };
         }
 
-        await prisma.user.findFirstOrThrow({
+        const user = await prisma.user.findFirst({
           where: { id: userId },
         });
 
-        let toTransaction: DebitTransaction | EWalletTransaction;
+        if (!user) throw { status: 1000, message: 'User tidak ditemukan.' };
+
+        let toTransaction:
+          | DebitTransaction
+          | EWalletTransaction
+          | PayLaterTransaction
+          | null = null;
 
         switch (toAccount) {
           case 'DEBIT':
@@ -76,8 +87,14 @@ export const InternalTransferMutation = extendType({
             });
             break;
 
-          default:
+          case 'EWALLET':
             toTransaction = await prisma.eWalletTransaction.findFirstOrThrow({
+              where: { id: toTransactionId },
+            });
+            break;
+
+          case 'PAYLATER':
+            toTransaction = await prisma.payLaterTransaction.findFirstOrThrow({
               where: { id: toTransactionId },
             });
             break;
@@ -87,7 +104,12 @@ export const InternalTransferMutation = extendType({
           | CashTransaction
           | DebitTransaction
           | EWalletTransaction
-          | EMoneyTransaction;
+          | EMoneyTransaction
+          | PayLaterTransaction
+          | null = null;
+
+        if (!toTransaction)
+          throw { status: 2601, message: 'toTransaction adalah null.' };
 
         switch (fromAccount) {
           case 'CASH':
@@ -99,8 +121,12 @@ export const InternalTransferMutation = extendType({
                 direction: 'OUT',
                 internalTransferTransactionId: toTransaction.id,
                 category: null,
-                merchantId: null,
+                merchantId: '640ff9670ce7b9e3754d332d',
                 location: null,
+                notes: null,
+                tags: null,
+                isHideFromBudget: true,
+                isHideFromInsight: true,
               },
             });
             break;
@@ -110,13 +136,18 @@ export const InternalTransferMutation = extendType({
               where: { id: fromTransactionId },
               data: {
                 transactionName: 'INTERNAL TRANSFER',
+                onlineTransaction: false,
                 transactionType: 'TRANSFER',
                 direction: 'OUT',
                 internalTransferTransactionId: toTransaction.id,
                 category: null,
-                merchantId: null,
+                merchantId: '640ff9670ce7b9e3754d332d',
+                tags: null,
+                isSubscription: false,
                 isReviewed: true,
                 location: null,
+                notes: null,
+                transactionMethod: 'UNDEFINED',
               },
             });
             break;
@@ -126,18 +157,46 @@ export const InternalTransferMutation = extendType({
               where: { id: fromTransactionId },
               data: {
                 transactionName: 'INTERNAL TRANSFER',
+                onlineTransaction: false,
+                isSubscription: false,
                 transactionType: 'TRANSFER',
                 direction: 'OUT',
                 internalTransferTransactionId: toTransaction.id,
                 category: null,
-                merchantId: null,
+                merchantId: '640ff9670ce7b9e3754d332d',
                 isReviewed: true,
                 location: null,
+                notes: null,
+                tags: null,
+                isHideFromBudget: true,
+                isHideFromInsight: true,
               },
             });
             break;
 
-          default:
+          case 'PAYLATER':
+            fromTransaction = await prisma.payLaterTransaction.update({
+              where: { id: fromTransactionId },
+              data: {
+                transactionName: 'INTERNAL TRANSFER',
+                onlineTransaction: false,
+                isSubscription: false,
+                transactionType: 'TRANSFER',
+                direction: 'OUT',
+                internalTransferTransactionId: toTransaction.id,
+                category: null,
+                merchantId: '640ff9670ce7b9e3754d332d',
+                isReviewed: true,
+                location: null,
+                notes: null,
+                tags: null,
+                isHideFromBudget: true,
+                isHideFromInsight: true,
+              },
+            });
+            break;
+
+          case 'EMONEY':
             fromTransaction = await prisma.eMoneyTransaction.update({
               where: { id: fromTransactionId },
               data: {
@@ -146,12 +205,20 @@ export const InternalTransferMutation = extendType({
                 direction: 'OUT',
                 internalTransferTransactionId: toTransaction.id,
                 category: null,
-                merchantId: null,
+                merchantId: '640ff9670ce7b9e3754d332d',
                 location: null,
+                isReviewed: true,
+                notes: null,
+                tags: null,
+                isHideFromBudget: true,
+                isHideFromInsight: true,
               },
             });
             break;
         }
+
+        if (!fromTransaction)
+          throw { status: 2602, message: 'fromTransaction adalah null.' };
 
         switch (toAccount) {
           case 'DEBIT':
@@ -159,29 +226,62 @@ export const InternalTransferMutation = extendType({
               where: { id: toTransaction.id },
               data: {
                 transactionName: 'INTERNAL TRANSFER',
+                onlineTransaction: false,
                 transactionType: 'TRANSFER',
                 direction: 'IN',
                 internalTransferTransactionId: fromTransaction.id,
                 category: null,
-                merchantId: null,
+                merchantId: '640ff9670ce7b9e3754d332d',
+                tags: null,
+                isSubscription: false,
                 isReviewed: true,
                 location: null,
+                notes: null,
+                transactionMethod: 'UNDEFINED',
               },
             });
             break;
 
-          default:
+          case 'EWALLET':
             await prisma.eWalletTransaction.update({
               where: { id: toTransaction.id },
               data: {
                 transactionName: 'INTERNAL TRANSFER',
+                onlineTransaction: false,
+                isSubscription: false,
                 transactionType: 'TRANSFER',
                 direction: 'IN',
                 internalTransferTransactionId: fromTransaction.id,
                 category: null,
-                merchantId: null,
+                merchantId: '640ff9670ce7b9e3754d332d',
                 isReviewed: true,
                 location: null,
+                notes: null,
+                tags: null,
+                isHideFromBudget: true,
+                isHideFromInsight: true,
+              },
+            });
+            break;
+
+          case 'PAYLATER':
+            await prisma.payLaterTransaction.update({
+              where: { id: toTransaction.id },
+              data: {
+                transactionName: 'INTERNAL TRANSFER',
+                onlineTransaction: false,
+                isSubscription: false,
+                transactionType: 'TRANSFER',
+                direction: 'IN',
+                internalTransferTransactionId: fromTransaction.id,
+                category: null,
+                merchantId: '640ff9670ce7b9e3754d332d',
+                isReviewed: true,
+                location: null,
+                notes: null,
+                tags: null,
+                isHideFromBudget: true,
+                isHideFromInsight: true,
               },
             });
             break;
@@ -239,26 +339,38 @@ export const InternalTransferMutation = extendType({
         const { userId, prisma } = context;
 
         if (!userId) {
-          throw new Error('Invalid token');
+          throw { status: 1100, message: 'Token tidak valid.' };
         }
+
+        const user = await prisma.user.findFirst({
+          where: { id: userId },
+        });
+
+        if (!user) throw { status: 1000, message: 'User tidak ditemukan.' };
 
         /**
          * Selecting a `toAccount` Cannot be an automatic account
          * Since we are 'creating a transaction' that doesn't currently exist
          */
-        if (toAccount === 'DEBIT' || toAccount === 'EWALLET') {
-          throw new Error('The `toAccount` cannot be an automatic account');
+        if (
+          toAccount === 'DEBIT' ||
+          toAccount === 'EWALLET' ||
+          toAccount === 'PAYLATER'
+        ) {
+          throw {
+            status: 2700,
+            message:
+              'Untuk internal transfer tipe create, tujuan akun tidak boleh akun otomatis.',
+          };
         }
-
-        await prisma.user.findFirstOrThrow({
-          where: { id: userId },
-        });
 
         let fromTransaction:
           | CashTransaction
           | DebitTransaction
           | EWalletTransaction
-          | EMoneyTransaction;
+          | EMoneyTransaction
+          | PayLaterTransaction
+          | null = null;
 
         switch (fromAccount) {
           case 'CASH':
@@ -279,14 +391,25 @@ export const InternalTransferMutation = extendType({
             });
             break;
 
-          default:
+          case 'PAYLATER':
+            fromTransaction = await prisma.payLaterTransaction.findFirstOrThrow(
+              {
+                where: { id: fromTransactionId },
+              }
+            );
+            break;
+
+          case 'EMONEY':
             fromTransaction = await prisma.eMoneyTransaction.findFirstOrThrow({
               where: { id: fromTransactionId },
             });
             break;
         }
 
-        let toTransaction: CashTransaction | EMoneyTransaction;
+        let toTransaction: CashTransaction | EMoneyTransaction | null = null;
+
+        if (!fromTransaction)
+          throw { status: 2602, message: 'fromTransaction adalah null.' };
 
         switch (toAccount) {
           case 'CASH':
@@ -303,11 +426,12 @@ export const InternalTransferMutation = extendType({
                 amount: fromTransaction.amount,
                 transactionType: 'TRANSFER',
                 direction: 'IN',
+                merchantId: '640ff9670ce7b9e3754d332d',
               },
             });
             break;
 
-          default:
+          case 'EMONEY':
             const eMoneyTransactionResponse =
               await prisma.eMoneyAccount.findFirstOrThrow({
                 where: { id: toAccountId },
@@ -322,10 +446,14 @@ export const InternalTransferMutation = extendType({
                 transactionType: 'TRANSFER',
                 direction: 'IN',
                 institutionId: eMoneyTransactionResponse.institutionId,
+                merchantId: '640ff9670ce7b9e3754d332d',
               },
             });
             break;
         }
+
+        if (!toTransaction)
+          throw { status: 2601, message: 'toTransaction adalah null.' };
 
         return {
           response: `Successfully make the transaction ${fromTransaction.id} as an internal transfer to ${toTransaction.id}`,

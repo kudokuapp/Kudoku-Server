@@ -1,5 +1,6 @@
 import { toTimeStamp } from '../../../utils/date';
 import { arg, extendType, nonNull } from 'nexus';
+import { decodeDebitAccountId } from '../../../utils/auth';
 
 export const DebitAccountQuery = extendType({
   type: 'Query',
@@ -22,62 +23,73 @@ export const DebitAccountQuery = extendType({
         const { userId, prisma } = context;
 
         if (!userId) {
-          throw new Error('Invalid token');
+          throw { status: 1100, message: 'Token tidak valid.' };
         }
 
         const user = await prisma.user.findFirst({ where: { id: userId } });
 
-        if (!user) throw new Error('Cannot find user');
+        if (!user) throw { status: 1000, message: 'User tidak ditemukan.' };
 
         const debitAccount = await prisma.debitAccount.findFirst({
           where: { id: debitAccountId },
         });
 
-        if (!debitAccount) throw new Error('Cannot find debit account');
+        if (!debitAccount)
+          throw { status: 4000, message: 'Akun debit tidak ditemukan.' };
 
-        const response = await prisma.debitTransaction.findMany({
-          where: { debitAccountId },
+        const allTransactions = await prisma.debitTransaction.findMany({
           orderBy: [{ dateTimestamp: 'desc' }, { referenceId: 'desc' }],
         });
 
         let responseArray: any[] = [];
 
-        for (let i = 0; i < response.length; i++) {
-          const element = response[i];
+        for (let i = 0; i < allTransactions.length; i++) {
+          const element = allTransactions[i];
 
-          const merchant = await prisma.merchant.findFirstOrThrow({
-            where: { id: element.merchantId ?? '63d3be20009767d5eb7e7410' },
-          });
+          const decodedDebitAccountId = decodeDebitAccountId(
+            element.debitAccountId
+          ) as unknown as string;
 
-          const obj = {
-            id: element.id,
-            transactionName: element.transactionName,
-            debitAccountId: element.debitAccountId,
-            dateTimestamp: toTimeStamp(element.dateTimestamp),
-            currency: element.currency,
-            amount: element.amount,
-            merchant: merchant ?? null,
-            merchantId: element.merchantId ?? null,
-            category: element.category,
-            direction: element.direction,
-            transactionType: element.transactionType,
-            internalTransferTransactionId:
-              element.internalTransferTransactionId,
-            notes: element.notes,
-            location: element.location,
-            tags: element.tags,
-            isHideFromBudget: element.isHideFromBudget,
-            isHideFromInsight: element.isHideFromInsight,
-            description: element.description,
-            institutionId: element.institutionId,
-            referenceId: element.referenceId,
-            onlineTransaction: element.onlineTransaction,
-            isReviewed: element.isReviewed,
-            isSubscription: element.isSubscription,
-            transactionMethod: element.transactionMethod,
-          };
+          if (decodedDebitAccountId === debitAccount.id) {
+            const merchant = await prisma.merchant.findFirstOrThrow({
+              where: { id: element.merchantId },
+            });
 
-          responseArray.push(obj);
+            if (!merchant)
+              throw { status: 2400, message: 'Merchant tidak ditemukan.' };
+
+            const obj = {
+              id: element.id,
+              transactionName: element.transactionName,
+              debitAccountId: decodeDebitAccountId(
+                element.debitAccountId
+              ) as unknown as string,
+              dateTimestamp: toTimeStamp(element.dateTimestamp),
+              currency: element.currency,
+              amount: element.amount,
+              merchant: merchant,
+              merchantId: element.merchantId,
+              category: element.category,
+              direction: element.direction,
+              transactionType: element.transactionType,
+              internalTransferTransactionId:
+                element.internalTransferTransactionId,
+              notes: element.notes,
+              location: element.location,
+              tags: element.tags,
+              isHideFromBudget: element.isHideFromBudget,
+              isHideFromInsight: element.isHideFromInsight,
+              description: element.description,
+              institutionId: element.institutionId,
+              referenceId: element.referenceId,
+              onlineTransaction: element.onlineTransaction,
+              isReviewed: element.isReviewed,
+              isSubscription: element.isSubscription,
+              transactionMethod: element.transactionMethod,
+            };
+
+            responseArray.push(obj);
+          }
         }
 
         return responseArray;
@@ -91,14 +103,14 @@ export const DebitAccountQuery = extendType({
       async resolve(parent, args, context, info) {
         const { userId, prisma } = context;
 
-        if (!userId) throw new Error('Invalid token');
+        if (!userId) throw { status: 1100, message: 'Token tidak valid.' };
 
         const debitAccount = await prisma.debitAccount.findMany({
           where: { userId },
         });
 
         if (!debitAccount)
-          throw new Error('User have not created a debit account');
+          throw { status: 4000, message: 'Akun debit tidak ditemukan.' };
 
         let response: any[] = [];
 

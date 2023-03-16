@@ -33,21 +33,23 @@ export const MerchantMutation = extendType({
         const { userId: id, prisma } = context;
 
         if (!id) {
-          throw new Error('Invalid token');
+          throw { status: 1100, message: 'Token tidak valid.' };
         }
 
         const user = await prisma.user.findFirst({ where: { id } });
 
-        if (!user) throw new Error('Not allowed to do this');
+        if (!user) throw { status: 1000, message: 'User tidak ditemukan.' };
 
         const alreadyMerchant = await prisma.merchant.findFirst({
           where: { OR: [{ name }, { picture }, { url }] },
         });
 
         if (alreadyMerchant)
-          throw new Error(
-            'Merchant with that name, picture, or url is already exist'
-          );
+          throw {
+            status: 2005,
+            message:
+              'Merchant dengan nama atau url atau gambar tersebut sudah ada.',
+          };
 
         const response = await prisma.merchant.create({
           data: { name, picture, url },

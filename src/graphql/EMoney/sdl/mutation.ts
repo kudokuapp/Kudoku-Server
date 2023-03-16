@@ -3,9 +3,12 @@ import { toTimeStamp } from '../../../utils/date';
 import { Merchant, TransactionType } from '@prisma/client';
 import { DirectionTypeEnum } from '../../Enum';
 import _ from 'lodash';
-import { CategoryInputType } from '../../ObjectType';
 import { updateBalance } from '../../../utils/transaction';
 import { MaybePromise } from 'nexus/dist/typegenTypeHelpers';
+import {
+  decodeEMoneyAccountId,
+  encodeEMoneyAccountId,
+} from '../../../utils/auth';
 
 export const EMoneyAccountMutation = extendType({
   type: 'Mutation',
@@ -32,7 +35,7 @@ export const EMoneyAccountMutation = extendType({
         initialBalance: nonNull(
           arg({
             type: 'String',
-            description: 'sessionId after running `sendOtpGopayViaBrick` query',
+            description: 'The initial balance for that e-money',
           })
         ),
 
@@ -50,14 +53,14 @@ export const EMoneyAccountMutation = extendType({
 
         const { userId, prisma } = context;
 
-        if (!userId) throw new Error('Invalid token');
+        if (!userId) throw { status: 1100, message: 'Token tidak valid.' };
 
         const searchUser = await prisma.user.findFirst({
           where: { id: userId },
         });
 
         if (!searchUser) {
-          throw new Error('User does not exist');
+          throw { status: 1000, message: 'User tidak ditemukan.' };
         }
 
         /*
@@ -71,7 +74,7 @@ export const EMoneyAccountMutation = extendType({
         });
 
         if (searchEMoneyAccount)
-          throw new Error('Account already exist with that card number');
+          throw { status: 6000, message: 'Akun e-money sudah ada.' };
 
         const response = await prisma.eMoneyAccount.create({
           data: {
@@ -118,22 +121,25 @@ export const EMoneyAccountMutation = extendType({
 
         const { userId, prisma } = context;
 
-        if (!userId) throw new Error('Invalid token');
+        if (!userId) throw { status: 1100, message: 'Token tidak valid.' };
 
         const user = await prisma.user.findFirst({ where: { id: userId } });
 
-        if (!user) throw new Error('Cannot find user');
+        if (!user) throw { status: 1000, message: 'User tidak ditemukan.' };
 
         const eMoneyAccount = await prisma.eMoneyAccount.findFirst({
           where: { AND: [{ id: eMoneyAccountId }, { userId: user.id }] },
         });
 
-        if (!eMoneyAccount) throw new Error('Cannot find that e-money account');
+        if (!eMoneyAccount)
+          throw { status: 6100, message: 'Akun e-money tidak ditemukan.' };
 
         if (Number(newBalance) === Number(eMoneyAccount.balance))
-          throw new Error(
-            'New balance cannot be the same as the current balance'
-          );
+          throw {
+            status: 2000,
+            message:
+              'Untuk reconcile, balance baru tidak boleh sama dengan balance yang sekarang.',
+          };
 
         const response = await prisma.eMoneyAccount.update({
           where: { id: eMoneyAccount.id },
@@ -148,14 +154,14 @@ export const EMoneyAccountMutation = extendType({
 
         await prisma.eMoneyTransaction.create({
           data: {
-            eMoneyAccountId,
+            eMoneyAccountId: encodeEMoneyAccountId(eMoneyAccount.id),
             transactionName: 'RECONCILE',
             dateTimestamp: new Date(),
             currency: eMoneyAccount.currency,
             amount: transactionAmount.toString(),
             transactionType: 'RECONCILE',
             direction: bigger ? 'IN' : 'OUT',
-            tags: [],
+            merchantId: '640ff9450ce7b9e3754d332c',
             isHideFromBudget: true,
             isHideFromInsight: true,
             isReviewed: true,
@@ -175,6 +181,64 @@ export const EMoneyAccountMutation = extendType({
         };
       },
     });
+
+    t.field('deleteEMoneyAccount', {
+      type: 'ResponseMessage',
+      description: 'Delete e-money account',
+
+      args: {
+        eMoneyAccountId: nonNull(
+          arg({
+            type: 'String',
+            description: 'The e-money account id',
+          })
+        ),
+      },
+
+      async resolve(parent, args, context, info) {
+        const { eMoneyAccountId } = args;
+
+        const { userId, prisma } = context;
+
+        if (!userId) throw { status: 1100, message: 'Token tidak valid.' };
+
+        const user = await prisma.user.findFirst({ where: { id: userId } });
+
+        if (!user) throw { status: 1000, message: 'User tidak ditemukan.' };
+
+        const eMoneyAccount = await prisma.eMoneyAccount.findFirst({
+          where: { AND: [{ id: eMoneyAccountId }, { userId }] },
+        });
+
+        if (!eMoneyAccount)
+          throw { status: 6100, message: 'Akun e-money tidak ditemukan.' };
+
+        await prisma.eMoneyAccount.delete({ where: { id: eMoneyAccount.id } });
+
+        const transaction = await prisma.eMoneyTransaction.findMany();
+
+        let count = 0;
+
+        for (let i = 0; i < transaction.length; i++) {
+          const element = transaction[i];
+
+          const decodedEMoneyAccount = decodeEMoneyAccountId(
+            element.eMoneyAccountId
+          );
+
+          if (decodedEMoneyAccount === eMoneyAccount.id) {
+            await prisma.eMoneyTransaction.delete({
+              where: { id: element.id },
+            });
+            count += 1;
+          }
+        }
+
+        return {
+          response: `Successfully delete cash account with id ${eMoneyAccount.id} and ${count} transactions associated with that account`,
+        };
+      },
+    });
   },
 });
 
@@ -184,7 +248,7 @@ export const EMoneyTransactionMutation = extendType({
     t.nonNull.field('addEMoneyTransaction', {
       type: 'EMoneyTransaction',
       description:
-        'Update transaction and balance for a particular e-money account',
+        'Add transaction and balance for a particular e-money account',
 
       args: {
         eMoneyAccountId: nonNull(
@@ -225,7 +289,7 @@ export const EMoneyTransactionMutation = extendType({
 
         category: nonNull(
           arg({
-            type: list(CategoryInputType),
+            type: list('NameAmountJsonInput'),
             description: 'The category of the transaction',
           })
         ),
@@ -234,7 +298,7 @@ export const EMoneyTransactionMutation = extendType({
           arg({
             type: 'String',
             description:
-              "The transaction type. It's either `INCOME`, `EXPENSE`, or `INTERNAL TRANSFER`",
+              "The transaction type. It's either `INCOME`, `EXPENSE`, or `TRANSFER`",
           })
         ),
 
@@ -244,11 +308,6 @@ export const EMoneyTransactionMutation = extendType({
             description: 'The direction for this transaction. `IN` or `OUT`',
           })
         ),
-
-        internalTransferTransactionId: arg({
-          type: 'String',
-          description: 'The account id if internal transfer',
-        }),
 
         notes: arg({
           type: 'String',
@@ -273,7 +332,7 @@ export const EMoneyTransactionMutation = extendType({
         }),
 
         tags: arg({
-          type: nonNull(list(nonNull('String'))),
+          type: list('NameAmountJsonInput'),
           description: 'The tags for this transaction',
         }),
 
@@ -302,7 +361,6 @@ export const EMoneyTransactionMutation = extendType({
           category,
           transactionType,
           direction,
-          internalTransferTransactionId,
           notes,
           description,
           institutionId,
@@ -314,34 +372,25 @@ export const EMoneyTransactionMutation = extendType({
 
         const { userId, prisma } = context;
 
-        if (!userId) throw new Error('Invalid token');
-
-        if (
-          transactionType !== 'TRANSFER' &&
-          internalTransferTransactionId !== null &&
-          internalTransferTransactionId !== undefined
-        )
-          throw new Error(
-            "It seems like you've put internalTransferAccountId even though it's not a `TRANSFER` type. This must be a mistake."
-          );
+        if (!userId) throw { status: 1100, message: 'Token tidak valid.' };
 
         const user = await prisma.user.findFirst({ where: { id: userId } });
 
-        if (!user) throw new Error('Cannot find user');
+        if (!user) throw { status: 1000, message: 'User tidak ditemukan.' };
 
         const eMoneyAccount = await prisma.eMoneyAccount.findFirst({
           where: { AND: [{ id: eMoneyAccountId }, { userId: user.id }] },
         });
 
-        if (!eMoneyAccount) throw new Error('Cannot find the e-money account');
+        if (!eMoneyAccount)
+          throw { status: 6100, message: 'Akun e-money tidak ditemukan.' };
 
         const response = await prisma.eMoneyTransaction.create({
           data: {
             transactionName,
-            internalTransferTransactionId,
             dateTimestamp: new Date(),
             isReviewed: true,
-            eMoneyAccountId: eMoneyAccount.id,
+            eMoneyAccountId: encodeEMoneyAccountId(eMoneyAccount.id),
             currency,
             amount,
             merchantId,
@@ -375,13 +424,12 @@ export const EMoneyTransactionMutation = extendType({
           },
         });
 
-        let merchant: Merchant | null = null;
+        const merchant = await prisma.merchant.findFirst({
+          where: { id: response.merchantId },
+        });
 
-        if (response.merchantId) {
-          merchant = await prisma.merchant.findFirst({
-            where: { id: response.merchantId },
-          });
-        }
+        if (!merchant)
+          throw { status: 2400, message: 'Merchant tidak ditemukan.' };
 
         return {
           id: response.id,
@@ -394,15 +442,20 @@ export const EMoneyTransactionMutation = extendType({
           isReviewed: response.isReviewed,
           merchant: merchant,
           merchantId: response.merchantId,
-          category: response.category as MaybePromise<
-            ({ amount: string; name: string } | null)[] | null | undefined
+          category: response.category as unknown as MaybePromise<
+            MaybePromise<
+              | { amount: string; name: string }
+              | { amount: MaybePromise<string>; name: MaybePromise<string> }
+            >[]
           >,
           transactionType: response.transactionType,
           description: response.description,
           direction: response.direction,
           notes: response.notes,
           location: response.location,
-          tags: response.tags,
+          tags: response.tags as unknown as MaybePromise<
+            ({ amount: string; name: string } | null)[] | null | undefined
+          >,
           isHideFromBudget: response.isHideFromBudget,
           isHideFromInsight: response.isHideFromInsight,
         };
@@ -438,7 +491,7 @@ export const EMoneyTransactionMutation = extendType({
         }),
 
         category: arg({
-          type: list(CategoryInputType),
+          type: list('NameAmountJsonInput'),
           description: 'The category of the transaction',
         }),
 
@@ -453,7 +506,7 @@ export const EMoneyTransactionMutation = extendType({
         }),
 
         tags: arg({
-          type: list(nonNull('String')),
+          type: list('NameAmountJsonInput'),
           description: 'The tags for this transaction',
         }),
 
@@ -472,13 +525,13 @@ export const EMoneyTransactionMutation = extendType({
         }),
 
         transactionType: arg({
-          type: 'ExpenseTypeNoTransferEnum',
+          type: 'ExpenseTypeEnum',
           description:
             'The transaction type. Either INCOME for in transation, and EXPENSE for outgoing transaction',
         }),
 
         direction: arg({
-          type: DirectionTypeEnum,
+          type: 'DirectionTypeEnum',
           description: 'The direction for this transaction. `IN` or `OUT`',
         }),
       },
@@ -509,12 +562,19 @@ export const EMoneyTransactionMutation = extendType({
           !tags &&
           !isHideFromBudget &&
           !isHideFromInsight &&
-          !transactionType
+          !transactionType &&
+          !amount
         )
-          throw new Error('Cannot have all value null');
+          throw {
+            status: 2003,
+            message: 'Semua value tidak boleh null atau undefined.',
+          };
 
         if (amount && !category)
-          throw new Error('Please insert new category when editing amount');
+          throw {
+            status: 2004,
+            message: 'Amount baru harus disertai dengan category baru.',
+          };
 
         /*
         Check if the category match the amount
@@ -525,42 +585,76 @@ export const EMoneyTransactionMutation = extendType({
           for (let i = 0; i < category.length; i++) {
             const element = category[i];
 
-            if (!element) throw new Error('Object is null');
+            if (
+              !element ||
+              !element.hasOwnProperty('name') ||
+              !element.hasOwnProperty('amount')
+            )
+              throw {
+                status: 2300,
+                message:
+                  'Category tidak boleh kosong. Dan harus dalam format {name, amount} untuk tiap category.',
+              };
 
             categorySum += Number(element.amount);
           }
 
           if (categorySum !== Number(amount))
-            throw new Error(
-              'The amount sum of categories need to be the same with the amount given'
-            );
+            throw {
+              status: 2200,
+              message:
+                'Total amount kategori harus sama dengan amount transaksi.',
+            };
+        }
+
+        /*
+        Check if the tags match the amount
+        */
+        if (amount && tags) {
+          let tagsSum: number = 0;
+
+          for (let i = 0; i < tags.length; i++) {
+            const element = tags[i];
+
+            if (
+              !element ||
+              !element.hasOwnProperty('name') ||
+              !element.hasOwnProperty('amount')
+            )
+              throw {
+                status: 2301,
+                message:
+                  'Tags harus dalam format {name, amount} untuk tiap tags.',
+              };
+
+            tagsSum += Number(element.amount);
+          }
+
+          if (tagsSum !== Number(amount))
+            throw {
+              status: 2201,
+              message: 'Total amount tags harus sama dengan amount transaksi.',
+            };
         }
 
         const { userId, prisma } = context;
 
-        if (!userId) throw new Error('Invalid token');
+        if (!userId) throw { status: 1100, message: 'Token tidak valid.' };
 
         const user = await prisma.user.findFirst({ where: { id: userId } });
 
-        if (!user) throw new Error('Cannot find user');
+        if (!user) throw { status: 1000, message: 'User tidak ditemukan.' };
 
         const transaction = await prisma.eMoneyTransaction.findFirst({
           where: { id: transactionId },
         });
 
         if (!transaction)
-          throw new Error('Cannot find the transaction based on that id');
+          throw { status: 2500, message: 'Transaksi tidak ditemukan.' };
 
-        const { eMoneyAccountId } = transaction;
+        const { eMoneyAccountId: _eMoneyAccountId } = transaction;
 
-        if (
-          (transactionType === 'EXPENSE' ||
-            transaction.transactionType === 'EXPENSE') &&
-          !merchantId
-        )
-          throw new Error(
-            'Please insert merchant id if the transaction type is not income'
-          );
+        const eMoneyAccountId = decodeEMoneyAccountId(_eMoneyAccountId);
 
         /**
          * Update balance if amount is edited
@@ -571,7 +665,8 @@ export const EMoneyTransactionMutation = extendType({
             where: { AND: [{ id: eMoneyAccountId }, { userId: user.id }] },
           });
 
-          if (!eMoneyAccount) throw new Error('Cannot find e-money account');
+          if (!eMoneyAccount)
+            throw { status: 6100, message: 'Akun e-money tidak ditemukan.' };
 
           const first = await prisma.eMoneyAccount.update({
             where: { id: eMoneyAccount.id },
@@ -618,13 +713,12 @@ export const EMoneyTransactionMutation = extendType({
           },
         });
 
-        let merchant: Merchant | null = null;
+        const merchant = await prisma.merchant.findFirst({
+          where: { id: response.merchantId },
+        });
 
-        if (response.merchantId) {
-          merchant = await prisma.merchant.findFirst({
-            where: { id: response.merchantId },
-          });
-        }
+        if (!merchant)
+          throw { status: 2400, message: 'Merchant tidak ditemukan.' };
 
         return {
           id: response.id,
@@ -637,15 +731,20 @@ export const EMoneyTransactionMutation = extendType({
           isReviewed: response.isReviewed,
           merchant,
           merchantId: response.merchantId,
-          category: response.category as MaybePromise<
-            ({ amount: string; name: string } | null)[] | null | undefined
+          category: response.category as unknown as MaybePromise<
+            MaybePromise<
+              | { amount: string; name: string }
+              | { amount: MaybePromise<string>; name: MaybePromise<string> }
+            >[]
           >,
           transactionType: response.transactionType,
           description: response.description,
           direction: response.direction,
           notes: response.notes,
           location: response.location,
-          tags: response.tags,
+          tags: response.tags as MaybePromise<
+            ({ amount: string; name: string } | null)[] | null | undefined
+          >,
           isHideFromBudget: response.isHideFromBudget,
           internalTransferTransactionId: response.internalTransferTransactionId,
           isHideFromInsight: response.isHideFromInsight,
@@ -671,26 +770,29 @@ export const EMoneyTransactionMutation = extendType({
 
         const { userId, prisma } = context;
 
-        if (!userId) throw new Error('Invalid token');
+        if (!userId) throw { status: 1100, message: 'Token tidak valid.' };
 
         const user = await prisma.user.findFirst({ where: { id: userId } });
 
-        if (!user) throw new Error('Cannot find user');
+        if (!user) throw { status: 1000, message: 'User tidak ditemukan.' };
 
         const transaction = await prisma.eMoneyTransaction.findFirst({
           where: { id: transactionId },
         });
 
         if (!transaction)
-          throw new Error('Cannot find the transaction based on that id');
+          throw { status: 2500, message: 'Transaksi tidak ditemukan.' };
 
-        const { eMoneyAccountId } = transaction;
+        const { eMoneyAccountId: _eMoneyAccountId } = transaction;
+
+        const eMoneyAccountId = decodeEMoneyAccountId(_eMoneyAccountId);
 
         const eMoneyAccount = await prisma.eMoneyAccount.findFirst({
           where: { AND: [{ id: eMoneyAccountId }, { userId: user.id }] },
         });
 
-        if (!eMoneyAccount) throw new Error('Cannot find the e-money account');
+        if (!eMoneyAccount)
+          throw { status: 6100, message: 'Akun e-money tidak ditemukan.' };
 
         /*
         Update balance

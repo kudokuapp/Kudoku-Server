@@ -31,35 +31,38 @@ export const ProfileQuery = extendType({
           const user = await context.prisma.user.findFirst({
             where: { id: userId },
           });
-          if (!user) throw new Error('Cannot find user');
+          if (!user) throw { status: 1000, message: 'User tidak ditemukan.' };
           responseUser = user;
 
           const profile = await context.prisma.profile.findFirst({
             where: { userId },
           });
-          if (!profile) throw new Error('Cannot find profile');
+          if (!profile)
+            throw { status: 2800, message: 'User profile tidak ditemukan.' };
 
           response = profile;
         } else if (username !== null && username !== undefined) {
           const user = await context.prisma.user.findFirst({
             where: { username },
           });
-          if (!user) throw new Error('Cannot find user');
+          if (!user) throw { status: 1000, message: 'User tidak ditemukan.' };
           responseUser = user;
           const profile = await context.prisma.profile.findFirst({
             where: { user: { username } },
           });
-          if (!profile) throw new Error('Cannot find profile');
+          if (!profile)
+            throw { status: 2800, message: 'User profile tidak ditemukan.' };
 
           response = profile;
         } else {
-          throw new Error(
-            'Cannot find have all id, username, and token null or undefined'
-          );
+          throw {
+            status: 2003,
+            message: 'Semua value tidak boleh null atau undefined.',
+          };
         }
 
         if (!responseUser.username)
-          throw new Error('username is null or undefined');
+          throw { status: 1600, message: 'Tidak ada username.' };
 
         return {
           id: response.id,

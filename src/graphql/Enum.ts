@@ -2,7 +2,7 @@ import { enumType } from 'nexus';
 
 export const ExpenseTypeEnum = enumType({
   name: 'ExpenseTypeEnum',
-  members: ['INCOME', 'EXPENSE', 'TRANSFER', 'RECONCILE'],
+  members: ['INCOME', 'EXPENSE'],
 });
 
 export const DirectionTypeEnum = enumType({
@@ -15,7 +15,7 @@ export const TransactionMethodEnum = enumType({
   members: ['VirtualAccount', 'mPayment', 'QRIS', 'Debit'],
 });
 
-export const ExpenseTypeNoTransferEnum = enumType({
-  name: 'ExpenseTypeNoTransferEnum',
-  members: ['INCOME', 'EXPENSE', 'RECONCILE'],
+export const typeOfAccount = enumType({
+  name: 'typeOfAccount',
+  members: ['CASH', 'DEBIT', 'EWALLET', 'EMONEY', 'PAYLATER'],
 });

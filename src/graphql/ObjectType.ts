@@ -1,4 +1,4 @@
-import { inputObjectType, objectType, enumType } from 'nexus';
+import { inputObjectType, objectType } from 'nexus';
 
 export const Location = objectType({
   name: 'Location',
@@ -16,6 +16,11 @@ export const NameAmountJson = objectType({
   },
 });
 
+export interface INameAmountJson {
+  name: string;
+  amount: string;
+}
+
 export const LocationInputType = inputObjectType({
   name: 'LocationInputType',
   definition(t) {
@@ -30,9 +35,4 @@ export const NameAmountJsonInput = inputObjectType({
     t.nonNull.string('name');
     t.nonNull.string('amount');
   },
-});
-
-export const typeOfAccount = enumType({
-  name: 'typeOfAccount',
-  members: ['CASH', 'DEBIT', 'EWALLET', 'EMONEY'],
 });

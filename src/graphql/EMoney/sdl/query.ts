@@ -1,5 +1,6 @@
 import { toTimeStamp } from '../../../utils/date';
 import { arg, extendType, nonNull } from 'nexus';
+import { decodeEMoneyAccountId } from '../../../utils/auth';
 
 export const EMoneyQuery = extendType({
   type: 'Query',
@@ -22,56 +23,65 @@ export const EMoneyQuery = extendType({
         const { userId, prisma } = context;
 
         if (!userId) {
-          throw new Error('Invalid token');
+          throw { status: 1100, message: 'Token tidak valid.' };
         }
 
         const user = await prisma.user.findFirst({ where: { id: userId } });
 
-        if (!user) throw new Error('Cannot find user');
+        if (!user) throw { status: 1000, message: 'User tidak ditemukan.' };
 
         const eMoneyAccount = await prisma.eMoneyAccount.findFirst({
           where: { id: eMoneyAccountId },
         });
 
-        if (!eMoneyAccount) throw new Error('Cannot find e-money account');
+        if (!eMoneyAccount)
+          throw { status: 6100, message: 'Akun e-money tidak ditemukan.' };
 
-        const response = await prisma.eMoneyTransaction.findMany({
-          where: { eMoneyAccountId: eMoneyAccount.id },
+        const allTransactions = await prisma.eMoneyTransaction.findMany({
           orderBy: [{ dateTimestamp: 'desc' }],
         });
 
         let responseArray: any[] = [];
 
-        for (let i = 0; i < response.length; i++) {
-          const element = response[i];
+        for (let i = 0; i < allTransactions.length; i++) {
+          const element = allTransactions[i];
 
-          const merchant = await prisma.merchant.findFirst({
-            where: { id: element.merchantId ?? '63d3be20009767d5eb7e7410' },
-          });
+          const decodedEMoneyAccountId = decodeEMoneyAccountId(
+            element.eMoneyAccountId
+          );
 
-          const obj = {
-            id: element.id,
-            transactionName: element.transactionName,
-            eMoneyAccountId: element.eMoneyAccountId,
-            dateTimestamp: toTimeStamp(element.dateTimestamp),
-            currency: element.currency,
-            amount: element.amount,
-            merchant: merchant ?? null,
-            merchantId: element.merchantId ?? null,
-            category: element.category,
-            direction: element.direction,
-            transactionType: element.transactionType,
-            notes: element.notes,
-            location: element.location,
-            tags: element.tags,
-            isHideFromBudget: element.isHideFromBudget,
-            isHideFromInsight: element.isHideFromInsight,
-            description: element.description,
-            institutionId: element.institutionId,
-            isReviewed: element.isReviewed,
-          };
+          if (decodedEMoneyAccountId === eMoneyAccount.id) {
+            const merchant = await prisma.merchant.findFirst({
+              where: { id: element.merchantId },
+            });
 
-          responseArray.push(obj);
+            if (!merchant)
+              throw { status: 2400, message: 'Merchant tidak ditemukan.' };
+
+            const obj = {
+              id: element.id,
+              transactionName: element.transactionName,
+              eMoneyAccountId: decodeEMoneyAccountId(element.eMoneyAccountId),
+              dateTimestamp: toTimeStamp(element.dateTimestamp),
+              currency: element.currency,
+              amount: element.amount,
+              merchant: merchant,
+              merchantId: element.merchantId,
+              category: element.category,
+              direction: element.direction,
+              transactionType: element.transactionType,
+              notes: element.notes,
+              location: element.location,
+              tags: element.tags,
+              isHideFromBudget: element.isHideFromBudget,
+              isHideFromInsight: element.isHideFromInsight,
+              description: element.description,
+              institutionId: element.institutionId,
+              isReviewed: element.isReviewed,
+            };
+
+            responseArray.push(obj);
+          }
         }
 
         return responseArray;
@@ -85,14 +95,14 @@ export const EMoneyQuery = extendType({
       async resolve(parent, args, context, info) {
         const { userId, prisma } = context;
 
-        if (!userId) throw new Error('Invalid token');
+        if (!userId) throw { status: 1100, message: 'Token tidak valid.' };
 
         const eMoneyAccount = await prisma.eMoneyAccount.findMany({
           where: { userId },
         });
 
         if (!eMoneyAccount)
-          throw new Error('User have not created a e-money account');
+          throw { status: 6100, message: 'Akun e-money tidak ditemukan.' };
 
         let response: any[] = [];
 

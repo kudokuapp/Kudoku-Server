@@ -2,7 +2,6 @@ import { extendType, arg, nonNull, stringArg } from 'nexus';
 import * as jwt from 'jsonwebtoken';
 import * as bcrypt from 'bcryptjs';
 import { APP_SECRET, OTP_SECRET } from '../../../utils/auth';
-import { TwilioError } from 'twilio';
 
 export const AuthQuery = extendType({
   type: 'Query',
@@ -16,14 +15,14 @@ export const AuthQuery = extendType({
 
       async resolve(parent, args, context) {
         const { username } = args;
-        const {prisma} = context
-        
+        const { prisma } = context;
+
         const user = await prisma.user.findFirst({
           where: { username },
         });
 
         if (!user) {
-          throw ({status: 1000, message: 'User tidak ditemukan.'})
+          throw { status: 1000, message: 'User tidak ditemukan.' };
         }
 
         const valid = await bcrypt.compare(
@@ -32,7 +31,7 @@ export const AuthQuery = extendType({
         );
 
         if (!valid) {
-          throw ({status: 1300, message: 'Password salah.'})
+          throw { status: 1300, message: 'Password salah.' };
         }
         const token = jwt.sign({ userId: user.id }, APP_SECRET);
         return { token };
@@ -54,11 +53,11 @@ export const AuthQuery = extendType({
 
         const user = await prisma.user.findFirst({ where: { username } });
 
-        if (!user) throw ({status: 1000, message: 'User tidak ditemukan.'})
+        if (!user) throw { status: 1000, message: 'User tidak ditemukan.' };
 
         const valid = await bcrypt.compare(args.pin, user.pin as string);
 
-        if (!valid) throw ({status: 1400, message: 'PIN salah.'})
+        if (!valid) throw { status: 1400, message: 'PIN salah.' };
 
         const token = jwt.sign({ userId: user.id }, OTP_SECRET, {
           expiresIn: '15m',
@@ -92,49 +91,48 @@ export const AuthQuery = extendType({
         const { twilioClient, prisma } = context;
 
         if (email !== null && email !== undefined) {
-
-            const response = await twilioClient.verify.v2
-              .services(process.env.TWILIO_SERVICE_SID as string)
-              .verificationChecks.create({ to: email, code: otp }).catch((e: TwilioError) => {
-                throw ({status: Number(`7${e.status}`), message: e.message})
-              });
-
-            if (!response.valid) throw ({status: 1500, message: 'OTP salah.'})
-
-            const user = await prisma.user.findFirst({ where: { email } });
-
-            if (!user) throw ({status: 1000, message: 'User tidak ditemukan.'})
-
-            const token = jwt.sign({ userId: user.id }, OTP_SECRET, {
-              expiresIn: '15m',
+          const response = await twilioClient.verify.v2
+            .services(process.env.TWILIO_SERVICE_SID as string)
+            .verificationChecks.create({ to: email, code: otp })
+            .catch((e) => {
+              throw { status: Number(`7${e.status}`), message: e.message };
             });
 
-            return { token };
-            
+          if (!response.valid) throw { status: 1500, message: 'OTP salah.' };
+
+          const user = await prisma.user.findFirst({ where: { email } });
+
+          if (!user) throw { status: 1000, message: 'User tidak ditemukan.' };
+
+          const token = jwt.sign({ userId: user.id }, OTP_SECRET, {
+            expiresIn: '15m',
+          });
+
+          return { token };
         } else if (whatsapp !== null && whatsapp !== undefined) {
-
-            const response = await twilioClient.verify.v2
-              .services(process.env.TWILIO_SERVICE_SID as string)
-              .verificationChecks.create({ to: whatsapp, code: otp }).catch((e: TwilioError) => {
-                throw ({status: Number(`7${e.status}`), message: e.message})
-              });
-              
-              
-            if (!response.valid) throw ({status: 1500, message: 'OTP salah.'})
-
-            const user = await prisma.user.findFirst({ where: { whatsapp } });
-
-            if (!user)
-              throw ({status: 1000, message: 'User tidak ditemukan.'})
-
-            const token = jwt.sign({ userId: user.id }, OTP_SECRET, {
-              expiresIn: '15m',
+          const response = await twilioClient.verify.v2
+            .services(process.env.TWILIO_SERVICE_SID as string)
+            .verificationChecks.create({ to: whatsapp, code: otp })
+            .catch((e: Error) => {
+              throw { status: Number(`7000`), message: e.message };
             });
 
-            return { token };
-            
+          if (!response.valid) throw { status: 1500, message: 'OTP salah.' };
+
+          const user = await prisma.user.findFirst({ where: { whatsapp } });
+
+          if (!user) throw { status: 1000, message: 'User tidak ditemukan.' };
+
+          const token = jwt.sign({ userId: user.id }, OTP_SECRET, {
+            expiresIn: '15m',
+          });
+
+          return { token };
         } else {
-          throw ({status: 2002, message: 'WhatsApp dan Email tidak boleh kosong dua-duanya.'})
+          throw {
+            status: 2002,
+            message: 'WhatsApp dan Email tidak boleh kosong dua-duanya.',
+          };
         }
       },
     });
@@ -162,34 +160,36 @@ export const AuthQuery = extendType({
         const { twilioClient } = context;
 
         if (email !== null && email !== undefined) {
-            const response = await twilioClient.verify
-              .services(process.env.TWILIO_SERVICE_SID as string)
-              .verifications.create({
-                to: email,
-                channel: 'email',
-                locale: 'id',
-              }).catch((e: TwilioError) => {
-                throw ({status: Number(`7${e.status}`), message: e.message})
-              });
-              
-            return { response: JSON.stringify(response)};
-            
-            
+          const response = await twilioClient.verify
+            .services(process.env.TWILIO_SERVICE_SID as string)
+            .verifications.create({
+              to: email,
+              channel: 'email',
+              locale: 'id',
+            })
+            .catch((e: Error) => {
+              throw { status: Number(`7000`), message: e.message };
+            });
+
+          return { response: JSON.stringify(response) };
         } else if (whatsapp !== null && whatsapp !== undefined) {
+          const response = await twilioClient.verify
+            .services(process.env.TWILIO_SERVICE_SID as string)
+            .verifications.create({
+              to: whatsapp,
+              channel: 'sms',
+              locale: 'id',
+            })
+            .catch((e: Error) => {
+              throw { status: Number(`7000`), message: e.message };
+            });
 
-            const response = await twilioClient.verify
-              .services(process.env.TWILIO_SERVICE_SID as string)
-              .verifications.create({
-                to: whatsapp,
-                channel: 'sms',
-                locale: 'id',
-              }).catch((e: TwilioError) => {
-                throw ({status: Number(`7${e.status}`), message: e.message})
-              });
-
-            return { response: JSON.stringify(response) };
+          return { response: JSON.stringify(response) };
         } else {
-          throw ({status: 2002, message: 'WhatsApp dan Email tidak boleh kosong dua-duanya.'})
+          throw {
+            status: 2002,
+            message: 'WhatsApp dan Email tidak boleh kosong dua-duanya.',
+          };
         }
       },
     });

@@ -14,22 +14,21 @@ declare global {
 }
 
 export interface NexusGenInputs {
-  CategoryInputType: { // input type
-    amount: string; // String!
-    name: string; // String!
-  }
   LocationInputType: { // input type
     latitude: string; // String!
     longitude: string; // String!
+  }
+  NameAmountJsonInput: { // input type
+    amount: string; // String!
+    name: string; // String!
   }
 }
 
 export interface NexusGenEnums {
   DirectionTypeEnum: "IN" | "OUT"
-  ExpenseTypeEnum: "EXPENSE" | "INCOME" | "RECONCILE" | "TRANSFER"
-  ExpenseTypeNoTransferEnum: "EXPENSE" | "INCOME" | "RECONCILE"
+  ExpenseTypeEnum: "EXPENSE" | "INCOME"
   TransactionMethodEnum: "Debit" | "QRIS" | "VirtualAccount" | "mPayment"
-  typeOfAccount: "CASH" | "DEBIT" | "EMONEY" | "EWALLET"
+  typeOfAccount: "CASH" | "DEBIT" | "EMONEY" | "EWALLET" | "PAYLATER"
 }
 
 export interface NexusGenScalars {
@@ -57,7 +56,7 @@ export interface NexusGenObjects {
   CashTransaction: { // root type
     amount: string; // String!
     cashAccountId: string; // String!
-    category?: Array<NexusGenRootTypes['Category'] | null> | null; // [Category]
+    category: NexusGenRootTypes['NameAmountJson'][]; // [NameAmountJson!]!
     currency: string; // String!
     dateTimestamp: string; // String!
     direction: string; // String!
@@ -66,16 +65,12 @@ export interface NexusGenObjects {
     isHideFromBudget: boolean; // Boolean!
     isHideFromInsight: boolean; // Boolean!
     location?: NexusGenRootTypes['Location'] | null; // Location
-    merchant?: NexusGenRootTypes['Merchant'] | null; // Merchant
-    merchantId?: string | null; // String
+    merchant: NexusGenRootTypes['Merchant']; // Merchant!
+    merchantId: string; // String!
     notes?: string | null; // String
-    tags?: Array<string | null> | null; // [String]
+    tags?: Array<NexusGenRootTypes['NameAmountJson'] | null> | null; // [NameAmountJson]
     transactionName: string; // String!
     transactionType: string; // String!
-  }
-  Category: { // root type
-    amount: string; // String!
-    name: string; // String!
   }
   DebitAccount: { // root type
     accountNumber: string; // String!
@@ -89,7 +84,7 @@ export interface NexusGenObjects {
   }
   DebitTransaction: { // root type
     amount: string; // String!
-    category?: Array<NexusGenRootTypes['Category'] | null> | null; // [Category]
+    category: NexusGenRootTypes['NameAmountJson'][]; // [NameAmountJson!]!
     currency: string; // String!
     dateTimestamp: string; // String!
     debitAccountId: string; // String!
@@ -103,12 +98,12 @@ export interface NexusGenObjects {
     isReviewed: boolean; // Boolean!
     isSubscription: boolean; // Boolean!
     location?: NexusGenRootTypes['Location'] | null; // Location
-    merchant?: NexusGenRootTypes['Merchant'] | null; // Merchant
-    merchantId?: string | null; // String
+    merchant: NexusGenRootTypes['Merchant']; // Merchant!
+    merchantId: string; // String!
     notes?: string | null; // String
     onlineTransaction: boolean; // Boolean!
     referenceId: string; // String!
-    tags?: Array<string | null> | null; // [String]
+    tags?: Array<NexusGenRootTypes['NameAmountJson'] | null> | null; // [NameAmountJson]
     transactionMethod: string; // String!
     transactionName: string; // String!
     transactionType: string; // String!
@@ -125,7 +120,7 @@ export interface NexusGenObjects {
   }
   EMoneyTransaction: { // root type
     amount: string; // String!
-    category?: Array<NexusGenRootTypes['Category'] | null> | null; // [Category]
+    category: NexusGenRootTypes['NameAmountJson'][]; // [NameAmountJson!]!
     currency: string; // String!
     dateTimestamp: string; // String!
     description?: string | null; // String
@@ -138,10 +133,10 @@ export interface NexusGenObjects {
     isHideFromInsight: boolean; // Boolean!
     isReviewed: boolean; // Boolean!
     location?: NexusGenRootTypes['Location'] | null; // Location
-    merchant?: NexusGenRootTypes['Merchant'] | null; // Merchant
-    merchantId?: string | null; // String
+    merchant: NexusGenRootTypes['Merchant']; // Merchant!
+    merchantId: string; // String!
     notes?: string | null; // String
-    tags?: Array<string | null> | null; // [String]
+    tags?: Array<NexusGenRootTypes['NameAmountJson'] | null> | null; // [NameAmountJson]
     transactionName: string; // String!
     transactionType: string; // String!
   }
@@ -157,7 +152,7 @@ export interface NexusGenObjects {
   }
   EWalletTransaction: { // root type
     amount: string; // String!
-    category?: Array<NexusGenRootTypes['Category'] | null> | null; // [Category]
+    category: NexusGenRootTypes['NameAmountJson'][]; // [NameAmountJson!]!
     currency: string; // String!
     dateTimestamp: string; // String!
     description: string; // String!
@@ -171,13 +166,12 @@ export interface NexusGenObjects {
     isReviewed: boolean; // Boolean!
     isSubscription: boolean; // Boolean!
     location?: NexusGenRootTypes['Location'] | null; // Location
-    merchant?: NexusGenRootTypes['Merchant'] | null; // Merchant
-    merchantId?: string | null; // String
+    merchant: NexusGenRootTypes['Merchant']; // Merchant!
+    merchantId: string; // String!
     notes?: string | null; // String
     onlineTransaction: boolean; // Boolean!
     referenceId: string; // String!
-    tags?: Array<string | null> | null; // [String]
-    transactionMethod: string; // String!
+    tags?: Array<NexusGenRootTypes['NameAmountJson'] | null> | null; // [NameAmountJson]
     transactionName: string; // String!
     transactionType: string; // String!
   }
@@ -192,6 +186,10 @@ export interface NexusGenObjects {
     url: string; // String!
   }
   Mutation: {};
+  NameAmountJson: { // root type
+    amount: string; // String!
+    name: string; // String!
+  }
   OTPData: { // root type
     clientId: number; // Int!
     otpToken: string; // String!
@@ -199,6 +197,41 @@ export interface NexusGenObjects {
     sessionId: string; // String!
     uniqueId: string; // String!
     username: string; // String!
+  }
+  PayLaterAccount: { // root type
+    accountNumber: string; // String!
+    balance: string; // String!
+    createdAt: string; // String!
+    currency: string; // String!
+    id: string; // String!
+    institutionId: string; // String!
+    lastUpdate: string; // String!
+    userId: string; // String!
+  }
+  PayLaterTransaction: { // root type
+    amount: string; // String!
+    category: NexusGenRootTypes['NameAmountJson'][]; // [NameAmountJson!]!
+    currency: string; // String!
+    dateTimestamp: string; // String!
+    description: string; // String!
+    direction: string; // String!
+    id: string; // String!
+    institutionId: string; // String!
+    internalTransferTransactionId?: string | null; // String
+    isHideFromBudget: boolean; // Boolean!
+    isHideFromInsight: boolean; // Boolean!
+    isReviewed: boolean; // Boolean!
+    isSubscription: boolean; // Boolean!
+    location?: NexusGenRootTypes['Location'] | null; // Location
+    merchant: NexusGenRootTypes['Merchant']; // Merchant!
+    merchantId: string; // String!
+    notes?: string | null; // String
+    onlineTransaction: boolean; // Boolean!
+    payLaterAccountId: string; // String!
+    referenceId: string; // String!
+    tags?: Array<NexusGenRootTypes['NameAmountJson'] | null> | null; // [NameAmountJson]
+    transactionName: string; // String!
+    transactionType: string; // String!
   }
   Profile: { // root type
     bio?: string | null; // String
@@ -257,7 +290,7 @@ export interface NexusGenFieldTypes {
   CashTransaction: { // field return type
     amount: string; // String!
     cashAccountId: string; // String!
-    category: Array<NexusGenRootTypes['Category'] | null> | null; // [Category]
+    category: NexusGenRootTypes['NameAmountJson'][]; // [NameAmountJson!]!
     currency: string; // String!
     dateTimestamp: string; // String!
     direction: string; // String!
@@ -266,16 +299,12 @@ export interface NexusGenFieldTypes {
     isHideFromBudget: boolean; // Boolean!
     isHideFromInsight: boolean; // Boolean!
     location: NexusGenRootTypes['Location'] | null; // Location
-    merchant: NexusGenRootTypes['Merchant'] | null; // Merchant
-    merchantId: string | null; // String
+    merchant: NexusGenRootTypes['Merchant']; // Merchant!
+    merchantId: string; // String!
     notes: string | null; // String
-    tags: Array<string | null> | null; // [String]
+    tags: Array<NexusGenRootTypes['NameAmountJson'] | null> | null; // [NameAmountJson]
     transactionName: string; // String!
     transactionType: string; // String!
-  }
-  Category: { // field return type
-    amount: string; // String!
-    name: string; // String!
   }
   DebitAccount: { // field return type
     accountNumber: string; // String!
@@ -289,7 +318,7 @@ export interface NexusGenFieldTypes {
   }
   DebitTransaction: { // field return type
     amount: string; // String!
-    category: Array<NexusGenRootTypes['Category'] | null> | null; // [Category]
+    category: NexusGenRootTypes['NameAmountJson'][]; // [NameAmountJson!]!
     currency: string; // String!
     dateTimestamp: string; // String!
     debitAccountId: string; // String!
@@ -303,12 +332,12 @@ export interface NexusGenFieldTypes {
     isReviewed: boolean; // Boolean!
     isSubscription: boolean; // Boolean!
     location: NexusGenRootTypes['Location'] | null; // Location
-    merchant: NexusGenRootTypes['Merchant'] | null; // Merchant
-    merchantId: string | null; // String
+    merchant: NexusGenRootTypes['Merchant']; // Merchant!
+    merchantId: string; // String!
     notes: string | null; // String
     onlineTransaction: boolean; // Boolean!
     referenceId: string; // String!
-    tags: Array<string | null> | null; // [String]
+    tags: Array<NexusGenRootTypes['NameAmountJson'] | null> | null; // [NameAmountJson]
     transactionMethod: string; // String!
     transactionName: string; // String!
     transactionType: string; // String!
@@ -325,7 +354,7 @@ export interface NexusGenFieldTypes {
   }
   EMoneyTransaction: { // field return type
     amount: string; // String!
-    category: Array<NexusGenRootTypes['Category'] | null> | null; // [Category]
+    category: NexusGenRootTypes['NameAmountJson'][]; // [NameAmountJson!]!
     currency: string; // String!
     dateTimestamp: string; // String!
     description: string | null; // String
@@ -338,10 +367,10 @@ export interface NexusGenFieldTypes {
     isHideFromInsight: boolean; // Boolean!
     isReviewed: boolean; // Boolean!
     location: NexusGenRootTypes['Location'] | null; // Location
-    merchant: NexusGenRootTypes['Merchant'] | null; // Merchant
-    merchantId: string | null; // String
+    merchant: NexusGenRootTypes['Merchant']; // Merchant!
+    merchantId: string; // String!
     notes: string | null; // String
-    tags: Array<string | null> | null; // [String]
+    tags: Array<NexusGenRootTypes['NameAmountJson'] | null> | null; // [NameAmountJson]
     transactionName: string; // String!
     transactionType: string; // String!
   }
@@ -357,7 +386,7 @@ export interface NexusGenFieldTypes {
   }
   EWalletTransaction: { // field return type
     amount: string; // String!
-    category: Array<NexusGenRootTypes['Category'] | null> | null; // [Category]
+    category: NexusGenRootTypes['NameAmountJson'][]; // [NameAmountJson!]!
     currency: string; // String!
     dateTimestamp: string; // String!
     description: string; // String!
@@ -371,13 +400,12 @@ export interface NexusGenFieldTypes {
     isReviewed: boolean; // Boolean!
     isSubscription: boolean; // Boolean!
     location: NexusGenRootTypes['Location'] | null; // Location
-    merchant: NexusGenRootTypes['Merchant'] | null; // Merchant
-    merchantId: string | null; // String
+    merchant: NexusGenRootTypes['Merchant']; // Merchant!
+    merchantId: string; // String!
     notes: string | null; // String
     onlineTransaction: boolean; // Boolean!
     referenceId: string; // String!
-    tags: Array<string | null> | null; // [String]
-    transactionMethod: string; // String!
+    tags: Array<NexusGenRootTypes['NameAmountJson'] | null> | null; // [NameAmountJson]
     transactionName: string; // String!
     transactionType: string; // String!
   }
@@ -404,11 +432,15 @@ export interface NexusGenFieldTypes {
     deleteCashAccount: NexusGenRootTypes['ResponseMessage'] | null; // ResponseMessage
     deleteCashTransaction: NexusGenRootTypes['ResponseMessage'] | null; // ResponseMessage
     deleteDebitAccount: NexusGenRootTypes['ResponseMessage'] | null; // ResponseMessage
+    deleteEMoneyAccount: NexusGenRootTypes['ResponseMessage'] | null; // ResponseMessage
     deleteEMoneyTransaction: NexusGenRootTypes['ResponseMessage']; // ResponseMessage!
-    editBcaTransaction: NexusGenRootTypes['DebitTransaction']; // DebitTransaction!
+    deleteGopayAccount: NexusGenRootTypes['ResponseMessage'] | null; // ResponseMessage
     editCashAccount: NexusGenRootTypes['CashAccount']; // CashAccount!
     editCashTransaction: NexusGenRootTypes['CashTransaction']; // CashTransaction!
+    editDebitTransaction: NexusGenRootTypes['DebitTransaction']; // DebitTransaction!
     editEMoneyTransaction: NexusGenRootTypes['EMoneyTransaction']; // EMoneyTransaction!
+    editEWalletTransaction: NexusGenRootTypes['EWalletTransaction']; // EWalletTransaction!
+    editPayLaterTransaction: NexusGenRootTypes['PayLaterTransaction']; // PayLaterTransaction!
     reconcileCashBalance: NexusGenRootTypes['CashAccount']; // CashAccount!
     reconcileEMoneyAccount: NexusGenRootTypes['EMoneyAccount']; // EMoneyAccount!
     refreshBcaTransactionViaBrick: Array<NexusGenRootTypes['DebitTransaction'] | null> | null; // [DebitTransaction]
@@ -418,6 +450,10 @@ export interface NexusGenFieldTypes {
     updateProfile: NexusGenRootTypes['Profile']; // Profile!
     updateUserFirstAndLastName: NexusGenRootTypes['User']; // User!
   }
+  NameAmountJson: { // field return type
+    amount: string; // String!
+    name: string; // String!
+  }
   OTPData: { // field return type
     clientId: number; // Int!
     otpToken: string; // String!
@@ -425,6 +461,41 @@ export interface NexusGenFieldTypes {
     sessionId: string; // String!
     uniqueId: string; // String!
     username: string; // String!
+  }
+  PayLaterAccount: { // field return type
+    accountNumber: string; // String!
+    balance: string; // String!
+    createdAt: string; // String!
+    currency: string; // String!
+    id: string; // String!
+    institutionId: string; // String!
+    lastUpdate: string; // String!
+    userId: string; // String!
+  }
+  PayLaterTransaction: { // field return type
+    amount: string; // String!
+    category: NexusGenRootTypes['NameAmountJson'][]; // [NameAmountJson!]!
+    currency: string; // String!
+    dateTimestamp: string; // String!
+    description: string; // String!
+    direction: string; // String!
+    id: string; // String!
+    institutionId: string; // String!
+    internalTransferTransactionId: string | null; // String
+    isHideFromBudget: boolean; // Boolean!
+    isHideFromInsight: boolean; // Boolean!
+    isReviewed: boolean; // Boolean!
+    isSubscription: boolean; // Boolean!
+    location: NexusGenRootTypes['Location'] | null; // Location
+    merchant: NexusGenRootTypes['Merchant']; // Merchant!
+    merchantId: string; // String!
+    notes: string | null; // String
+    onlineTransaction: boolean; // Boolean!
+    payLaterAccountId: string; // String!
+    referenceId: string; // String!
+    tags: Array<NexusGenRootTypes['NameAmountJson'] | null> | null; // [NameAmountJson]
+    transactionName: string; // String!
+    transactionType: string; // String!
   }
   Profile: { // field return type
     bio: string | null; // String
@@ -444,6 +515,8 @@ export interface NexusGenFieldTypes {
     getAllEWalletAccount: Array<NexusGenRootTypes['EWalletAccount'] | null> | null; // [EWalletAccount]
     getAllEWalletTransaction: Array<NexusGenRootTypes['EWalletTransaction'] | null> | null; // [EWalletTransaction]
     getAllMerchant: NexusGenRootTypes['Merchant'][]; // [Merchant!]!
+    getAllPayLaterAccount: Array<NexusGenRootTypes['PayLaterAccount'] | null> | null; // [PayLaterAccount]
+    getAllPayLaterTransaction: Array<NexusGenRootTypes['PayLaterTransaction'] | null> | null; // [PayLaterTransaction]
     getAllUser: Array<NexusGenRootTypes['User'] | null>; // [User]!
     getOtp: NexusGenRootTypes['ResponseMessage'] | null; // ResponseMessage
     getProfile: NexusGenRootTypes['Profile'] | null; // Profile
@@ -492,7 +565,7 @@ export interface NexusGenFieldTypeNames {
   CashTransaction: { // field return type name
     amount: 'String'
     cashAccountId: 'String'
-    category: 'Category'
+    category: 'NameAmountJson'
     currency: 'String'
     dateTimestamp: 'String'
     direction: 'String'
@@ -504,13 +577,9 @@ export interface NexusGenFieldTypeNames {
     merchant: 'Merchant'
     merchantId: 'String'
     notes: 'String'
-    tags: 'String'
+    tags: 'NameAmountJson'
     transactionName: 'String'
     transactionType: 'String'
-  }
-  Category: { // field return type name
-    amount: 'String'
-    name: 'String'
   }
   DebitAccount: { // field return type name
     accountNumber: 'String'
@@ -524,7 +593,7 @@ export interface NexusGenFieldTypeNames {
   }
   DebitTransaction: { // field return type name
     amount: 'String'
-    category: 'Category'
+    category: 'NameAmountJson'
     currency: 'String'
     dateTimestamp: 'String'
     debitAccountId: 'String'
@@ -543,7 +612,7 @@ export interface NexusGenFieldTypeNames {
     notes: 'String'
     onlineTransaction: 'Boolean'
     referenceId: 'String'
-    tags: 'String'
+    tags: 'NameAmountJson'
     transactionMethod: 'String'
     transactionName: 'String'
     transactionType: 'String'
@@ -560,7 +629,7 @@ export interface NexusGenFieldTypeNames {
   }
   EMoneyTransaction: { // field return type name
     amount: 'String'
-    category: 'Category'
+    category: 'NameAmountJson'
     currency: 'String'
     dateTimestamp: 'String'
     description: 'String'
@@ -576,7 +645,7 @@ export interface NexusGenFieldTypeNames {
     merchant: 'Merchant'
     merchantId: 'String'
     notes: 'String'
-    tags: 'String'
+    tags: 'NameAmountJson'
     transactionName: 'String'
     transactionType: 'String'
   }
@@ -592,7 +661,7 @@ export interface NexusGenFieldTypeNames {
   }
   EWalletTransaction: { // field return type name
     amount: 'String'
-    category: 'Category'
+    category: 'NameAmountJson'
     currency: 'String'
     dateTimestamp: 'String'
     description: 'String'
@@ -611,8 +680,7 @@ export interface NexusGenFieldTypeNames {
     notes: 'String'
     onlineTransaction: 'Boolean'
     referenceId: 'String'
-    tags: 'String'
-    transactionMethod: 'String'
+    tags: 'NameAmountJson'
     transactionName: 'String'
     transactionType: 'String'
   }
@@ -639,11 +707,15 @@ export interface NexusGenFieldTypeNames {
     deleteCashAccount: 'ResponseMessage'
     deleteCashTransaction: 'ResponseMessage'
     deleteDebitAccount: 'ResponseMessage'
+    deleteEMoneyAccount: 'ResponseMessage'
     deleteEMoneyTransaction: 'ResponseMessage'
-    editBcaTransaction: 'DebitTransaction'
+    deleteGopayAccount: 'ResponseMessage'
     editCashAccount: 'CashAccount'
     editCashTransaction: 'CashTransaction'
+    editDebitTransaction: 'DebitTransaction'
     editEMoneyTransaction: 'EMoneyTransaction'
+    editEWalletTransaction: 'EWalletTransaction'
+    editPayLaterTransaction: 'PayLaterTransaction'
     reconcileCashBalance: 'CashAccount'
     reconcileEMoneyAccount: 'EMoneyAccount'
     refreshBcaTransactionViaBrick: 'DebitTransaction'
@@ -653,6 +725,10 @@ export interface NexusGenFieldTypeNames {
     updateProfile: 'Profile'
     updateUserFirstAndLastName: 'User'
   }
+  NameAmountJson: { // field return type name
+    amount: 'String'
+    name: 'String'
+  }
   OTPData: { // field return type name
     clientId: 'Int'
     otpToken: 'String'
@@ -660,6 +736,41 @@ export interface NexusGenFieldTypeNames {
     sessionId: 'String'
     uniqueId: 'String'
     username: 'String'
+  }
+  PayLaterAccount: { // field return type name
+    accountNumber: 'String'
+    balance: 'String'
+    createdAt: 'String'
+    currency: 'String'
+    id: 'String'
+    institutionId: 'String'
+    lastUpdate: 'String'
+    userId: 'String'
+  }
+  PayLaterTransaction: { // field return type name
+    amount: 'String'
+    category: 'NameAmountJson'
+    currency: 'String'
+    dateTimestamp: 'String'
+    description: 'String'
+    direction: 'String'
+    id: 'String'
+    institutionId: 'String'
+    internalTransferTransactionId: 'String'
+    isHideFromBudget: 'Boolean'
+    isHideFromInsight: 'Boolean'
+    isReviewed: 'Boolean'
+    isSubscription: 'Boolean'
+    location: 'Location'
+    merchant: 'Merchant'
+    merchantId: 'String'
+    notes: 'String'
+    onlineTransaction: 'Boolean'
+    payLaterAccountId: 'String'
+    referenceId: 'String'
+    tags: 'NameAmountJson'
+    transactionName: 'String'
+    transactionType: 'String'
   }
   Profile: { // field return type name
     bio: 'String'
@@ -679,6 +790,8 @@ export interface NexusGenFieldTypeNames {
     getAllEWalletAccount: 'EWalletAccount'
     getAllEWalletTransaction: 'EWalletTransaction'
     getAllMerchant: 'Merchant'
+    getAllPayLaterAccount: 'PayLaterAccount'
+    getAllPayLaterTransaction: 'PayLaterTransaction'
     getAllUser: 'User'
     getOtp: 'ResponseMessage'
     getProfile: 'Profile'
@@ -721,34 +834,32 @@ export interface NexusGenArgTypes {
     addCashTransaction: { // args
       amount: string; // String!
       cashAccountId: string; // String!
-      category: Array<NexusGenInputs['CategoryInputType'] | null>; // [CategoryInputType]!
+      category: Array<NexusGenInputs['NameAmountJsonInput'] | null>; // [NameAmountJsonInput]!
       currency: string; // String!
       direction: NexusGenEnums['DirectionTypeEnum']; // DirectionTypeEnum!
-      internalTransferTransactionId?: string | null; // String
-      isHideFromBudget: boolean; // Boolean!
-      isHideFromInsight: boolean; // Boolean!
-      location?: NexusGenInputs['LocationInputType'] | null; // LocationInputType
-      merchantId?: string | null; // String
-      notes?: string | null; // String
-      tags: string[]; // [String!]!
-      transactionName: string; // String!
-      transactionType: NexusGenEnums['ExpenseTypeEnum']; // ExpenseTypeEnum!
-    }
-    addEMoneyTransaction: { // args
-      amount: string; // String!
-      category: Array<NexusGenInputs['CategoryInputType'] | null>; // [CategoryInputType]!
-      currency: string; // String!
-      description?: string | null; // String
-      direction: NexusGenEnums['DirectionTypeEnum']; // DirectionTypeEnum!
-      eMoneyAccountId: string; // String!
-      institutionId: string; // String!
-      internalTransferTransactionId?: string | null; // String
       isHideFromBudget: boolean; // Boolean!
       isHideFromInsight: boolean; // Boolean!
       location?: NexusGenInputs['LocationInputType'] | null; // LocationInputType
       merchantId: string; // String!
       notes?: string | null; // String
-      tags: string[]; // [String!]!
+      tags?: Array<NexusGenInputs['NameAmountJsonInput'] | null> | null; // [NameAmountJsonInput]
+      transactionName: string; // String!
+      transactionType: NexusGenEnums['ExpenseTypeEnum']; // ExpenseTypeEnum!
+    }
+    addEMoneyTransaction: { // args
+      amount: string; // String!
+      category: Array<NexusGenInputs['NameAmountJsonInput'] | null>; // [NameAmountJsonInput]!
+      currency: string; // String!
+      description?: string | null; // String
+      direction: NexusGenEnums['DirectionTypeEnum']; // DirectionTypeEnum!
+      eMoneyAccountId: string; // String!
+      institutionId: string; // String!
+      isHideFromBudget: boolean; // Boolean!
+      isHideFromInsight: boolean; // Boolean!
+      location?: NexusGenInputs['LocationInputType'] | null; // LocationInputType
+      merchantId: string; // String!
+      notes?: string | null; // String
+      tags?: Array<NexusGenInputs['NameAmountJsonInput'] | null> | null; // [NameAmountJsonInput]
       transactionName: string; // String!
       transactionType: string; // String!
     }
@@ -794,24 +905,14 @@ export interface NexusGenArgTypes {
     deleteDebitAccount: { // args
       debitAccountId: string; // String!
     }
+    deleteEMoneyAccount: { // args
+      eMoneyAccountId: string; // String!
+    }
     deleteEMoneyTransaction: { // args
       transactionId: string; // String!
     }
-    editBcaTransaction: { // args
-      category?: Array<NexusGenInputs['CategoryInputType'] | null> | null; // [CategoryInputType]
-      internalTransferTransactionId?: string | null; // String
-      isHideFromBudget: boolean; // Boolean!
-      isHideFromInsight: boolean; // Boolean!
-      isSubscription?: boolean | null; // Boolean
-      location?: NexusGenInputs['LocationInputType'] | null; // LocationInputType
-      merchantId?: string | null; // String
-      notes?: string | null; // String
-      onlineTransaction?: boolean | null; // Boolean
-      tags: string[]; // [String!]!
-      transactionId: string; // String!
-      transactionMethod?: NexusGenEnums['TransactionMethodEnum'] | null; // TransactionMethodEnum
-      transactionName?: string | null; // String
-      transactionType?: NexusGenEnums['ExpenseTypeEnum'] | null; // ExpenseTypeEnum
+    deleteGopayAccount: { // args
+      eWalletAccountId: string; // String!
     }
     editCashAccount: { // args
       accountName: string | null; // String
@@ -820,33 +921,75 @@ export interface NexusGenArgTypes {
     }
     editCashTransaction: { // args
       amount?: string | null; // String
-      category?: Array<NexusGenInputs['CategoryInputType'] | null> | null; // [CategoryInputType]
+      category?: Array<NexusGenInputs['NameAmountJsonInput'] | null> | null; // [NameAmountJsonInput]
       currency: string | null; // String
       direction?: NexusGenEnums['DirectionTypeEnum'] | null; // DirectionTypeEnum
-      internalTransferTransactionId?: string | null; // String
       isHideFromBudget?: boolean | null; // Boolean
       isHideFromInsight?: boolean | null; // Boolean
       location?: NexusGenInputs['LocationInputType'] | null; // LocationInputType
       merchantId?: string | null; // String
       notes?: string | null; // String
-      tags?: string[] | null; // [String!]
+      tags?: Array<NexusGenInputs['NameAmountJsonInput'] | null> | null; // [NameAmountJsonInput]
       transactionId: string; // String!
+      transactionName?: string | null; // String
+      transactionType?: NexusGenEnums['ExpenseTypeEnum'] | null; // ExpenseTypeEnum
+    }
+    editDebitTransaction: { // args
+      category?: Array<NexusGenInputs['NameAmountJsonInput'] | null> | null; // [NameAmountJsonInput]
+      isHideFromBudget: boolean; // Boolean!
+      isHideFromInsight: boolean; // Boolean!
+      isSubscription?: boolean | null; // Boolean
+      location?: NexusGenInputs['LocationInputType'] | null; // LocationInputType
+      merchantId?: string | null; // String
+      notes?: string | null; // String
+      onlineTransaction?: boolean | null; // Boolean
+      tags?: Array<NexusGenInputs['NameAmountJsonInput'] | null> | null; // [NameAmountJsonInput]
+      transactionId: string; // String!
+      transactionMethod?: NexusGenEnums['TransactionMethodEnum'] | null; // TransactionMethodEnum
       transactionName?: string | null; // String
       transactionType?: NexusGenEnums['ExpenseTypeEnum'] | null; // ExpenseTypeEnum
     }
     editEMoneyTransaction: { // args
       amount?: string | null; // String
-      category?: Array<NexusGenInputs['CategoryInputType'] | null> | null; // [CategoryInputType]
+      category?: Array<NexusGenInputs['NameAmountJsonInput'] | null> | null; // [NameAmountJsonInput]
       direction?: NexusGenEnums['DirectionTypeEnum'] | null; // DirectionTypeEnum
       isHideFromBudget?: boolean | null; // Boolean
       isHideFromInsight?: boolean | null; // Boolean
       location?: NexusGenInputs['LocationInputType'] | null; // LocationInputType
       merchantId?: string | null; // String
       notes?: string | null; // String
-      tags?: string[] | null; // [String!]
+      tags?: Array<NexusGenInputs['NameAmountJsonInput'] | null> | null; // [NameAmountJsonInput]
       transactionId: string; // String!
       transactionName?: string | null; // String
-      transactionType?: NexusGenEnums['ExpenseTypeNoTransferEnum'] | null; // ExpenseTypeNoTransferEnum
+      transactionType?: NexusGenEnums['ExpenseTypeEnum'] | null; // ExpenseTypeEnum
+    }
+    editEWalletTransaction: { // args
+      category?: Array<NexusGenInputs['NameAmountJsonInput'] | null> | null; // [NameAmountJsonInput]
+      isHideFromBudget: boolean; // Boolean!
+      isHideFromInsight: boolean; // Boolean!
+      isSubscription?: boolean | null; // Boolean
+      location?: NexusGenInputs['LocationInputType'] | null; // LocationInputType
+      merchantId?: string | null; // String
+      notes?: string | null; // String
+      onlineTransaction?: boolean | null; // Boolean
+      tags?: Array<NexusGenInputs['NameAmountJsonInput'] | null> | null; // [NameAmountJsonInput]
+      transactionId: string; // String!
+      transactionName?: string | null; // String
+      transactionType?: NexusGenEnums['ExpenseTypeEnum'] | null; // ExpenseTypeEnum
+    }
+    editPayLaterTransaction: { // args
+      category?: Array<NexusGenInputs['NameAmountJsonInput'] | null> | null; // [NameAmountJsonInput]
+      isHideFromBudget: boolean; // Boolean!
+      isHideFromInsight: boolean; // Boolean!
+      isSubscription?: boolean | null; // Boolean
+      location?: NexusGenInputs['LocationInputType'] | null; // LocationInputType
+      merchantId?: string | null; // String
+      notes?: string | null; // String
+      onlineTransaction?: boolean | null; // Boolean
+      tags?: Array<NexusGenInputs['NameAmountJsonInput'] | null> | null; // [NameAmountJsonInput]
+      transactionId: string; // String!
+      transactionName?: string | null; // String
+      transactionType?: NexusGenEnums['ExpenseTypeEnum'] | null; // ExpenseTypeEnum
     }
     reconcileCashBalance: { // args
       cashAccountId: string; // String!
@@ -861,8 +1004,8 @@ export interface NexusGenArgTypes {
       debitAccountId: string; // String!
     }
     refreshGopayTransactionViaBrick: { // args
-      eWalletAccountId: string; // String!
-      payLaterAccountId: string; // String!
+      eWalletAccountId?: string | null; // String
+      payLaterAccountId?: string | null; // String
     }
     signup: { // args
       id: string; // ID!
@@ -898,6 +1041,9 @@ export interface NexusGenArgTypes {
     }
     getAllEWalletTransaction: { // args
       eWalletAccountId: string; // String!
+    }
+    getAllPayLaterTransaction: { // args
+      payLaterAccountId: string; // String!
     }
     getOtp: { // args
       email?: string | null; // String
