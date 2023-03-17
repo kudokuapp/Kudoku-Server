@@ -458,10 +458,11 @@ export const CashTransactionMutation = extendType({
             tagsSum += Number(element.amount);
           }
 
-          if (tagsSum !== Number(amount))
+          if (tagsSum > Number(amount))
             throw {
               status: 2201,
-              message: 'Total amount tags harus sama dengan amount transaksi.',
+              message:
+                'Total amount tags tidak boleh lebih besar dengan amount transaksi.',
             };
         }
 
@@ -795,10 +796,11 @@ export const CashTransactionMutation = extendType({
             tagsSum += Number(element.amount);
           }
 
-          if (tagsSum !== Number(amount))
+          if (tagsSum > Number(amount))
             throw {
               status: 2201,
-              message: 'Total amount tags harus sama dengan amount transaksi.',
+              message:
+                'Total amount tags tidak boleh lebih besar dengan amount transaksi.',
             };
         }
 

@@ -378,6 +378,62 @@ export const EMoneyTransactionMutation = extendType({
 
         if (!user) throw { status: 1000, message: 'User tidak ditemukan.' };
 
+        if (category) {
+          let categorySum: number = 0;
+
+          for (let i = 0; i < category.length; i++) {
+            const element = category[i];
+
+            if (
+              !element ||
+              !element.hasOwnProperty('name') ||
+              !element.hasOwnProperty('amount')
+            )
+              throw {
+                status: 2300,
+                message:
+                  'Category tidak boleh kosong. Dan harus dalam format {name, amount} untuk tiap category.',
+              };
+
+            categorySum += Number(element.amount);
+          }
+
+          if (categorySum !== Number(amount))
+            throw {
+              status: 2200,
+              message:
+                'Total amount kategori harus sama dengan amount transaksi.',
+            };
+        }
+
+        if (tags) {
+          let tagsSum: number = 0;
+
+          for (let i = 0; i < tags.length; i++) {
+            const element = tags[i];
+
+            if (
+              !element ||
+              !element.hasOwnProperty('name') ||
+              !element.hasOwnProperty('amount')
+            )
+              throw {
+                status: 2301,
+                message:
+                  'Tags harus dalam format {name, amount} untuk tiap tags.',
+              };
+
+            tagsSum += Number(element.amount);
+          }
+
+          if (tagsSum > Number(amount))
+            throw {
+              status: 2201,
+              message:
+                'Total amount tags tidak boleh lebih besar dengan amount transaksi.',
+            };
+        }
+
         const eMoneyAccount = await prisma.eMoneyAccount.findFirst({
           where: { AND: [{ id: eMoneyAccountId }, { userId: user.id }] },
         });
