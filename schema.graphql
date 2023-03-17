@@ -880,7 +880,7 @@ type Mutation {
 
     """The associated id of that paylater account id"""
     payLaterAccountId: String
-  ): ResponseMessage!
+  ): ResponseMessage
 
   """
   This is the API where user can sign up after they got invited. This means that the user's data is already in our MongoDB database.

@@ -419,7 +419,7 @@ export const EWalletAccountMutation = extendType({
 export const EWalletTransactionMutation = extendType({
   type: 'Mutation',
   definition(t) {
-    t.nonNull.field('refreshGopayTransactionViaBrick', {
+    t.field('refreshGopayTransactionViaBrick', {
       type: 'ResponseMessage',
       description: 'Update transaction and balance for gopay account',
       args: {
@@ -530,8 +530,8 @@ export const EWalletTransactionMutation = extendType({
             orderBy: [{ dateTimestamp: 'desc' }, { referenceId: 'desc' }],
           });
 
-        let eWalletTransaction: EWalletTransaction[] = [];
-        let payLaterTransaction: PayLaterTransaction[] = [];
+        let eWalletTransactionNew: EWalletTransaction[] = [];
+        let payLaterTransactionNew: PayLaterTransaction[] = [];
 
         for (let i = 0; i < eWalletTransactionAll.length; i++) {
           const element = eWalletTransactionAll[i];
@@ -541,7 +541,7 @@ export const EWalletTransactionMutation = extendType({
           );
 
           if (decodedEWalletAccountId === eWalletAccount.id) {
-            eWalletTransaction.push(element);
+            eWalletTransactionNew.push(element);
           }
         }
 
@@ -553,45 +553,78 @@ export const EWalletTransactionMutation = extendType({
           );
 
           if (decodedEWalletAccountId === eWalletAccount.id) {
-            payLaterTransaction.push(element);
+            payLaterTransactionNew.push(element);
           }
         }
 
-        const {
-          dateTimestamp: dateTimestampEWallet,
-          referenceId: referenceIdEWallet,
-        } = eWalletTransaction[0];
+        /**
+         * We first check the existing transaction
+         * We need to check whether or not this exist
+         * This is because we need dateTimestamp and referenceId
+         * to refresh the Gopay transaction
+         */
 
-        const {
-          dateTimestamp: dateTimestampPayLater,
-          referenceId: referenceIdPayLater,
-        } = payLaterTransaction[0];
+        const eWalletTransaction =
+          eWalletTransactionNew.length > 0 ? eWalletTransactionNew[0] : null;
+        const payLaterTransaction =
+          payLaterTransactionNew.length > 0 ? payLaterTransactionNew[0] : null;
 
-        const findLatestTransaction = () => {
-          const getReferenceNumber = (referenceId: string) => {
-            const regex = /[^-]+$/;
-            const referenceIdRegex = referenceId.match(regex);
-            const referenceIdNum = referenceIdRegex
-              ? Number(referenceIdRegex[0])
-              : 0;
-            return referenceIdNum;
-          };
+        const dateTimestampEWallet = eWalletTransaction
+          ? eWalletTransaction.dateTimestamp
+          : null;
+        const referenceIdEWallet = eWalletTransaction
+          ? eWalletTransaction.referenceId
+          : null;
 
-          if (!dateTimestampEWallet && !dateTimestampPayLater) {
-            throw {
-              status: 5300,
-              message:
-                'Transaksi e-wallet dan transaksi paylater dua-duanya null.',
+        const dateTimestampPayLater = payLaterTransaction
+          ? payLaterTransaction.dateTimestamp
+          : null;
+        const referenceIdPayLater = payLaterTransaction
+          ? payLaterTransaction.referenceId
+          : null;
+
+        /**
+         * The first if is
+         * if all the value is not null.
+         * In other words, there is transaction
+         * for gopay wallet and gopay pay later.
+         * Both exist in our database
+         */
+
+        if (
+          dateTimestampEWallet !== null &&
+          referenceIdEWallet !== null &&
+          dateTimestampPayLater !== null &&
+          referenceIdPayLater !== null
+        ) {
+          const findLatestTransaction = () => {
+            const getReferenceNumber = (referenceId: string) => {
+              const regex = /[^-]+$/;
+              const referenceIdRegex = referenceId.match(regex);
+              const referenceIdNum = referenceIdRegex
+                ? Number(referenceIdRegex[0])
+                : 0;
+              return referenceIdNum;
             };
-          }
 
-          const ewalletMoment = moment(dateTimestampEWallet);
-          const paylaterMoment = moment(dateTimestampPayLater);
+            const ewalletMoment = moment(dateTimestampEWallet);
+            const paylaterMoment = moment(dateTimestampPayLater);
 
-          if (ewalletMoment.isSame(paylaterMoment, 'day')) {
-            const ewalletRefNum = getReferenceNumber(referenceIdEWallet);
-            const paylaterRefNum = getReferenceNumber(referenceIdPayLater);
-            return ewalletRefNum > paylaterRefNum
+            if (ewalletMoment.isSame(paylaterMoment, 'day')) {
+              const ewalletRefNum = getReferenceNumber(referenceIdEWallet);
+              const paylaterRefNum = getReferenceNumber(referenceIdPayLater);
+              return ewalletRefNum > paylaterRefNum
+                ? {
+                    dateTimestamp: dateTimestampEWallet,
+                    referenceId: referenceIdEWallet,
+                  }
+                : {
+                    dateTimestamp: dateTimestampPayLater,
+                    referenceId: referenceIdPayLater,
+                  };
+            }
+
+            return ewalletMoment.isAfter(paylaterMoment)
               ? {
                   dateTimestamp: dateTimestampEWallet,
                   referenceId: referenceIdEWallet,
@@ -600,171 +633,596 @@ export const EWalletTransactionMutation = extendType({
                   dateTimestamp: dateTimestampPayLater,
                   referenceId: referenceIdPayLater,
                 };
-          }
-
-          return ewalletMoment.isAfter(paylaterMoment)
-            ? {
-                dateTimestamp: dateTimestampEWallet,
-                referenceId: referenceIdEWallet,
-              }
-            : {
-                dateTimestamp: dateTimestampPayLater,
-                referenceId: referenceIdPayLater,
-              };
-        };
-
-        const { dateTimestamp, referenceId } = findLatestTransaction();
-
-        const from = moment(dateTimestamp)
-          .subtract(1, 'day')
-          .format('YYYY-MM-DD');
-
-        const to = moment().format('YYYY-MM-DD');
-
-        const transactionUrl = brickUrl(`/v1/transaction/list`);
-
-        const transactionOptions = {
-          method: 'GET',
-          url: transactionUrl.href,
-          params: { from, to },
-          headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${eWalletAccount.accessToken}`,
-          },
-        };
-
-        const {
-          data: { data },
-        }: { data: { data: BrickTransactionData[] } } = await axios
-          .request(transactionOptions)
-          .catch((e) => {
-            throw new Error(e);
-          });
-
-        const transactionData = _.sortBy(data, [
-          'dateTimestamp',
-          'reference_id',
-        ]);
-
-        const index = findBrickTransactionIndex(referenceId, transactionData);
-
-        const newTransaction = transactionData.splice(
-          index + 1,
-          transactionData.length
-        );
-
-        if (newTransaction.length === 0)
-          throw {
-            status: 5400,
-            message:
-              'Tidak ada transaksi baru untuk gopay wallet dan paylater untuk akun tersebut.',
           };
 
-        for (let i = 0; i < newTransaction.length; i++) {
-          const element = newTransaction[i];
+          const { dateTimestamp, referenceId } = findLatestTransaction();
 
-          if (element.transaction_type === 'Wallet') {
-            const obj = {
-              eWalletAccountId: encodeEWalletAccountId(eWalletAccount.id),
-              transactionName: element.description,
-              dateTimestamp: new Date(
-                moment(element.dateTimestamp).add(1, 'day') as unknown as Date
-              ),
-              referenceId: element.reference_id,
-              currency: element.account_currency,
-              amount: element.amount.toString(),
-              onlineTransaction: false,
-              isReviewed: false,
-              merchantId: '63d8b775d3e050940af0caf1',
-              category: [
-                { name: 'UNDEFINED', amount: element.amount.toString() },
-              ],
-              transactionType: (element.direction === 'in'
-                ? 'INCOME'
-                : 'EXPENSE') as TransactionType,
-              direction: (element.direction === 'in'
-                ? 'IN'
-                : 'OUT') as DirectionType,
-              isSubscription: false,
-              description: element.description,
-              institutionId: mapBrickInstitutionIdToKudoku(11),
-              isHideFromBudget: false,
-              isHideFromInsight: false,
+          const from = moment(dateTimestamp)
+            .subtract(1, 'day')
+            .format('YYYY-MM-DD');
+
+          const to = moment().format('YYYY-MM-DD');
+
+          const transactionUrl = brickUrl(`/v1/transaction/list`);
+
+          const transactionOptions = {
+            method: 'GET',
+            url: transactionUrl.href,
+            params: { from, to },
+            headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${eWalletAccount.accessToken}`,
+            },
+          };
+
+          const {
+            data: { data },
+          }: { data: { data: BrickTransactionData[] } } = await axios
+            .request(transactionOptions)
+            .catch((e) => {
+              throw new Error(e);
+            });
+
+          const transactionData = _.sortBy(data, [
+            'dateTimestamp',
+            'reference_id',
+          ]);
+
+          const index = findBrickTransactionIndex(referenceId, transactionData);
+
+          const newTransaction = transactionData.splice(
+            index + 1,
+            transactionData.length
+          );
+
+          if (newTransaction.length === 0)
+            throw {
+              status: 5400,
+              message:
+                'Tidak ada transaksi baru untuk gopay wallet dan paylater untuk akun tersebut.',
             };
 
-            await prisma.eWalletTransaction.create({ data: obj });
-          } else {
-            const obj = {
-              payLaterAccountId: encodePayLaterAccountId(payLaterAccount.id),
-              transactionName: element.description,
-              dateTimestamp: new Date(
-                moment(element.dateTimestamp).add(1, 'day') as unknown as Date
-              ),
-              referenceId: element.reference_id,
-              currency: element.account_currency,
-              amount: element.amount.toString(),
-              onlineTransaction: false,
-              isReviewed: false,
-              merchantId: '63d8b775d3e050940af0caf1',
-              category: [
-                { name: 'UNDEFINED', amount: element.amount.toString() },
-              ],
-              transactionType: (element.direction === 'in'
-                ? 'INCOME'
-                : 'EXPENSE') as TransactionType,
-              direction: (element.direction === 'in'
-                ? 'IN'
-                : 'OUT') as DirectionType,
-              isSubscription: false,
-              description: element.description,
-              institutionId: mapBrickInstitutionIdToKudoku(11),
-              isHideFromBudget: false,
-              isHideFromInsight: false,
-            };
+          for (let i = 0; i < newTransaction.length; i++) {
+            const element = newTransaction[i];
 
-            await prisma.payLaterTransaction.create({ data: obj });
+            if (element.transaction_type === 'Wallet') {
+              const obj = {
+                eWalletAccountId: encodeEWalletAccountId(eWalletAccount.id),
+                transactionName: element.description,
+                dateTimestamp: new Date(
+                  moment(element.dateTimestamp).add(1, 'day') as unknown as Date
+                ),
+                referenceId: element.reference_id,
+                currency: element.account_currency,
+                amount: element.amount.toString(),
+                onlineTransaction: false,
+                isReviewed: false,
+                merchantId: '63d8b775d3e050940af0caf1',
+                category: [
+                  { name: 'UNDEFINED', amount: element.amount.toString() },
+                ],
+                transactionType: (element.direction === 'in'
+                  ? 'INCOME'
+                  : 'EXPENSE') as TransactionType,
+                direction: (element.direction === 'in'
+                  ? 'IN'
+                  : 'OUT') as DirectionType,
+                isSubscription: false,
+                description: element.description,
+                institutionId: mapBrickInstitutionIdToKudoku(11),
+                isHideFromBudget: false,
+                isHideFromInsight: false,
+              };
+
+              await prisma.eWalletTransaction.create({ data: obj });
+            } else {
+              const obj = {
+                payLaterAccountId: encodePayLaterAccountId(payLaterAccount.id),
+                transactionName: element.description,
+                dateTimestamp: new Date(
+                  moment(element.dateTimestamp).add(1, 'day') as unknown as Date
+                ),
+                referenceId: element.reference_id,
+                currency: element.account_currency,
+                amount: element.amount.toString(),
+                onlineTransaction: false,
+                isReviewed: false,
+                merchantId: '63d8b775d3e050940af0caf1',
+                category: [
+                  { name: 'UNDEFINED', amount: element.amount.toString() },
+                ],
+                transactionType: (element.direction === 'in'
+                  ? 'INCOME'
+                  : 'EXPENSE') as TransactionType,
+                direction: (element.direction === 'in'
+                  ? 'IN'
+                  : 'OUT') as DirectionType,
+                isSubscription: false,
+                description: element.description,
+                institutionId: mapBrickInstitutionIdToKudoku(11),
+                isHideFromBudget: false,
+                isHideFromInsight: false,
+              };
+
+              await prisma.payLaterTransaction.create({ data: obj });
+            }
           }
-        }
+        } else if (
+          /**
+           * We then run the algorithm if
+           * only the gopay wallet is not null.
+           * In other words, there is no existing
+           * gopay pay later in our database.
+           */
+          dateTimestampEWallet !== null &&
+          referenceIdEWallet !== null &&
+          dateTimestampPayLater === null &&
+          referenceIdPayLater === null
+        ) {
+          const dateTimestamp = dateTimestampEWallet;
+          const referenceId = referenceIdEWallet;
 
-        /*
+          const from = moment(dateTimestamp)
+            .subtract(1, 'day')
+            .format('YYYY-MM-DD');
+
+          const to = moment().format('YYYY-MM-DD');
+
+          const transactionUrl = brickUrl(`/v1/transaction/list`);
+
+          const transactionOptions = {
+            method: 'GET',
+            url: transactionUrl.href,
+            params: { from, to },
+            headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${eWalletAccount.accessToken}`,
+            },
+          };
+
+          const {
+            data: { data },
+          }: { data: { data: BrickTransactionData[] } } = await axios
+            .request(transactionOptions)
+            .catch((e) => {
+              throw new Error(e);
+            });
+
+          const transactionData = _.sortBy(data, [
+            'dateTimestamp',
+            'reference_id',
+          ]);
+
+          const index = findBrickTransactionIndex(referenceId, transactionData);
+
+          const newTransaction = transactionData.splice(
+            index + 1,
+            transactionData.length
+          );
+
+          if (newTransaction.length === 0)
+            throw {
+              status: 5400,
+              message:
+                'Tidak ada transaksi baru untuk gopay wallet dan paylater untuk akun tersebut.',
+            };
+
+          for (let i = 0; i < newTransaction.length; i++) {
+            const element = newTransaction[i];
+
+            if (element.transaction_type === 'Wallet') {
+              const obj = {
+                eWalletAccountId: encodeEWalletAccountId(eWalletAccount.id),
+                transactionName: element.description,
+                dateTimestamp: new Date(
+                  moment(element.dateTimestamp).add(1, 'day') as unknown as Date
+                ),
+                referenceId: element.reference_id,
+                currency: element.account_currency,
+                amount: element.amount.toString(),
+                onlineTransaction: false,
+                isReviewed: false,
+                merchantId: '63d8b775d3e050940af0caf1',
+                category: [
+                  { name: 'UNDEFINED', amount: element.amount.toString() },
+                ],
+                transactionType: (element.direction === 'in'
+                  ? 'INCOME'
+                  : 'EXPENSE') as TransactionType,
+                direction: (element.direction === 'in'
+                  ? 'IN'
+                  : 'OUT') as DirectionType,
+                isSubscription: false,
+                description: element.description,
+                institutionId: mapBrickInstitutionIdToKudoku(11),
+                isHideFromBudget: false,
+                isHideFromInsight: false,
+              };
+
+              await prisma.eWalletTransaction.create({ data: obj });
+            } else {
+              const obj = {
+                payLaterAccountId: encodePayLaterAccountId(payLaterAccount.id),
+                transactionName: element.description,
+                dateTimestamp: new Date(
+                  moment(element.dateTimestamp).add(1, 'day') as unknown as Date
+                ),
+                referenceId: element.reference_id,
+                currency: element.account_currency,
+                amount: element.amount.toString(),
+                onlineTransaction: false,
+                isReviewed: false,
+                merchantId: '63d8b775d3e050940af0caf1',
+                category: [
+                  { name: 'UNDEFINED', amount: element.amount.toString() },
+                ],
+                transactionType: (element.direction === 'in'
+                  ? 'INCOME'
+                  : 'EXPENSE') as TransactionType,
+                direction: (element.direction === 'in'
+                  ? 'IN'
+                  : 'OUT') as DirectionType,
+                isSubscription: false,
+                description: element.description,
+                institutionId: mapBrickInstitutionIdToKudoku(11),
+                isHideFromBudget: false,
+                isHideFromInsight: false,
+              };
+
+              await prisma.payLaterTransaction.create({ data: obj });
+            }
+          }
+
+          /*
         Update balance after pulling new transaction
         */
-        const accountDetail = await getAccountDetail(
-          eWalletAccount.accessToken
-        ).catch((e: AxiosError) => {
-          throw { status: Number(`8000`), message: e.message };
-        });
+          const accountDetail = await getAccountDetail(
+            eWalletAccount.accessToken
+          ).catch((e: AxiosError) => {
+            throw { status: Number(`8000`), message: e.message };
+          });
 
-        await prisma.eWalletAccount.update({
-          where: { id: eWalletAccount.id },
-          data: {
-            balance: accountDetail[0].balances.current.toString(),
-            lastUpdate: new Date(),
-          },
-        });
+          await prisma.eWalletAccount.update({
+            where: { id: eWalletAccount.id },
+            data: {
+              balance: accountDetail[0].balances.current.toString(),
+              lastUpdate: new Date(),
+            },
+          });
 
-        await prisma.payLaterAccount.update({
-          where: { id: payLaterAccount.id },
-          data: {
-            balance: accountDetail[1].balances.current.toString(),
-            lastUpdate: new Date(),
-          },
-        });
+          await prisma.payLaterAccount.update({
+            where: { id: payLaterAccount.id },
+            data: {
+              balance: accountDetail[1].balances.current.toString(),
+              lastUpdate: new Date(),
+            },
+          });
 
-        /*
+          /*
         Create data on the 'Refresh' collection
         */
-        await prisma.refresh.create({
-          data: {
-            userId: user.id,
-            date: new Date(),
-          },
-        });
+          await prisma.refresh.create({
+            data: {
+              userId: user.id,
+              date: new Date(),
+            },
+          });
 
-        return {
-          response: `Successfully create ${newTransaction.length} new transaction and update new balance`,
-        };
+          return {
+            response: `Successfully create new transaction and update new balance`,
+          };
+        } else if (
+          /**
+           * We then run the algorithm if
+           * only the gopay wallet is null.
+           * In other words, there is no existing
+           * gopay wallet in our database.
+           */
+          dateTimestampEWallet === null &&
+          referenceIdEWallet === null &&
+          dateTimestampPayLater !== null &&
+          referenceIdPayLater !== null
+        ) {
+          const dateTimestamp = dateTimestampPayLater;
+          const referenceId = referenceIdPayLater;
+
+          const from = moment(dateTimestamp)
+            .subtract(1, 'day')
+            .format('YYYY-MM-DD');
+
+          const to = moment().format('YYYY-MM-DD');
+
+          const transactionUrl = brickUrl(`/v1/transaction/list`);
+
+          const transactionOptions = {
+            method: 'GET',
+            url: transactionUrl.href,
+            params: { from, to },
+            headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${eWalletAccount.accessToken}`,
+            },
+          };
+
+          const {
+            data: { data },
+          }: { data: { data: BrickTransactionData[] } } = await axios
+            .request(transactionOptions)
+            .catch((e) => {
+              throw new Error(e);
+            });
+
+          const transactionData = _.sortBy(data, [
+            'dateTimestamp',
+            'reference_id',
+          ]);
+
+          const index = findBrickTransactionIndex(referenceId, transactionData);
+
+          const newTransaction = transactionData.splice(
+            index + 1,
+            transactionData.length
+          );
+
+          if (newTransaction.length === 0)
+            throw {
+              status: 5400,
+              message:
+                'Tidak ada transaksi baru untuk gopay wallet dan paylater untuk akun tersebut.',
+            };
+
+          for (let i = 0; i < newTransaction.length; i++) {
+            const element = newTransaction[i];
+
+            if (element.transaction_type === 'Wallet') {
+              const obj = {
+                eWalletAccountId: encodeEWalletAccountId(eWalletAccount.id),
+                transactionName: element.description,
+                dateTimestamp: new Date(
+                  moment(element.dateTimestamp).add(1, 'day') as unknown as Date
+                ),
+                referenceId: element.reference_id,
+                currency: element.account_currency,
+                amount: element.amount.toString(),
+                onlineTransaction: false,
+                isReviewed: false,
+                merchantId: '63d8b775d3e050940af0caf1',
+                category: [
+                  { name: 'UNDEFINED', amount: element.amount.toString() },
+                ],
+                transactionType: (element.direction === 'in'
+                  ? 'INCOME'
+                  : 'EXPENSE') as TransactionType,
+                direction: (element.direction === 'in'
+                  ? 'IN'
+                  : 'OUT') as DirectionType,
+                isSubscription: false,
+                description: element.description,
+                institutionId: mapBrickInstitutionIdToKudoku(11),
+                isHideFromBudget: false,
+                isHideFromInsight: false,
+              };
+
+              await prisma.eWalletTransaction.create({ data: obj });
+            } else {
+              const obj = {
+                payLaterAccountId: encodePayLaterAccountId(payLaterAccount.id),
+                transactionName: element.description,
+                dateTimestamp: new Date(
+                  moment(element.dateTimestamp).add(1, 'day') as unknown as Date
+                ),
+                referenceId: element.reference_id,
+                currency: element.account_currency,
+                amount: element.amount.toString(),
+                onlineTransaction: false,
+                isReviewed: false,
+                merchantId: '63d8b775d3e050940af0caf1',
+                category: [
+                  { name: 'UNDEFINED', amount: element.amount.toString() },
+                ],
+                transactionType: (element.direction === 'in'
+                  ? 'INCOME'
+                  : 'EXPENSE') as TransactionType,
+                direction: (element.direction === 'in'
+                  ? 'IN'
+                  : 'OUT') as DirectionType,
+                isSubscription: false,
+                description: element.description,
+                institutionId: mapBrickInstitutionIdToKudoku(11),
+                isHideFromBudget: false,
+                isHideFromInsight: false,
+              };
+
+              await prisma.payLaterTransaction.create({ data: obj });
+            }
+          }
+
+          /*
+          Update balance after pulling new transaction
+          */
+          const accountDetail = await getAccountDetail(
+            eWalletAccount.accessToken
+          ).catch((e: AxiosError) => {
+            throw { status: Number(`8000`), message: e.message };
+          });
+
+          await prisma.eWalletAccount.update({
+            where: { id: eWalletAccount.id },
+            data: {
+              balance: accountDetail[0].balances.current.toString(),
+              lastUpdate: new Date(),
+            },
+          });
+
+          await prisma.payLaterAccount.update({
+            where: { id: payLaterAccount.id },
+            data: {
+              balance: accountDetail[1].balances.current.toString(),
+              lastUpdate: new Date(),
+            },
+          });
+
+          /*
+          Create data on the 'Refresh' collection
+          */
+          await prisma.refresh.create({
+            data: {
+              userId: user.id,
+              date: new Date(),
+            },
+          });
+
+          return {
+            response: `Successfully create new transaction and update new balance`,
+          };
+        } else {
+          /**
+           * This means that everything is null.
+           * Which means there is no existing gopay wallet,
+           * and gopay pay later in our database.
+           */
+
+          const from = moment().subtract(7, 'day').format('YYYY-MM-DD');
+
+          const to = moment().format('YYYY-MM-DD');
+
+          const transactionUrl = brickUrl(`/v1/transaction/list`);
+
+          const transactionOptions = {
+            method: 'GET',
+            url: transactionUrl.href,
+            params: { from, to },
+            headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${eWalletAccount.accessToken}`,
+            },
+          };
+
+          const {
+            data: { data: newTransaction },
+          }: { data: { data: BrickTransactionData[] } } = await axios
+            .request(transactionOptions)
+            .catch((e) => {
+              throw new Error(e);
+            });
+
+          if (newTransaction.length === 0)
+            throw {
+              status: 5400,
+              message:
+                'Tidak ada transaksi baru untuk gopay wallet dan paylater untuk akun tersebut.',
+            };
+
+          for (let i = 0; i < newTransaction.length; i++) {
+            const element = newTransaction[i];
+
+            if (element.transaction_type === 'Wallet') {
+              const obj = {
+                eWalletAccountId: encodeEWalletAccountId(eWalletAccount.id),
+                transactionName: element.description,
+                dateTimestamp: new Date(
+                  moment(element.dateTimestamp).add(1, 'day') as unknown as Date
+                ),
+                referenceId: element.reference_id,
+                currency: element.account_currency,
+                amount: element.amount.toString(),
+                onlineTransaction: false,
+                isReviewed: false,
+                merchantId: '63d8b775d3e050940af0caf1',
+                category: [
+                  { name: 'UNDEFINED', amount: element.amount.toString() },
+                ],
+                transactionType: (element.direction === 'in'
+                  ? 'INCOME'
+                  : 'EXPENSE') as TransactionType,
+                direction: (element.direction === 'in'
+                  ? 'IN'
+                  : 'OUT') as DirectionType,
+                isSubscription: false,
+                description: element.description,
+                institutionId: mapBrickInstitutionIdToKudoku(11),
+                isHideFromBudget: false,
+                isHideFromInsight: false,
+              };
+
+              await prisma.eWalletTransaction.create({ data: obj });
+            } else {
+              const obj = {
+                payLaterAccountId: encodePayLaterAccountId(payLaterAccount.id),
+                transactionName: element.description,
+                dateTimestamp: new Date(
+                  moment(element.dateTimestamp).add(1, 'day') as unknown as Date
+                ),
+                referenceId: element.reference_id,
+                currency: element.account_currency,
+                amount: element.amount.toString(),
+                onlineTransaction: false,
+                isReviewed: false,
+                merchantId: '63d8b775d3e050940af0caf1',
+                category: [
+                  { name: 'UNDEFINED', amount: element.amount.toString() },
+                ],
+                transactionType: (element.direction === 'in'
+                  ? 'INCOME'
+                  : 'EXPENSE') as TransactionType,
+                direction: (element.direction === 'in'
+                  ? 'IN'
+                  : 'OUT') as DirectionType,
+                isSubscription: false,
+                description: element.description,
+                institutionId: mapBrickInstitutionIdToKudoku(11),
+                isHideFromBudget: false,
+                isHideFromInsight: false,
+              };
+
+              await prisma.payLaterTransaction.create({ data: obj });
+            }
+          }
+
+          /*
+          Update balance after pulling new transaction
+          */
+          const accountDetail = await getAccountDetail(
+            eWalletAccount.accessToken
+          ).catch((e: AxiosError) => {
+            throw { status: Number(`8000`), message: e.message };
+          });
+
+          await prisma.eWalletAccount.update({
+            where: { id: eWalletAccount.id },
+            data: {
+              balance: accountDetail[0].balances.current.toString(),
+              lastUpdate: new Date(),
+            },
+          });
+
+          await prisma.payLaterAccount.update({
+            where: { id: payLaterAccount.id },
+            data: {
+              balance: accountDetail[1].balances.current.toString(),
+              lastUpdate: new Date(),
+            },
+          });
+
+          /*
+          Create data on the 'Refresh' collection
+          */
+          await prisma.refresh.create({
+            data: {
+              userId: user.id,
+              date: new Date(),
+            },
+          });
+
+          return {
+            response:
+              'Successfully create new transaction and update new balance',
+          };
+        }
       },
     });
 

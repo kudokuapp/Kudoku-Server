@@ -444,7 +444,7 @@ export interface NexusGenFieldTypes {
     reconcileCashBalance: NexusGenRootTypes['CashAccount']; // CashAccount!
     reconcileEMoneyAccount: NexusGenRootTypes['EMoneyAccount']; // EMoneyAccount!
     refreshBcaTransactionViaBrick: Array<NexusGenRootTypes['DebitTransaction'] | null> | null; // [DebitTransaction]
-    refreshGopayTransactionViaBrick: NexusGenRootTypes['ResponseMessage']; // ResponseMessage!
+    refreshGopayTransactionViaBrick: NexusGenRootTypes['ResponseMessage'] | null; // ResponseMessage
     signup: NexusGenRootTypes['AuthPayLoad']; // AuthPayLoad!
     updateEmailOrWhatsapp: NexusGenRootTypes['User']; // User!
     updateProfile: NexusGenRootTypes['Profile']; // Profile!
