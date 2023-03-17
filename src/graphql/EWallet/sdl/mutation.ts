@@ -874,45 +874,6 @@ export const EWalletTransactionMutation = extendType({
               await prisma.payLaterTransaction.create({ data: obj });
             }
           }
-
-          /*
-        Update balance after pulling new transaction
-        */
-          const accountDetail = await getAccountDetail(
-            eWalletAccount.accessToken
-          ).catch((e: AxiosError) => {
-            throw { status: Number(`8000`), message: e.message };
-          });
-
-          await prisma.eWalletAccount.update({
-            where: { id: eWalletAccount.id },
-            data: {
-              balance: accountDetail[0].balances.current.toString(),
-              lastUpdate: new Date(),
-            },
-          });
-
-          await prisma.payLaterAccount.update({
-            where: { id: payLaterAccount.id },
-            data: {
-              balance: accountDetail[1].balances.current.toString(),
-              lastUpdate: new Date(),
-            },
-          });
-
-          /*
-        Create data on the 'Refresh' collection
-        */
-          await prisma.refresh.create({
-            data: {
-              userId: user.id,
-              date: new Date(),
-            },
-          });
-
-          return {
-            response: `Successfully create new transaction and update new balance`,
-          };
         } else if (
           /**
            * We then run the algorithm if
@@ -1039,45 +1000,6 @@ export const EWalletTransactionMutation = extendType({
               await prisma.payLaterTransaction.create({ data: obj });
             }
           }
-
-          /*
-          Update balance after pulling new transaction
-          */
-          const accountDetail = await getAccountDetail(
-            eWalletAccount.accessToken
-          ).catch((e: AxiosError) => {
-            throw { status: Number(`8000`), message: e.message };
-          });
-
-          await prisma.eWalletAccount.update({
-            where: { id: eWalletAccount.id },
-            data: {
-              balance: accountDetail[0].balances.current.toString(),
-              lastUpdate: new Date(),
-            },
-          });
-
-          await prisma.payLaterAccount.update({
-            where: { id: payLaterAccount.id },
-            data: {
-              balance: accountDetail[1].balances.current.toString(),
-              lastUpdate: new Date(),
-            },
-          });
-
-          /*
-          Create data on the 'Refresh' collection
-          */
-          await prisma.refresh.create({
-            data: {
-              userId: user.id,
-              date: new Date(),
-            },
-          });
-
-          return {
-            response: `Successfully create new transaction and update new balance`,
-          };
         } else {
           /**
            * This means that everything is null.
@@ -1182,47 +1104,47 @@ export const EWalletTransactionMutation = extendType({
               await prisma.payLaterTransaction.create({ data: obj });
             }
           }
+        }
 
-          /*
+        /*
           Update balance after pulling new transaction
           */
-          const accountDetail = await getAccountDetail(
-            eWalletAccount.accessToken
-          ).catch((e: AxiosError) => {
-            throw { status: Number(`8000`), message: e.message };
-          });
+        const accountDetail = await getAccountDetail(
+          eWalletAccount.accessToken
+        ).catch((e: AxiosError) => {
+          throw { status: Number(`8000`), message: e.message };
+        });
 
-          await prisma.eWalletAccount.update({
-            where: { id: eWalletAccount.id },
-            data: {
-              balance: accountDetail[0].balances.current.toString(),
-              lastUpdate: new Date(),
-            },
-          });
+        await prisma.eWalletAccount.update({
+          where: { id: eWalletAccount.id },
+          data: {
+            balance: accountDetail[0].balances.current.toString(),
+            lastUpdate: new Date(),
+          },
+        });
 
-          await prisma.payLaterAccount.update({
-            where: { id: payLaterAccount.id },
-            data: {
-              balance: accountDetail[1].balances.current.toString(),
-              lastUpdate: new Date(),
-            },
-          });
+        await prisma.payLaterAccount.update({
+          where: { id: payLaterAccount.id },
+          data: {
+            balance: accountDetail[1].balances.current.toString(),
+            lastUpdate: new Date(),
+          },
+        });
 
-          /*
+        /*
           Create data on the 'Refresh' collection
           */
-          await prisma.refresh.create({
-            data: {
-              userId: user.id,
-              date: new Date(),
-            },
-          });
+        await prisma.refresh.create({
+          data: {
+            userId: user.id,
+            date: new Date(),
+          },
+        });
 
-          return {
-            response:
-              'Successfully create new transaction and update new balance',
-          };
-        }
+        return {
+          response:
+            'Successfully create new transaction and update new balance',
+        };
       },
     });
 
