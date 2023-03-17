@@ -860,7 +860,7 @@ export const EMoneyTransactionMutation = extendType({
           },
         });
 
-        await prisma.cashTransaction.delete({ where: { id: transactionId } });
+        await prisma.eMoneyTransaction.delete({ where: { id: transactionId } });
 
         return {
           response: `Successfully delete transaction of ${transactionId} and update balance`,
