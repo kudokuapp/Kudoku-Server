@@ -228,12 +228,6 @@ export const CashAccountMutation = extendType({
         cashAccountId: nonNull(
           arg({ type: 'String', description: 'The cash account id' })
         ),
-        transactionName: nonNull(
-          arg({
-            type: 'String',
-            description: 'Transaction name',
-          })
-        ),
       },
 
       async resolve(parent, args, context, info) {

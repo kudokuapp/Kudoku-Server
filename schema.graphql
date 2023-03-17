@@ -856,9 +856,6 @@ type Mutation {
 
     """The new balance"""
     newBalance: String!
-
-    """Transaction name"""
-    transactionName: String!
   ): CashAccount!
 
   """Reconcile e-money balance"""

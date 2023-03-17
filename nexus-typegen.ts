@@ -994,7 +994,6 @@ export interface NexusGenArgTypes {
     reconcileCashBalance: { // args
       cashAccountId: string; // String!
       newBalance: string; // String!
-      transactionName: string; // String!
     }
     reconcileEMoneyAccount: { // args
       eMoneyAccountId: string; // String!
