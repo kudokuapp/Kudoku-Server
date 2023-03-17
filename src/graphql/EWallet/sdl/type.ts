@@ -116,7 +116,7 @@ export const EWalletTransaction = objectType({
       description: 'The merchant Id',
     });
 
-    t.nonNull.list.nonNull.field('category', {
+    t.list.nonNull.field('category', {
       type: 'NameAmountJson',
       description: 'The category for this transaction',
     });
@@ -221,7 +221,7 @@ export const PayLaterTransaction = objectType({
       description: 'The merchant Id',
     });
 
-    t.nonNull.list.nonNull.field('category', {
+    t.list.nonNull.field('category', {
       type: 'NameAmountJson',
       description: 'The category for this transaction',
     });

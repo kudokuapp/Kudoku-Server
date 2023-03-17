@@ -976,9 +976,7 @@ export const EWalletTransactionMutation = extendType({
         return {
           id: response.id,
           transactionName: response.transactionName,
-          eWalletAccountId: decodeEWalletAccountId(
-            response.eWalletAccountId
-          ) as unknown as string,
+          eWalletAccountId: decodeEWalletAccountId(response.eWalletAccountId),
           dateTimestamp: toTimeStamp(response.dateTimestamp),
           referenceId: response.referenceId,
           institutionId: response.institutionId,
@@ -988,11 +986,8 @@ export const EWalletTransactionMutation = extendType({
           isReviewed: response.isReviewed,
           merchant: merchant,
           merchantId: response.merchantId,
-          category: response.category as unknown as MaybePromise<
-            MaybePromise<
-              | { amount: string; name: string }
-              | { amount: MaybePromise<string>; name: MaybePromise<string> }
-            >[]
+          category: response.category as MaybePromise<
+            { amount: string; name: string }[] | null | undefined
           >,
           transactionType: response.transactionType,
           description: response.description,
@@ -1000,8 +995,8 @@ export const EWalletTransactionMutation = extendType({
           direction: response.direction,
           notes: response.notes,
           location: response.location,
-          tags: response.tags as unknown as MaybePromise<
-            ({ amount: string; name: string } | null)[] | null | undefined
+          tags: response.tags as MaybePromise<
+            { amount: string; name: string }[] | null | undefined
           >,
           isSubscription: response.isSubscription,
           isHideFromBudget: response.isHideFromBudget,
@@ -1230,11 +1225,8 @@ export const EWalletTransactionMutation = extendType({
           isReviewed: response.isReviewed,
           merchant: merchant,
           merchantId: response.merchantId,
-          category: response.category as unknown as MaybePromise<
-            MaybePromise<
-              | { amount: string; name: string }
-              | { amount: MaybePromise<string>; name: MaybePromise<string> }
-            >[]
+          category: response.category as MaybePromise<
+            { amount: string; name: string }[] | null | undefined
           >,
           transactionType: response.transactionType,
           description: response.description,
@@ -1242,8 +1234,8 @@ export const EWalletTransactionMutation = extendType({
           direction: response.direction,
           notes: response.notes,
           location: response.location,
-          tags: response.tags as unknown as MaybePromise<
-            ({ amount: string; name: string } | null)[] | null | undefined
+          tags: response.tags as MaybePromise<
+            { amount: string; name: string }[] | null | undefined
           >,
           isSubscription: response.isSubscription,
           isHideFromBudget: response.isHideFromBudget,

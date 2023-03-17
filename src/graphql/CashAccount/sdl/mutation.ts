@@ -524,19 +524,16 @@ export const CashTransactionMutation = extendType({
           amount: response.amount,
           merchant: merchant,
           merchantId: response.merchantId,
-          category: response.category as unknown as MaybePromise<
-            MaybePromise<
-              | { amount: string; name: string }
-              | { amount: MaybePromise<string>; name: MaybePromise<string> }
-            >[]
+          category: response.category as MaybePromise<
+            { amount: string; name: string }[] | null | undefined
           >,
           transactionType: response.transactionType,
           internalTransferTransactionId: response.internalTransferTransactionId,
           direction: response.direction,
           notes: response.notes,
           location: response.location,
-          tags: response.tags as unknown as MaybePromise<
-            ({ amount: string; name: string } | null)[] | null | undefined
+          tags: response.tags as MaybePromise<
+            { amount: string; name: string }[] | null | undefined
           >,
           isHideFromBudget: response.isHideFromBudget,
           isHideFromInsight: response.isHideFromInsight,
@@ -885,11 +882,8 @@ export const CashTransactionMutation = extendType({
           transactionName: response.transactionName,
           merchant,
           merchantId: response.merchantId,
-          category: response.category as unknown as MaybePromise<
-            MaybePromise<
-              | { amount: string; name: string }
-              | { amount: MaybePromise<string>; name: MaybePromise<string> }
-            >[]
+          category: response.category as MaybePromise<
+            { amount: string; name: string }[] | null | undefined
           >,
           transactionType: response.transactionType,
           internalTransferTransactionId: response.internalTransferTransactionId,
@@ -897,7 +891,7 @@ export const CashTransactionMutation = extendType({
           notes: response.notes,
           location: response.location,
           tags: response.tags as MaybePromise<
-            ({ amount: string; name: string } | null)[] | null | undefined
+            { amount: string; name: string }[] | null | undefined
           >,
           isHideFromBudget: response.isHideFromBudget,
           isHideFromInsight: response.isHideFromInsight,

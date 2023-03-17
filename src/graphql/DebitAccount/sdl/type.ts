@@ -85,7 +85,7 @@ export const DebitTransaction = objectType({
       description: 'The merchant Id',
     });
 
-    t.nonNull.list.nonNull.field('category', {
+    t.list.nonNull.field('category', {
       type: 'NameAmountJson',
       description: 'The category for this transaction',
     });
@@ -121,7 +121,7 @@ export const DebitTransaction = objectType({
       description: 'The location of the transaction',
     });
 
-    t.list.field('tags', {
+    t.list.nonNull.field('tags', {
       type: 'NameAmountJson',
       description: 'Additional tags for this transaction',
     });

@@ -733,9 +733,7 @@ export const DebitTransactionMutation = extendType({
         return {
           id: response.id,
           transactionName: response.transactionName,
-          debitAccountId: decodeDebitAccountId(
-            response.debitAccountId
-          ) as unknown as string,
+          debitAccountId: decodeDebitAccountId(response.debitAccountId),
           dateTimestamp: toTimeStamp(response.dateTimestamp),
           referenceId: response.referenceId,
           institutionId: response.institutionId,
@@ -745,11 +743,8 @@ export const DebitTransactionMutation = extendType({
           isReviewed: response.isReviewed,
           merchant: merchant,
           merchantId: response.merchantId,
-          category: response.category as unknown as MaybePromise<
-            MaybePromise<
-              | { amount: string; name: string }
-              | { amount: MaybePromise<string>; name: MaybePromise<string> }
-            >[]
+          category: response.category as MaybePromise<
+            { amount: string; name: string }[] | null | undefined
           >,
           transactionType: response.transactionType,
           description: response.description,
@@ -757,8 +752,8 @@ export const DebitTransactionMutation = extendType({
           direction: response.direction,
           notes: response.notes,
           location: response.location,
-          tags: response.tags as unknown as MaybePromise<
-            ({ amount: string; name: string } | null)[] | null | undefined
+          tags: response.tags as MaybePromise<
+            { amount: string; name: string }[] | null | undefined
           >,
           isSubscription: response.isSubscription,
           isHideFromBudget: response.isHideFromBudget,

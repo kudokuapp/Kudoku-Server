@@ -498,19 +498,16 @@ export const EMoneyTransactionMutation = extendType({
           isReviewed: response.isReviewed,
           merchant: merchant,
           merchantId: response.merchantId,
-          category: response.category as unknown as MaybePromise<
-            MaybePromise<
-              | { amount: string; name: string }
-              | { amount: MaybePromise<string>; name: MaybePromise<string> }
-            >[]
+          category: response.category as MaybePromise<
+            { amount: string; name: string }[] | null | undefined
           >,
           transactionType: response.transactionType,
           description: response.description,
           direction: response.direction,
           notes: response.notes,
           location: response.location,
-          tags: response.tags as unknown as MaybePromise<
-            ({ amount: string; name: string } | null)[] | null | undefined
+          tags: response.tags as MaybePromise<
+            { amount: string; name: string }[] | null | undefined
           >,
           isHideFromBudget: response.isHideFromBudget,
           isHideFromInsight: response.isHideFromInsight,
@@ -787,11 +784,8 @@ export const EMoneyTransactionMutation = extendType({
           isReviewed: response.isReviewed,
           merchant,
           merchantId: response.merchantId,
-          category: response.category as unknown as MaybePromise<
-            MaybePromise<
-              | { amount: string; name: string }
-              | { amount: MaybePromise<string>; name: MaybePromise<string> }
-            >[]
+          category: response.category as MaybePromise<
+            { amount: string; name: string }[] | null | undefined
           >,
           transactionType: response.transactionType,
           description: response.description,
@@ -799,7 +793,7 @@ export const EMoneyTransactionMutation = extendType({
           notes: response.notes,
           location: response.location,
           tags: response.tags as MaybePromise<
-            ({ amount: string; name: string } | null)[] | null | undefined
+            { amount: string; name: string }[] | null | undefined
           >,
           isHideFromBudget: response.isHideFromBudget,
           internalTransferTransactionId: response.internalTransferTransactionId,
