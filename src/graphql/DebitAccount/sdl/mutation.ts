@@ -77,7 +77,7 @@ export const DebitAccountMutation = extendType({
         const { clientId, redirectRefId } = await getClientIdandRedirectRefId(
           userId
         ).catch((e: AxiosError) => {
-          throw { status: Number(`8${e.code}`), message: e.message };
+          throw { status: Number(`8000`), message: e.message };
         });
 
         const url = brickUrl(`/v1/auth/${clientId}`);
@@ -103,12 +103,12 @@ export const DebitAccountMutation = extendType({
         }: { data: { data: BrickTokenData } } = await axios
           .request(options)
           .catch((e: AxiosError) => {
-            throw { status: Number(`8${e.code}`), message: e.message };
+            throw { status: Number(`8000`), message: e.message };
           });
 
         const accountDetail = await getAccountDetail(data.accessToken).catch(
           (e: AxiosError) => {
-            throw { status: Number(`8${e.code}`), message: e.message };
+            throw { status: Number(`8000`), message: e.message };
           }
         );
 
@@ -167,7 +167,7 @@ export const DebitAccountMutation = extendType({
         }: { data: { data: BrickTransactionData[] } } = await axios
           .request(transactionOptions)
           .catch((e: AxiosError) => {
-            throw { status: Number(`8${e.code}`), message: e.message };
+            throw { status: Number(`8000`), message: e.message };
           });
 
         for (let i = 0; i < transactionData.length; i++) {
@@ -376,7 +376,7 @@ export const DebitTransactionMutation = extendType({
         }: { data: { data: BrickTransactionData[] } } = await axios
           .request(transactionOptions)
           .catch((e: AxiosError) => {
-            throw { status: Number(`8${e.code}`), message: e.message };
+            throw { status: Number(`8000`), message: e.message };
           });
 
         const transactionData = _.sortBy(data, [
@@ -442,7 +442,7 @@ export const DebitTransactionMutation = extendType({
         const accountDetail = await getAccountDetail(
           debitAccount.accessToken
         ).catch((e: AxiosError) => {
-          throw { status: Number(`8${e.code}`), message: e.message };
+          throw { status: Number(`8000`), message: e.message };
         });
 
         await prisma.debitAccount.update({

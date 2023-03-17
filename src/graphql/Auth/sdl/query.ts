@@ -95,7 +95,7 @@ export const AuthQuery = extendType({
             .services(process.env.TWILIO_SERVICE_SID as string)
             .verificationChecks.create({ to: email, code: otp })
             .catch((e) => {
-              throw { status: Number(`7${e.status}`), message: e.message };
+              throw { status: Number(`7000`), message: e.message };
             });
 
           if (!response.valid) throw { status: 1500, message: 'OTP salah.' };

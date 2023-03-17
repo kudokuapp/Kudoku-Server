@@ -133,12 +133,12 @@ export const EWalletAccountMutation = extendType({
         }: { data: { data: BrickTokenData } } = await axios
           .request(options)
           .catch((e: AxiosError) => {
-            throw { status: Number(`8${e.code}`), message: e.message };
+            throw { status: Number(`8000`), message: e.message };
           });
 
         const accountDetail = await getAccountDetail(data.accessToken).catch(
           (e: AxiosError) => {
-            throw { status: Number(`8${e.code}`), message: e.message };
+            throw { status: Number(`8000`), message: e.message };
           }
         );
 
@@ -225,7 +225,7 @@ export const EWalletAccountMutation = extendType({
         }: { data: { data: BrickTransactionData[] } } = await axios
           .request(transactionOptions)
           .catch((e: AxiosError) => {
-            throw { status: Number(`8${e.code}`), message: e.message };
+            throw { status: Number(`8000`), message: e.message };
           });
 
         for (let i = 0; i < transactionData.length; i++) {
@@ -733,7 +733,7 @@ export const EWalletTransactionMutation = extendType({
         const accountDetail = await getAccountDetail(
           eWalletAccount.accessToken
         ).catch((e: AxiosError) => {
-          throw { status: Number(`8${e.code}`), message: e.message };
+          throw { status: Number(`8000`), message: e.message };
         });
 
         await prisma.eWalletAccount.update({
