@@ -27,6 +27,9 @@ export const MerchantQuery = extendType({
 
           //TRANSFER
           '640ff9670ce7b9e3754d332d',
+
+          //INCOME
+          '6414a1e910657b29b4ffbaf9',
         ];
 
         return await prisma.merchant.findMany({
