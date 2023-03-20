@@ -181,13 +181,11 @@ export const DebitAccountMutation = extendType({
             ),
             referenceId: element.reference_id,
             currency: element.account_currency,
-            amount: element.amount.toString(),
+            amount: `${element.amount}`,
             onlineTransaction: false,
             isReviewed: false,
             merchantId: '63d8b775d3e050940af0caf1',
-            category: [
-              { name: 'UNDEFINED', amount: element.amount.toString() },
-            ],
+            category: [{ name: 'UNDEFINED', amount: `${element.amount}` }],
             transactionType: (element.direction === 'in'
               ? 'INCOME'
               : 'EXPENSE') as TransactionType,
@@ -411,13 +409,11 @@ export const DebitTransactionMutation = extendType({
               ),
               referenceId: element.reference_id,
               currency: element.account_currency,
-              amount: element.amount.toString(),
+              amount: `${element.amount}`,
               onlineTransaction: false,
               isReviewed: false,
               merchantId: '63d8b775d3e050940af0caf1',
-              category: [
-                { name: 'UNDEFINED', amount: element.amount.toString() },
-              ],
+              category: [{ name: 'UNDEFINED', amount: `${element.amount}` }],
               transactionType: (element.direction === 'in'
                 ? 'INCOME'
                 : 'EXPENSE') as TransactionType,
