@@ -77,6 +77,7 @@ export const DebitAccountMutation = extendType({
         const { clientId, redirectRefId } = await getClientIdandRedirectRefId(
           userId
         ).catch((e: AxiosError) => {
+          console.error(e);
           throw { status: Number(`8000`), message: e.message };
         });
 
@@ -103,11 +104,13 @@ export const DebitAccountMutation = extendType({
         }: { data: { data: BrickTokenData } } = await axios
           .request(options)
           .catch((e: AxiosError) => {
+            console.error(e);
             throw { status: Number(`8000`), message: e.message };
           });
 
         const accountDetail = await getAccountDetail(data.accessToken).catch(
           (e: AxiosError) => {
+            console.error(e);
             throw { status: Number(`8000`), message: e.message };
           }
         );
@@ -167,6 +170,7 @@ export const DebitAccountMutation = extendType({
         }: { data: { data: BrickTransactionData[] } } = await axios
           .request(transactionOptions)
           .catch((e: AxiosError) => {
+            console.error(e);
             throw { status: Number(`8000`), message: e.message };
           });
 
@@ -374,6 +378,7 @@ export const DebitTransactionMutation = extendType({
         }: { data: { data: BrickTransactionData[] } } = await axios
           .request(transactionOptions)
           .catch((e: AxiosError) => {
+            console.error(e);
             throw { status: Number(`8000`), message: e.message };
           });
 
@@ -438,6 +443,7 @@ export const DebitTransactionMutation = extendType({
         const accountDetail = await getAccountDetail(
           debitAccount.accessToken
         ).catch((e: AxiosError) => {
+          console.error(e);
           throw { status: Number(`8000`), message: e.message };
         });
 

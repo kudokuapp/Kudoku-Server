@@ -41,7 +41,7 @@ export const MerchantMutation = extendType({
         if (!user) throw { status: 1000, message: 'User tidak ditemukan.' };
 
         const alreadyMerchant = await prisma.merchant.findFirst({
-          where: { OR: [{ name }, { picture }, { url }] },
+          where: { OR: [{ name }, { url }] },
         });
 
         if (alreadyMerchant)
