@@ -1,8 +1,10 @@
-import { decodeCashAccountId, encodeCashAccountId } from '../../../utils/auth';
+import {
+  decodeCashAccountId,
+  encodeCashAccountId,
+} from '../../../utils/auth/cashAccountId';
 import { arg, extendType, list, nonNull } from 'nexus';
 import { MaybePromise } from 'nexus/dist/typegenTypeHelpers';
-import { toTimeStamp } from '../../../utils/date';
-import { updateBalance } from '../../../utils/transaction';
+import updateBalance from '../../../utils/transaction/updateBalance';
 
 export const CashAccountMutation = extendType({
   type: 'Mutation',
@@ -19,10 +21,12 @@ export const CashAccountMutation = extendType({
             default: 'Cash',
           })
         ),
+
         displayPicture: arg({
           type: 'String',
           description: 'The icon or display picture of that account',
         }),
+
         startingBalance: nonNull(
           arg({
             type: 'String',
@@ -30,6 +34,7 @@ export const CashAccountMutation = extendType({
             default: '0',
           })
         ),
+
         currency: nonNull(
           arg({
             type: 'String',
@@ -39,52 +44,44 @@ export const CashAccountMutation = extendType({
         ),
       },
 
-      async resolve(parent, args, context) {
-        const { accountName, displayPicture, startingBalance, currency } = args;
-        const { userId: id, prisma } = context;
+      async resolve(
+        __,
+        { accountName, displayPicture, startingBalance, currency },
+        { userId, prisma },
+        ___
+      ) {
+        try {
+          if (!userId) throw new Error('Token tidak valid.');
 
-        if (!id) throw { status: 1100, message: 'Token tidak valid.' };
+          const user = await prisma.user.findFirstOrThrow({
+            where: { id: userId },
+          });
 
-        const searchUser = await prisma.user.findFirst({
-          where: { id },
-        });
+          /**
+           * Avoid same cash account name duplication
+           */
+          const searchCashAccount = await prisma.cashAccount.findFirst({
+            where: { AND: [{ accountName }, { userId: user.id }] },
+          });
 
-        if (!searchUser) {
-          throw { status: 1000, message: 'User tidak ditemukan.' };
+          if (searchCashAccount) throw new Error('Akun cash sudah ada.');
+
+          const response = await prisma.cashAccount.create({
+            data: {
+              userId: user.id,
+              accountName,
+              displayPicture: displayPicture ?? null,
+              balance: startingBalance,
+              createdAt: new Date(),
+              lastUpdate: new Date(),
+              currency,
+            },
+          });
+
+          return response;
+        } catch (error) {
+          throw error;
         }
-
-        /*
-        Avoid same cash account name duplication
-        */
-        const searchCashAccount = await prisma.cashAccount.findFirst({
-          where: { AND: [{ accountName }, { userId: searchUser.id }] },
-        });
-
-        if (searchCashAccount)
-          throw { status: 3100, message: 'Akun cash sudah ada.' };
-
-        const response = await prisma.cashAccount.create({
-          data: {
-            userId: searchUser.id,
-            accountName,
-            displayPicture: displayPicture ?? null,
-            balance: startingBalance,
-            createdAt: new Date(),
-            lastUpdate: new Date(),
-            currency,
-          },
-        });
-
-        return {
-          id: response.id,
-          accountName: response.accountName,
-          userId: response.userId,
-          balance: response.balance,
-          displayPicture: response.displayPicture,
-          createdAt: toTimeStamp(response.createdAt),
-          lastUpdate: toTimeStamp(response.lastUpdate),
-          currency: response.currency,
-        };
       },
     });
 
@@ -114,48 +111,41 @@ export const CashAccountMutation = extendType({
         ),
       },
 
-      async resolve(parent, args, context) {
-        const { accountName, displayPicture, cashAccountId } = args;
-        const { userId: id, prisma } = context;
+      async resolve(
+        __,
+        { accountName, displayPicture, cashAccountId },
+        { userId, prisma },
+        ___
+      ) {
+        try {
+          if (!displayPicture && !accountName)
+            throw new Error(
+              'Gambar dan nama akun tidak boleh kosong dua-duanya.'
+            );
 
-        if (!displayPicture && !accountName)
-          throw {
-            status: 2001,
-            message: 'Gambar dan nama akun tidak boleh kosong dua-duanya.',
-          };
+          if (!userId) throw new Error('Token tidak valid.');
 
-        if (!id) throw { status: 1100, message: 'Token tidak valid.' };
+          const user = await prisma.user.findFirstOrThrow({
+            where: { id: userId },
+          });
 
-        const user = await prisma.user.findFirst({ where: { id } });
+          const cashAccount = await prisma.cashAccount.findFirstOrThrow({
+            where: { AND: [{ id: cashAccountId }, { userId: user.id }] },
+          });
 
-        if (!user) throw { status: 1000, message: 'User tidak ditemukan.' };
+          const response = await prisma.cashAccount.update({
+            where: { id: cashAccount.id },
+            data: {
+              accountName: accountName ?? cashAccount.accountName,
+              displayPicture: displayPicture ?? cashAccount.displayPicture,
+              lastUpdate: new Date(),
+            },
+          });
 
-        const account = await prisma.cashAccount.findFirst({
-          where: { AND: [{ id: cashAccountId }, { userId: user.id }] },
-        });
-
-        if (!account)
-          throw { status: 3000, message: 'Akun cash tidak ditemukan' };
-
-        const response = await prisma.cashAccount.update({
-          where: { id: account.id },
-          data: {
-            accountName: accountName ?? account.accountName,
-            displayPicture: displayPicture ?? account.displayPicture,
-            lastUpdate: new Date(),
-          },
-        });
-
-        return {
-          id: response.id,
-          userId: response.userId,
-          createdAt: toTimeStamp(response.createdAt),
-          accountName: response.accountName,
-          displayPicture: response.displayPicture ?? null,
-          balance: response.balance,
-          lastUpdate: toTimeStamp(response.lastUpdate),
-          currency: response.currency,
-        };
+          return response;
+        } catch (error) {
+          throw error;
+        }
       },
     });
 
@@ -172,46 +162,45 @@ export const CashAccountMutation = extendType({
         ),
       },
 
-      async resolve(parent, args, context, info) {
-        const { cashAccountId } = args;
+      async resolve(__, { cashAccountId }, { userId, prisma }, ___) {
+        try {
+          if (!userId) throw new Error('Token tidak valid.');
 
-        const { userId, prisma } = context;
+          const user = await prisma.user.findFirstOrThrow({
+            where: { id: userId },
+          });
 
-        if (!userId) throw { status: 1100, message: 'Token tidak valid.' };
+          const cashAccount = await prisma.cashAccount.findFirstOrThrow({
+            where: { AND: [{ id: cashAccountId }, { userId: user.id }] },
+          });
 
-        const user = await prisma.user.findFirst({ where: { id: userId } });
+          await prisma.cashAccount.delete({ where: { id: cashAccount.id } });
 
-        if (!user) throw { status: 1000, message: 'User tidak ditemukan.' };
+          const transaction = await prisma.cashTransaction.findMany();
 
-        const cashAccount = await prisma.cashAccount.findFirst({
-          where: { AND: [{ id: cashAccountId }, { userId }] },
-        });
+          let count = 0;
 
-        if (!cashAccount)
-          throw { status: 3000, message: 'Akun cash tidak ditemukan' };
+          for (let i = 0; i < transaction.length; i++) {
+            const element = transaction[i];
 
-        await prisma.cashAccount.delete({ where: { id: cashAccount.id } });
+            const decodedCashAccountId = decodeCashAccountId(
+              element.cashAccountId
+            ) as unknown as string;
 
-        const transaction = await prisma.cashTransaction.findMany();
-
-        let count = 0;
-
-        for (let i = 0; i < transaction.length; i++) {
-          const element = transaction[i];
-
-          const decodedCashAccountId = decodeCashAccountId(
-            element.cashAccountId
-          ) as unknown as string;
-
-          if (decodedCashAccountId === cashAccount.id) {
-            await prisma.cashTransaction.delete({ where: { id: element.id } });
-            count += 1;
+            if (decodedCashAccountId === cashAccount.id) {
+              await prisma.cashTransaction.delete({
+                where: { id: element.id },
+              });
+              count += 1;
+            }
           }
-        }
 
-        return {
-          response: `Successfully delete cash account with id ${cashAccountId} and ${count} transactions associated with that account`,
-        };
+          return {
+            response: `Successfully delete cash account with id ${cashAccountId} and ${count} transactions associated with that account`,
+          };
+        } catch (error) {
+          throw error;
+        }
       },
     });
 
@@ -225,72 +214,73 @@ export const CashAccountMutation = extendType({
             description: 'The new balance',
           })
         ),
+
         cashAccountId: nonNull(
           arg({ type: 'String', description: 'The cash account id' })
         ),
       },
 
-      async resolve(parent, args, context, info) {
-        const { newBalance, cashAccountId } = args;
+      async resolve(
+        __,
+        { newBalance, cashAccountId },
+        { userId, prisma, pubsub },
+        ___
+      ) {
+        try {
+          if (!userId) throw new Error('Token tidak valid.');
 
-        const { userId, prisma } = context;
+          const user = await prisma.user.findFirstOrThrow({
+            where: { id: userId },
+          });
 
-        if (!userId) throw { status: 1100, message: 'Token tidak valid.' };
+          const cashAccount = await prisma.cashAccount.findFirstOrThrow({
+            where: { AND: [{ id: cashAccountId }, { userId: user.id }] },
+          });
 
-        const user = await prisma.user.findFirst({ where: { id: userId } });
+          if (Number(newBalance) === Number(cashAccount.balance))
+            throw new Error(
+              'Untuk reconcile, balance baru tidak boleh sama dengan balance yang sekarang.'
+            );
 
-        if (!user) throw { status: 1000, message: 'User tidak ditemukan.' };
+          const response = await prisma.cashAccount.update({
+            where: { id: cashAccount.id },
+            data: { balance: newBalance, lastUpdate: new Date() },
+          });
 
-        const cashAccount = await prisma.cashAccount.findFirst({
-          where: { AND: [{ id: cashAccountId }, { userId: user.id }] },
-        });
+          const bigger = Number(newBalance) > Number(cashAccount.balance);
 
-        if (!cashAccount)
-          throw { status: 3000, message: 'Akun cash tidak ditemukan' };
+          const transactionAmount = bigger
+            ? Number(newBalance) - Number(cashAccount.balance)
+            : Number(cashAccount.balance) - Number(newBalance);
 
-        if (Number(newBalance) === Number(cashAccount.balance))
-          throw {
-            status: 2000,
-            message:
-              'Untuk reconcile, balance baru tidak boleh sama dengan balance yang sekarang.',
-          };
+          const transaction = await prisma.cashTransaction.create({
+            data: {
+              cashAccountId: encodeCashAccountId(cashAccount.id),
+              dateTimestamp: new Date(),
+              currency: cashAccount.currency,
+              transactionName: 'Penyesuaian Cash',
+              amount: transactionAmount.toString(),
+              transactionType: 'RECONCILE',
+              direction: bigger ? 'IN' : 'OUT',
+              merchantId: '640ff9450ce7b9e3754d332c',
+              isHideFromBudget: true,
+              isHideFromInsight: true,
+            },
+          });
 
-        const response = await prisma.cashAccount.update({
-          where: { id: cashAccount.id },
-          data: { balance: newBalance, lastUpdate: new Date() },
-        });
+          await pubsub.publish(`cashAccountUpdated_${cashAccount.id}`, {
+            cashAccountUpdate: response,
+          });
 
-        const bigger = Number(newBalance) > Number(cashAccount.balance);
+          await pubsub.publish(`cashTransactionLive_${cashAccount.id}`, {
+            mutationType: 'ADD',
+            transaction: transaction,
+          });
 
-        const transactionAmount = bigger
-          ? Number(newBalance) - Number(cashAccount.balance)
-          : Number(cashAccount.balance) - Number(newBalance);
-
-        await prisma.cashTransaction.create({
-          data: {
-            cashAccountId: encodeCashAccountId(cashAccount.id),
-            dateTimestamp: new Date(),
-            currency: cashAccount.currency,
-            transactionName: 'Penyesuaian Cash',
-            amount: transactionAmount.toString(),
-            transactionType: 'RECONCILE',
-            direction: bigger ? 'IN' : 'OUT',
-            merchantId: '640ff9450ce7b9e3754d332c',
-            isHideFromBudget: true,
-            isHideFromInsight: true,
-          },
-        });
-
-        return {
-          id: response.id,
-          accountName: response.accountName,
-          userId: response.userId,
-          balance: response.balance,
-          displayPicture: response.displayPicture,
-          createdAt: toTimeStamp(response.createdAt),
-          lastUpdate: toTimeStamp(response.lastUpdate),
-          currency: response.currency,
-        };
+          return response;
+        } catch (error) {
+          throw error;
+        }
       },
     });
   },
@@ -393,151 +383,164 @@ export const CashTransactionMutation = extendType({
         }),
       },
 
-      async resolve(parent, args, context, info) {
-        const { cashAccountId, amount, merchantId, direction, category, tags } =
-          args;
+      async resolve(
+        __,
+        {
+          cashAccountId,
+          amount,
+          merchantId,
+          direction,
+          category,
+          tags,
+          currency,
+          transactionName,
+          transactionType,
+          notes,
+          location,
+          isHideFromBudget,
+          isHideFromInsight,
+        },
+        { userId, prisma, pubsub },
+        ___
+      ) {
+        try {
+          if (!userId) throw new Error('Token tidak valid.');
 
-        const { userId, prisma } = context;
+          const user = await prisma.user.findFirstOrThrow({
+            where: { id: userId },
+          });
 
-        if (!userId) throw { status: 1100, message: 'Token tidak valid.' };
+          /**
+           * Check if the category match the amount
+           */
+          let categorySum: number = 0;
 
-        const user = await prisma.user.findFirst({ where: { id: userId } });
-
-        if (!user) throw { status: 1000, message: 'User tidak ditemukan.' };
-
-        /*
-        Check if the category match the amount
-        */
-
-        let categorySum: number = 0;
-
-        for (let i = 0; i < category.length; i++) {
-          const element = category[i];
-
-          if (
-            !element ||
-            !element.hasOwnProperty('name') ||
-            !element.hasOwnProperty('amount')
-          )
-            throw {
-              status: 2300,
-              message:
-                'Category tidak boleh kosong. Dan harus dalam format {name, amount} untuk tiap category.',
-            };
-
-          categorySum += Number(element.amount);
-        }
-
-        if (categorySum !== Number(amount))
-          throw {
-            status: 2200,
-            message:
-              'Total amount kategori harus sama dengan amount transaksi.',
-          };
-
-        /**
-         * Check if the tags match the amount
-         */
-        if (tags) {
-          let tagsSum: number = 0;
-
-          for (let i = 0; i < tags.length; i++) {
-            const element = tags[i];
+          for (let i = 0; i < category.length; i++) {
+            const element = category[i];
 
             if (
               !element ||
               !element.hasOwnProperty('name') ||
               !element.hasOwnProperty('amount')
             )
-              throw {
-                status: 2301,
-                message:
-                  'Tags harus dalam format {name, amount} untuk tiap tags.',
-              };
+              throw new Error(
+                'Category tidak boleh kosong. Dan harus dalam format {name, amount} untuk tiap category.'
+              );
 
-            tagsSum += Number(element.amount);
+            categorySum += Number(element.amount);
           }
 
-          if (tagsSum > Number(amount))
-            throw {
-              status: 2201,
-              message:
-                'Total amount tags tidak boleh lebih besar dengan amount transaksi.',
-            };
+          if (categorySum !== Number(amount))
+            throw new Error(
+              'Total amount kategori harus sama dengan amount transaksi.'
+            );
+
+          /**
+           * Check if the tags match the amount
+           */
+          if (tags) {
+            let tagsSum: number = 0;
+
+            for (let i = 0; i < tags.length; i++) {
+              const element = tags[i];
+
+              if (
+                !element ||
+                !element.hasOwnProperty('name') ||
+                !element.hasOwnProperty('amount')
+              )
+                throw new Error(
+                  'Tags harus dalam format {name, amount} untuk tiap tags.'
+                );
+
+              tagsSum += Number(element.amount);
+            }
+
+            if (tagsSum > Number(amount))
+              throw new Error(
+                'Total amount tags tidak boleh lebih besar dengan amount transaksi.'
+              );
+          }
+
+          const cashAccount = await prisma.cashAccount.findFirstOrThrow({
+            where: { AND: [{ userId: user.id }, { id: cashAccountId }] },
+          });
+
+          /**
+           * Update balance
+           */
+          const updatedCashAccount = await prisma.cashAccount.update({
+            where: { id: cashAccount.id },
+            data: {
+              balance: updateBalance({
+                balance: cashAccount.balance,
+                amount,
+                direction,
+                reverse: false,
+              }).toString(),
+              lastUpdate: new Date(),
+            },
+          });
+
+          const merchant = await prisma.merchant.findFirstOrThrow({
+            where: { id: merchantId },
+          });
+
+          const response = await prisma.cashTransaction.create({
+            data: {
+              cashAccountId: encodeCashAccountId(cashAccountId),
+              dateTimestamp: new Date(),
+              currency: currency,
+              transactionName: transactionName,
+              amount: amount,
+              merchantId: merchantId,
+              category: category,
+              transactionType: transactionType,
+              direction: direction,
+              notes: notes,
+              location: location,
+              tags: tags,
+              isHideFromBudget: isHideFromBudget,
+              isHideFromInsight: isHideFromInsight,
+            },
+          });
+
+          await pubsub.publish(`cashAccountUpdated_${cashAccount.id}`, {
+            cashAccountUpdate: updatedCashAccount,
+          });
+
+          await pubsub.publish(`cashTransactionLive_${cashAccount.id}`, {
+            mutationType: 'ADD',
+            transaction: response,
+          });
+
+          return {
+            id: response.id,
+            dateTimestamp: response.dateTimestamp,
+            cashAccountId: decodeCashAccountId(response.cashAccountId),
+            currency: response.currency,
+            transactionName: response.transactionName,
+            amount: response.amount,
+            merchant: merchant,
+            merchantId: response.merchantId,
+            category: response.category as MaybePromise<
+              { amount: string; name: string }[] | null | undefined
+            >,
+            transactionType: response.transactionType,
+            internalTransferTransactionId:
+              response.internalTransferTransactionId,
+            direction: response.direction,
+            notes: response.notes,
+            location: response.location,
+            tags: response.tags as MaybePromise<
+              { amount: string; name: string }[] | null | undefined
+            >,
+            isHideFromBudget: response.isHideFromBudget,
+            isHideFromInsight: response.isHideFromInsight,
+          };
+        } catch (error) {
+          throw error;
         }
-
-        const cashAccount = await prisma.cashAccount.findFirst({
-          where: { AND: [{ userId: user.id }, { id: cashAccountId }] },
-        });
-
-        if (!cashAccount)
-          throw { status: 3000, message: 'Akun cash tidak ditemukan' };
-
-        /*
-        Update balance
-        */
-        await prisma.cashAccount.update({
-          where: { id: cashAccount.id },
-          data: {
-            balance: updateBalance({
-              balance: cashAccount.balance,
-              amount,
-              direction,
-              reverse: false,
-            }).toString(),
-            lastUpdate: new Date(),
-          },
-        });
-
-        const merchant = await prisma.merchant.findFirst({
-          where: { id: merchantId },
-        });
-
-        if (!merchant)
-          throw { status: 2400, message: 'Merchant tidak ditemukan.' };
-
-        const response = await prisma.cashTransaction.create({
-          data: {
-            cashAccountId: encodeCashAccountId(cashAccountId),
-            dateTimestamp: new Date(),
-            currency: args.currency,
-            transactionName: args.transactionName,
-            amount: args.amount,
-            merchantId: args.merchantId,
-            category: args.category,
-            transactionType: args.transactionType,
-            direction: args.direction,
-            notes: args.notes,
-            location: args.location,
-            tags: args.tags,
-            isHideFromBudget: args.isHideFromBudget,
-            isHideFromInsight: args.isHideFromInsight,
-          },
-        });
-
-        return {
-          id: response.id,
-          dateTimestamp: toTimeStamp(response.dateTimestamp),
-          cashAccountId: decodeCashAccountId(response.cashAccountId),
-          currency: response.currency,
-          transactionName: response.transactionName,
-          amount: response.amount,
-          merchant: merchant,
-          merchantId: response.merchantId,
-          category: response.category as MaybePromise<
-            { amount: string; name: string }[] | null | undefined
-          >,
-          transactionType: response.transactionType,
-          internalTransferTransactionId: response.internalTransferTransactionId,
-          direction: response.direction,
-          notes: response.notes,
-          location: response.location,
-          tags: response.tags as MaybePromise<
-            { amount: string; name: string }[] | null | undefined
-          >,
-          isHideFromBudget: response.isHideFromBudget,
-          isHideFromInsight: response.isHideFromInsight,
-        };
       },
     });
 
@@ -550,55 +553,61 @@ export const CashTransactionMutation = extendType({
         ),
       },
 
-      async resolve(parent, args, context, info) {
-        const { transactionId } = args;
-        const { userId, prisma } = context;
+      async resolve(__, { transactionId }, { userId, prisma, pubsub }, ___) {
+        try {
+          if (!userId) throw new Error('Token tidak valid.');
 
-        if (!userId) throw { status: 1100, message: 'Token tidak valid.' };
+          const user = await prisma.user.findFirstOrThrow({
+            where: { id: userId },
+          });
 
-        const user = await prisma.user.findFirst({ where: { id: userId } });
+          const transaction = await prisma.cashTransaction.findFirstOrThrow({
+            where: { id: transactionId },
+          });
 
-        if (!user) throw { status: 1000, message: 'User tidak ditemukan.' };
+          const { cashAccountId: _cashAccountId } = transaction;
 
-        const transaction = await prisma.cashTransaction.findFirst({
-          where: { id: transactionId },
-        });
+          const cashAccountId = decodeCashAccountId(_cashAccountId);
 
-        if (!transaction)
-          throw { status: 2500, message: 'Transaksi tidak ditemukan.' };
+          const cashAccount = await prisma.cashAccount.findFirstOrThrow({
+            where: { id: cashAccountId as unknown as string },
+          });
 
-        const { cashAccountId: _cashAccountId } = transaction;
+          /**
+           * Update balance
+           */
+          const updatedCashAccount = await prisma.cashAccount.update({
+            where: { id: cashAccount.id },
+            data: {
+              balance: updateBalance({
+                balance: cashAccount.balance,
+                amount: transaction.amount,
+                direction: transaction.direction,
+                reverse: true,
+              }).toString(),
+              lastUpdate: new Date(),
+            },
+          });
 
-        const cashAccountId = decodeCashAccountId(_cashAccountId);
+          const deletedTransaction = await prisma.cashTransaction.delete({
+            where: { id: transactionId },
+          });
 
-        const cashAccount = await prisma.cashAccount.findFirst({
-          where: { id: cashAccountId as unknown as string },
-        });
+          await pubsub.publish(`cashAccountUpdated_${cashAccount.id}`, {
+            cashAccountUpdate: updatedCashAccount,
+          });
 
-        if (!cashAccount)
-          throw { status: 3000, message: 'Akun cash tidak ditemukan' };
+          await pubsub.publish(`cashTransactionLive_${cashAccount.id}`, {
+            mutationType: 'DELETE',
+            transaction: deletedTransaction,
+          });
 
-        /*
-        Update balance
-        */
-        await prisma.cashAccount.update({
-          where: { id: cashAccount.id },
-          data: {
-            balance: updateBalance({
-              balance: cashAccount.balance,
-              amount: transaction.amount,
-              direction: transaction.direction,
-              reverse: true,
-            }).toString(),
-            lastUpdate: new Date(),
-          },
-        });
-
-        await prisma.cashTransaction.delete({ where: { id: transactionId } });
-
-        return {
-          response: 'Successfully delete transaction and update its balance',
-        };
+          return {
+            response: 'Successfully delete transaction and update its balance',
+          };
+        } catch (error) {
+          throw error;
+        }
       },
     });
 
@@ -620,12 +629,6 @@ export const CashTransactionMutation = extendType({
         transactionName: arg({
           type: 'String',
           description: 'Transaction name',
-        }),
-
-        amount: arg({
-          type: 'String',
-          description:
-            'The amount for this transaction. IMPORTANT: only number and commas allowed! E.g.: 50000 for Rp 50.000, or 1002350,89 for Rp 1.002.350,89',
         }),
 
         merchantId: arg({
@@ -679,11 +682,11 @@ export const CashTransactionMutation = extendType({
         }),
       },
 
-      async resolve(parent, args, context, info) {
-        const {
+      async resolve(
+        __,
+        {
           transactionId,
           currency,
-          amount,
           transactionName,
           merchantId,
           category,
@@ -694,208 +697,151 @@ export const CashTransactionMutation = extendType({
           tags,
           isHideFromBudget,
           isHideFromInsight,
-        } = args;
-        const { userId, prisma } = context;
+        },
+        { userId, prisma, pubsub },
+        ___
+      ) {
+        try {
+          if (
+            !currency &&
+            !merchantId &&
+            !category &&
+            !transactionName &&
+            !transactionType &&
+            !direction &&
+            !notes &&
+            !location &&
+            !tags &&
+            !isHideFromBudget &&
+            !isHideFromInsight
+          )
+            throw new Error('Semua value tidak boleh null atau undefined.');
 
-        if (
-          !currency &&
-          !merchantId &&
-          !category &&
-          !transactionName &&
-          !transactionType &&
-          !direction &&
-          !notes &&
-          !location &&
-          !tags &&
-          !isHideFromBudget &&
-          !isHideFromInsight &&
-          !amount
-        )
-          throw {
-            status: 2003,
-            message: 'Semua value tidak boleh null atau undefined.',
-          };
+          if (!userId) throw new Error('Token tidak valid.');
 
-        if (amount && !category)
-          throw {
-            status: 2004,
-            message: 'Amount baru harus disertai dengan category baru.',
-          };
+          const user = await prisma.user.findFirstOrThrow({
+            where: { id: userId },
+          });
 
-        if (!userId) throw { status: 1100, message: 'Token tidak valid.' };
+          const transaction = await prisma.cashTransaction.findFirstOrThrow({
+            where: { id: transactionId },
+          });
 
-        const user = await prisma.user.findFirst({ where: { id: userId } });
+          const { cashAccountId: _cashAccountId } = transaction;
 
-        if (!user) throw { status: 1000, message: 'User tidak ditemukan.' };
+          const cashAccountId = decodeCashAccountId(_cashAccountId);
 
-        const transaction = await prisma.cashTransaction.findFirst({
-          where: { id: transactionId },
-        });
+          /**
+           * Check if the category match the amount
+           */
+          if (category) {
+            let categorySum: number = 0;
 
-        if (!transaction)
-          throw { status: 2500, message: 'Transaksi tidak ditemukan.' };
+            for (let i = 0; i < category.length; i++) {
+              const element = category[i];
 
-        const { cashAccountId: _cashAccountId } = transaction;
+              if (
+                !element ||
+                !element.hasOwnProperty('name') ||
+                !element.hasOwnProperty('amount')
+              )
+                throw new Error(
+                  'Category tidak boleh kosong. Dan harus dalam format {name, amount} untuk tiap category.'
+                );
 
-        const cashAccountId = decodeCashAccountId(_cashAccountId);
+              categorySum += Number(element.amount);
+            }
 
-        /*
-        Check if the category match the amount
-        */
-        if (amount && category) {
-          let categorySum: number = 0;
-
-          for (let i = 0; i < category.length; i++) {
-            const element = category[i];
-
-            if (
-              !element ||
-              !element.hasOwnProperty('name') ||
-              !element.hasOwnProperty('amount')
-            )
-              throw {
-                status: 2300,
-                message:
-                  'Category tidak boleh kosong. Dan harus dalam format {name, amount} untuk tiap category.',
-              };
-
-            categorySum += Number(element.amount);
+            if (categorySum !== Number(transaction.amount))
+              throw new Error(
+                'Total amount kategori harus sama dengan amount transaksi.'
+              );
           }
 
-          if (categorySum !== Number(amount))
-            throw {
-              status: 2200,
-              message:
-                'Total amount kategori harus sama dengan amount transaksi.',
-            };
-        }
+          /**
+           * Check if the tags match the amount
+           */
+          if (tags) {
+            let tagsSum: number = 0;
 
-        /*
-        Check if the tags match the amount
-        */
-        if (amount && tags) {
-          let tagsSum: number = 0;
+            for (let i = 0; i < tags.length; i++) {
+              const element = tags[i];
 
-          for (let i = 0; i < tags.length; i++) {
-            const element = tags[i];
+              if (
+                !element ||
+                !element.hasOwnProperty('name') ||
+                !element.hasOwnProperty('amount')
+              )
+                throw new Error(
+                  'Tags harus dalam format {name, amount} untuk tiap tags.'
+                );
 
-            if (
-              !element ||
-              !element.hasOwnProperty('name') ||
-              !element.hasOwnProperty('amount')
-            )
-              throw {
-                status: 2301,
-                message:
-                  'Tags harus dalam format {name, amount} untuk tiap tags.',
-              };
+              tagsSum += Number(element.amount);
+            }
 
-            tagsSum += Number(element.amount);
+            if (tagsSum > Number(transaction.amount))
+              throw new Error(
+                'Total amount tags tidak boleh lebih besar dengan amount transaksi.'
+              );
           }
 
-          if (tagsSum > Number(amount))
-            throw {
-              status: 2201,
-              message:
-                'Total amount tags tidak boleh lebih besar dengan amount transaksi.',
-            };
-        }
-
-        /*
-          Update balance if amount is edited
-          */
-
-        if (amount && cashAccountId) {
-          const cashAccount = await prisma.cashAccount.findFirst({
-            where: {
-              AND: [
-                { id: cashAccountId as unknown as string },
-                { userId: user.id },
-              ],
-            },
-          });
-
-          if (!cashAccount)
-            throw { status: 3000, message: 'Akun cash tidak ditemukan.' };
-
-          const first = await prisma.cashAccount.update({
-            where: { id: cashAccount.id },
+          const response = await prisma.cashTransaction.update({
+            where: { id: transaction.id },
             data: {
-              balance: updateBalance({
-                balance: cashAccount.balance,
-                amount: transaction.amount,
-                direction: transaction.direction,
-                reverse: true,
-              }).toString(),
-              lastUpdate: new Date(),
+              currency: currency ?? transaction.currency,
+              transactionName: transactionName ?? transaction.transactionName,
+              merchantId: merchantId ?? transaction.merchantId,
+              category: category ?? transaction.category,
+              transactionType: transactionType ?? transaction.transactionType,
+              direction: direction ?? transaction.direction,
+              notes: notes ?? transaction.notes,
+              location: location ?? transaction.location,
+              tags: tags ?? transaction.tags,
+              isHideFromBudget:
+                isHideFromBudget ?? transaction.isHideFromBudget,
+              isHideFromInsight:
+                isHideFromInsight ?? transaction.isHideFromInsight,
             },
           });
 
-          await prisma.cashAccount.update({
-            where: { id: cashAccount.id },
-            data: {
-              balance: updateBalance({
-                balance: first.balance,
-                amount,
-                direction: direction ?? transaction.direction,
-                reverse: false,
-              }).toString(),
-              lastUpdate: new Date(),
-            },
+          await pubsub.publish(`cashTransactionLive_${cashAccountId}`, {
+            mutationType: 'EDIT',
+            transaction: response,
           });
+
+          const merchant = await prisma.merchant.findFirstOrThrow({
+            where: { id: response.merchantId },
+          });
+
+          return {
+            id: response.id,
+            cashAccountId: decodeCashAccountId(
+              response.cashAccountId
+            ) as unknown as string,
+            dateTimestamp: response.dateTimestamp,
+            currency: response.currency,
+            amount: response.amount,
+            transactionName: response.transactionName,
+            merchant,
+            merchantId: response.merchantId,
+            category: response.category as MaybePromise<
+              { amount: string; name: string }[] | null | undefined
+            >,
+            transactionType: response.transactionType,
+            internalTransferTransactionId:
+              response.internalTransferTransactionId,
+            direction: response.direction,
+            notes: response.notes,
+            location: response.location,
+            tags: response.tags as MaybePromise<
+              { amount: string; name: string }[] | null | undefined
+            >,
+            isHideFromBudget: response.isHideFromBudget,
+            isHideFromInsight: response.isHideFromInsight,
+          };
+        } catch (error) {
+          throw error;
         }
-
-        const response = await prisma.cashTransaction.update({
-          where: { id: transaction.id },
-          data: {
-            currency: currency ?? transaction.currency,
-            amount: amount ?? transaction.amount,
-            transactionName: transactionName ?? transaction.transactionName,
-            merchantId: merchantId ?? transaction.merchantId,
-            category: category ?? transaction.category,
-            transactionType: transactionType ?? transaction.transactionType,
-            direction: direction ?? transaction.direction,
-            notes: notes ?? transaction.notes,
-            location: location ?? transaction.location,
-            tags: tags ?? transaction.tags,
-            isHideFromBudget: isHideFromBudget ?? transaction.isHideFromBudget,
-            isHideFromInsight:
-              isHideFromInsight ?? transaction.isHideFromInsight,
-          },
-        });
-
-        const merchant = await prisma.merchant.findFirst({
-          where: { id: response.merchantId },
-        });
-
-        if (!merchant)
-          throw { status: 2400, message: 'Merchant tidak ditemukan.' };
-
-        return {
-          id: response.id,
-          cashAccountId: decodeCashAccountId(
-            response.cashAccountId
-          ) as unknown as string,
-          dateTimestamp: toTimeStamp(response.dateTimestamp),
-          currency: response.currency,
-          amount: response.amount,
-          transactionName: response.transactionName,
-          merchant,
-          merchantId: response.merchantId,
-          category: response.category as MaybePromise<
-            { amount: string; name: string }[] | null | undefined
-          >,
-          transactionType: response.transactionType,
-          internalTransferTransactionId: response.internalTransferTransactionId,
-          direction: response.direction,
-          notes: response.notes,
-          location: response.location,
-          tags: response.tags as MaybePromise<
-            { amount: string; name: string }[] | null | undefined
-          >,
-          isHideFromBudget: response.isHideFromBudget,
-          isHideFromInsight: response.isHideFromInsight,
-        };
       },
     });
   },

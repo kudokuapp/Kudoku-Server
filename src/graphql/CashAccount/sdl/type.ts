@@ -9,11 +9,11 @@ export const CashAccount = objectType({
 
     t.nonNull.string('userId');
 
-    t.nonNull.string('createdAt', {
+    t.nonNull.dateTime('createdAt', {
       description: 'When this account is created',
     });
 
-    t.nonNull.string('lastUpdate', {
+    t.nonNull.dateTime('lastUpdate', {
       description: 'When this account is last updated',
     });
 
@@ -49,7 +49,7 @@ export const CashTransaction = objectType({
       description: 'The cash account Id',
     });
 
-    t.nonNull.string('dateTimestamp', {
+    t.nonNull.dateTime('dateTimestamp', {
       description: 'Date and Timestamp for this transaction',
     });
 
@@ -110,5 +110,16 @@ export const CashTransaction = objectType({
     t.nonNull.boolean('isHideFromInsight', {
       description: 'Whether or not this transaction is hidden from insight',
     });
+  },
+});
+
+export const CashTransactionSubscriptionType = objectType({
+  name: 'CashTransactionSubscriptionType',
+  definition(t) {
+    t.nonNull.field('mutationType', {
+      type: 'typeOfMutationType',
+      description: 'The type of mutationType. Either `ADD` `EDIT` or `DELETE`',
+    });
+    t.nonNull.field('transaction', { type: 'CashTransaction' });
   },
 });

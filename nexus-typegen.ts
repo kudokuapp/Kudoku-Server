@@ -5,8 +5,23 @@
 
 
 import type { Context } from "./src/context"
-
-
+import type { core } from "nexus"
+declare global {
+  interface NexusGenCustomInputMethods<TypeName extends string> {
+    /**
+     * A date-time string at UTC, such as 2007-12-03T10:15:30Z, compliant with the date-time format.
+     */
+    dateTime<FieldName extends string>(fieldName: FieldName, opts?: core.CommonInputFieldConfig<TypeName, FieldName>): void // "DateTime";
+  }
+}
+declare global {
+  interface NexusGenCustomOutputMethods<TypeName extends string> {
+    /**
+     * A date-time string at UTC, such as 2007-12-03T10:15:30Z, compliant with the date-time format.
+     */
+    dateTime<FieldName extends string>(fieldName: FieldName, ...opts: core.ScalarOutSpread<TypeName, FieldName>): void // "DateTime";
+  }
+}
 
 
 declare global {
@@ -29,6 +44,7 @@ export interface NexusGenEnums {
   ExpenseTypeEnum: "EXPENSE" | "INCOME"
   TransactionMethodEnum: "Debit" | "QRIS" | "VirtualAccount" | "mPayment"
   typeOfAccount: "CASH" | "DEBIT" | "EMONEY" | "EWALLET" | "PAYLATER"
+  typeOfMutationType: "ADD" | "DELETE" | "EDIT"
 }
 
 export interface NexusGenScalars {
@@ -37,6 +53,7 @@ export interface NexusGenScalars {
   Float: number
   Boolean: boolean
   ID: string
+  DateTime: any
 }
 
 export interface NexusGenObjects {
@@ -46,11 +63,11 @@ export interface NexusGenObjects {
   CashAccount: { // root type
     accountName: string; // String!
     balance: string; // String!
-    createdAt: string; // String!
+    createdAt: NexusGenScalars['DateTime']; // DateTime!
     currency: string; // String!
     displayPicture?: string | null; // String
     id: string; // String!
-    lastUpdate: string; // String!
+    lastUpdate: NexusGenScalars['DateTime']; // DateTime!
     userId: string; // String!
   }
   CashTransaction: { // root type
@@ -58,7 +75,7 @@ export interface NexusGenObjects {
     cashAccountId: string; // String!
     category?: NexusGenRootTypes['NameAmountJson'][] | null; // [NameAmountJson!]
     currency: string; // String!
-    dateTimestamp: string; // String!
+    dateTimestamp: NexusGenScalars['DateTime']; // DateTime!
     direction: string; // String!
     id: string; // String!
     internalTransferTransactionId?: string | null; // String
@@ -72,21 +89,26 @@ export interface NexusGenObjects {
     transactionName: string; // String!
     transactionType: string; // String!
   }
+  CashTransactionSubscriptionType: { // root type
+    mutationType: NexusGenEnums['typeOfMutationType']; // typeOfMutationType!
+    transaction: NexusGenRootTypes['CashTransaction']; // CashTransaction!
+  }
   DebitAccount: { // root type
     accountNumber: string; // String!
     balance: string; // String!
-    createdAt: string; // String!
+    createdAt: NexusGenScalars['DateTime']; // DateTime!
     currency: string; // String!
+    expired: boolean; // Boolean!
     id: string; // String!
     institutionId: string; // String!
-    lastUpdate: string; // String!
+    lastUpdate: NexusGenScalars['DateTime']; // DateTime!
     userId: string; // String!
   }
   DebitTransaction: { // root type
     amount: string; // String!
     category?: NexusGenRootTypes['NameAmountJson'][] | null; // [NameAmountJson!]
     currency: string; // String!
-    dateTimestamp: string; // String!
+    dateTimestamp: NexusGenScalars['DateTime']; // DateTime!
     debitAccountId: string; // String!
     description: string; // String!
     direction: string; // String!
@@ -108,21 +130,25 @@ export interface NexusGenObjects {
     transactionName: string; // String!
     transactionType: string; // String!
   }
+  DebitTransactionSubscriptionType: { // root type
+    mutationType: NexusGenEnums['typeOfMutationType']; // typeOfMutationType!
+    transaction: NexusGenRootTypes['DebitTransaction']; // DebitTransaction!
+  }
   EMoneyAccount: { // root type
     balance: string; // String!
     cardNumber: string; // String!
-    createdAt: string; // String!
+    createdAt: NexusGenScalars['DateTime']; // DateTime!
     currency: string; // String!
     id: string; // String!
     institutionId: string; // String!
-    lastUpdate: string; // String!
+    lastUpdate: NexusGenScalars['DateTime']; // DateTime!
     userId: string; // String!
   }
   EMoneyTransaction: { // root type
     amount: string; // String!
     category?: NexusGenRootTypes['NameAmountJson'][] | null; // [NameAmountJson!]
     currency: string; // String!
-    dateTimestamp: string; // String!
+    dateTimestamp: NexusGenScalars['DateTime']; // DateTime!
     description?: string | null; // String
     direction: string; // String!
     eMoneyAccountId: string; // String!
@@ -140,21 +166,26 @@ export interface NexusGenObjects {
     transactionName: string; // String!
     transactionType: string; // String!
   }
+  EMoneyTransactionSubscriptionType: { // root type
+    mutationType: NexusGenEnums['typeOfMutationType']; // typeOfMutationType!
+    transaction: NexusGenRootTypes['EMoneyTransaction']; // EMoneyTransaction!
+  }
   EWalletAccount: { // root type
     accountNumber: string; // String!
     balance: string; // String!
-    createdAt: string; // String!
+    createdAt: NexusGenScalars['DateTime']; // DateTime!
     currency: string; // String!
+    expired: boolean; // Boolean!
     id: string; // String!
     institutionId: string; // String!
-    lastUpdate: string; // String!
+    lastUpdate: NexusGenScalars['DateTime']; // DateTime!
     userId: string; // String!
   }
   EWalletTransaction: { // root type
     amount: string; // String!
     category?: NexusGenRootTypes['NameAmountJson'][] | null; // [NameAmountJson!]
     currency: string; // String!
-    dateTimestamp: string; // String!
+    dateTimestamp: NexusGenScalars['DateTime']; // DateTime!
     description: string; // String!
     direction: string; // String!
     eWalletAccountId: string; // String!
@@ -174,6 +205,18 @@ export interface NexusGenObjects {
     tags?: Array<NexusGenRootTypes['NameAmountJson'] | null> | null; // [NameAmountJson]
     transactionName: string; // String!
     transactionType: string; // String!
+  }
+  EWalletTransactionSubscriptionType: { // root type
+    mutationType: NexusGenEnums['typeOfMutationType']; // typeOfMutationType!
+    transaction: NexusGenRootTypes['EWalletTransaction']; // EWalletTransaction!
+  }
+  GopayEWalletAndPayLaterAccount: { // root type
+    EWallet: NexusGenRootTypes['EWalletAccount']; // EWalletAccount!
+    PayLater: NexusGenRootTypes['PayLaterAccount']; // PayLaterAccount!
+  }
+  GopayEWalletAndPayLaterTransaction: { // root type
+    EWallet: Array<NexusGenRootTypes['EWalletTransaction'] | null>; // [EWalletTransaction]!
+    PayLater: Array<NexusGenRootTypes['PayLaterTransaction'] | null>; // [PayLaterTransaction]!
   }
   Location: { // root type
     latitude: string; // String!
@@ -201,18 +244,19 @@ export interface NexusGenObjects {
   PayLaterAccount: { // root type
     accountNumber: string; // String!
     balance: string; // String!
-    createdAt: string; // String!
+    createdAt: NexusGenScalars['DateTime']; // DateTime!
     currency: string; // String!
+    expired: boolean; // Boolean!
     id: string; // String!
     institutionId: string; // String!
-    lastUpdate: string; // String!
+    lastUpdate: NexusGenScalars['DateTime']; // DateTime!
     userId: string; // String!
   }
   PayLaterTransaction: { // root type
     amount: string; // String!
     category?: NexusGenRootTypes['NameAmountJson'][] | null; // [NameAmountJson!]
     currency: string; // String!
-    dateTimestamp: string; // String!
+    dateTimestamp: NexusGenScalars['DateTime']; // DateTime!
     description: string; // String!
     direction: string; // String!
     id: string; // String!
@@ -233,6 +277,10 @@ export interface NexusGenObjects {
     transactionName: string; // String!
     transactionType: string; // String!
   }
+  PayLaterTransactionSubscriptionType: { // root type
+    mutationType: NexusGenEnums['typeOfMutationType']; // typeOfMutationType!
+    transaction: NexusGenRootTypes['PayLaterTransaction']; // PayLaterTransaction!
+  }
   Profile: { // root type
     bio?: string | null; // String
     birthday?: string | null; // String
@@ -243,7 +291,7 @@ export interface NexusGenObjects {
   }
   Query: {};
   Refresh: { // root type
-    date: string; // String!
+    date: NexusGenScalars['DateTime']; // DateTime!
     id: string; // String!
     user: NexusGenRootTypes['User']; // User!
     userId: string; // String!
@@ -251,8 +299,9 @@ export interface NexusGenObjects {
   ResponseMessage: { // root type
     response?: string | null; // String
   }
+  Subscription: {};
   User: { // root type
-    createdAt: string; // String!
+    createdAt: NexusGenScalars['DateTime']; // DateTime!
     email: string; // String!
     firstName: string; // String!
     id: string; // String!
@@ -280,11 +329,11 @@ export interface NexusGenFieldTypes {
   CashAccount: { // field return type
     accountName: string; // String!
     balance: string; // String!
-    createdAt: string; // String!
+    createdAt: NexusGenScalars['DateTime']; // DateTime!
     currency: string; // String!
     displayPicture: string | null; // String
     id: string; // String!
-    lastUpdate: string; // String!
+    lastUpdate: NexusGenScalars['DateTime']; // DateTime!
     userId: string; // String!
   }
   CashTransaction: { // field return type
@@ -292,7 +341,7 @@ export interface NexusGenFieldTypes {
     cashAccountId: string; // String!
     category: NexusGenRootTypes['NameAmountJson'][] | null; // [NameAmountJson!]
     currency: string; // String!
-    dateTimestamp: string; // String!
+    dateTimestamp: NexusGenScalars['DateTime']; // DateTime!
     direction: string; // String!
     id: string; // String!
     internalTransferTransactionId: string | null; // String
@@ -306,21 +355,26 @@ export interface NexusGenFieldTypes {
     transactionName: string; // String!
     transactionType: string; // String!
   }
+  CashTransactionSubscriptionType: { // field return type
+    mutationType: NexusGenEnums['typeOfMutationType']; // typeOfMutationType!
+    transaction: NexusGenRootTypes['CashTransaction']; // CashTransaction!
+  }
   DebitAccount: { // field return type
     accountNumber: string; // String!
     balance: string; // String!
-    createdAt: string; // String!
+    createdAt: NexusGenScalars['DateTime']; // DateTime!
     currency: string; // String!
+    expired: boolean; // Boolean!
     id: string; // String!
     institutionId: string; // String!
-    lastUpdate: string; // String!
+    lastUpdate: NexusGenScalars['DateTime']; // DateTime!
     userId: string; // String!
   }
   DebitTransaction: { // field return type
     amount: string; // String!
     category: NexusGenRootTypes['NameAmountJson'][] | null; // [NameAmountJson!]
     currency: string; // String!
-    dateTimestamp: string; // String!
+    dateTimestamp: NexusGenScalars['DateTime']; // DateTime!
     debitAccountId: string; // String!
     description: string; // String!
     direction: string; // String!
@@ -342,21 +396,25 @@ export interface NexusGenFieldTypes {
     transactionName: string; // String!
     transactionType: string; // String!
   }
+  DebitTransactionSubscriptionType: { // field return type
+    mutationType: NexusGenEnums['typeOfMutationType']; // typeOfMutationType!
+    transaction: NexusGenRootTypes['DebitTransaction']; // DebitTransaction!
+  }
   EMoneyAccount: { // field return type
     balance: string; // String!
     cardNumber: string; // String!
-    createdAt: string; // String!
+    createdAt: NexusGenScalars['DateTime']; // DateTime!
     currency: string; // String!
     id: string; // String!
     institutionId: string; // String!
-    lastUpdate: string; // String!
+    lastUpdate: NexusGenScalars['DateTime']; // DateTime!
     userId: string; // String!
   }
   EMoneyTransaction: { // field return type
     amount: string; // String!
     category: NexusGenRootTypes['NameAmountJson'][] | null; // [NameAmountJson!]
     currency: string; // String!
-    dateTimestamp: string; // String!
+    dateTimestamp: NexusGenScalars['DateTime']; // DateTime!
     description: string | null; // String
     direction: string; // String!
     eMoneyAccountId: string; // String!
@@ -374,21 +432,26 @@ export interface NexusGenFieldTypes {
     transactionName: string; // String!
     transactionType: string; // String!
   }
+  EMoneyTransactionSubscriptionType: { // field return type
+    mutationType: NexusGenEnums['typeOfMutationType']; // typeOfMutationType!
+    transaction: NexusGenRootTypes['EMoneyTransaction']; // EMoneyTransaction!
+  }
   EWalletAccount: { // field return type
     accountNumber: string; // String!
     balance: string; // String!
-    createdAt: string; // String!
+    createdAt: NexusGenScalars['DateTime']; // DateTime!
     currency: string; // String!
+    expired: boolean; // Boolean!
     id: string; // String!
     institutionId: string; // String!
-    lastUpdate: string; // String!
+    lastUpdate: NexusGenScalars['DateTime']; // DateTime!
     userId: string; // String!
   }
   EWalletTransaction: { // field return type
     amount: string; // String!
     category: NexusGenRootTypes['NameAmountJson'][] | null; // [NameAmountJson!]
     currency: string; // String!
-    dateTimestamp: string; // String!
+    dateTimestamp: NexusGenScalars['DateTime']; // DateTime!
     description: string; // String!
     direction: string; // String!
     eWalletAccountId: string; // String!
@@ -409,6 +472,18 @@ export interface NexusGenFieldTypes {
     transactionName: string; // String!
     transactionType: string; // String!
   }
+  EWalletTransactionSubscriptionType: { // field return type
+    mutationType: NexusGenEnums['typeOfMutationType']; // typeOfMutationType!
+    transaction: NexusGenRootTypes['EWalletTransaction']; // EWalletTransaction!
+  }
+  GopayEWalletAndPayLaterAccount: { // field return type
+    EWallet: NexusGenRootTypes['EWalletAccount']; // EWalletAccount!
+    PayLater: NexusGenRootTypes['PayLaterAccount']; // PayLaterAccount!
+  }
+  GopayEWalletAndPayLaterTransaction: { // field return type
+    EWallet: Array<NexusGenRootTypes['EWalletTransaction'] | null>; // [EWalletTransaction]!
+    PayLater: Array<NexusGenRootTypes['PayLaterTransaction'] | null>; // [PayLaterTransaction]!
+  }
   Location: { // field return type
     latitude: string; // String!
     longitude: string; // String!
@@ -427,7 +502,7 @@ export interface NexusGenFieldTypes {
     changePassword: NexusGenRootTypes['AuthPayLoad']; // AuthPayLoad!
     changePin: NexusGenRootTypes['AuthPayLoad']; // AuthPayLoad!
     connectBcaViaBrick: NexusGenRootTypes['DebitAccount']; // DebitAccount!
-    connectGopayViaBrick: NexusGenRootTypes['EWalletAccount'][]; // [EWalletAccount!]!
+    connectGopayViaBrick: NexusGenRootTypes['GopayEWalletAndPayLaterAccount']; // GopayEWalletAndPayLaterAccount!
     createEMoneyAccount: NexusGenRootTypes['EMoneyAccount']; // EMoneyAccount!
     deleteCashAccount: NexusGenRootTypes['ResponseMessage'] | null; // ResponseMessage
     deleteCashTransaction: NexusGenRootTypes['ResponseMessage'] | null; // ResponseMessage
@@ -444,7 +519,7 @@ export interface NexusGenFieldTypes {
     reconcileCashBalance: NexusGenRootTypes['CashAccount']; // CashAccount!
     reconcileEMoneyAccount: NexusGenRootTypes['EMoneyAccount']; // EMoneyAccount!
     refreshBcaTransactionViaBrick: Array<NexusGenRootTypes['DebitTransaction'] | null> | null; // [DebitTransaction]
-    refreshGopayTransactionViaBrick: NexusGenRootTypes['ResponseMessage'] | null; // ResponseMessage
+    refreshGopayTransactionViaBrick: NexusGenRootTypes['GopayEWalletAndPayLaterTransaction'] | null; // GopayEWalletAndPayLaterTransaction
     signup: NexusGenRootTypes['AuthPayLoad']; // AuthPayLoad!
     updateEmailOrWhatsapp: NexusGenRootTypes['User']; // User!
     updateProfile: NexusGenRootTypes['Profile']; // Profile!
@@ -465,18 +540,19 @@ export interface NexusGenFieldTypes {
   PayLaterAccount: { // field return type
     accountNumber: string; // String!
     balance: string; // String!
-    createdAt: string; // String!
+    createdAt: NexusGenScalars['DateTime']; // DateTime!
     currency: string; // String!
+    expired: boolean; // Boolean!
     id: string; // String!
     institutionId: string; // String!
-    lastUpdate: string; // String!
+    lastUpdate: NexusGenScalars['DateTime']; // DateTime!
     userId: string; // String!
   }
   PayLaterTransaction: { // field return type
     amount: string; // String!
     category: NexusGenRootTypes['NameAmountJson'][] | null; // [NameAmountJson!]
     currency: string; // String!
-    dateTimestamp: string; // String!
+    dateTimestamp: NexusGenScalars['DateTime']; // DateTime!
     description: string; // String!
     direction: string; // String!
     id: string; // String!
@@ -496,6 +572,10 @@ export interface NexusGenFieldTypes {
     tags: Array<NexusGenRootTypes['NameAmountJson'] | null> | null; // [NameAmountJson]
     transactionName: string; // String!
     transactionType: string; // String!
+  }
+  PayLaterTransactionSubscriptionType: { // field return type
+    mutationType: NexusGenEnums['typeOfMutationType']; // typeOfMutationType!
+    transaction: NexusGenRootTypes['PayLaterTransaction']; // PayLaterTransaction!
   }
   Profile: { // field return type
     bio: string | null; // String
@@ -528,7 +608,7 @@ export interface NexusGenFieldTypes {
     verifyPin: NexusGenRootTypes['AuthPayLoad']; // AuthPayLoad!
   }
   Refresh: { // field return type
-    date: string; // String!
+    date: NexusGenScalars['DateTime']; // DateTime!
     id: string; // String!
     user: NexusGenRootTypes['User']; // User!
     userId: string; // String!
@@ -536,8 +616,21 @@ export interface NexusGenFieldTypes {
   ResponseMessage: { // field return type
     response: string | null; // String
   }
+  Subscription: { // field return type
+    cashTransactionLive: NexusGenRootTypes['CashTransactionSubscriptionType'] | null; // CashTransactionSubscriptionType
+    debitTransactionLive: NexusGenRootTypes['DebitTransactionSubscriptionType'] | null; // DebitTransactionSubscriptionType
+    eMoneyTransactionLive: NexusGenRootTypes['EMoneyTransactionSubscriptionType'] | null; // EMoneyTransactionSubscriptionType
+    eWalletTransactionLive: NexusGenRootTypes['EWalletTransactionSubscriptionType'] | null; // EWalletTransactionSubscriptionType
+    newMerchantLive: NexusGenRootTypes['Merchant'] | null; // Merchant
+    payLaterTransactionLive: NexusGenRootTypes['PayLaterTransactionSubscriptionType'] | null; // PayLaterTransactionSubscriptionType
+    updatedCashAccountLive: NexusGenRootTypes['CashAccount'] | null; // CashAccount
+    updatedDebitAccountLive: NexusGenRootTypes['DebitAccount'] | null; // DebitAccount
+    updatedEMoneyAccountLive: NexusGenRootTypes['EMoneyAccount'] | null; // EMoneyAccount
+    updatedEWalletAccountLive: NexusGenRootTypes['EWalletAccount'] | null; // EWalletAccount
+    updatedPayLaterAccountLive: NexusGenRootTypes['PayLaterAccount'] | null; // PayLaterAccount
+  }
   User: { // field return type
-    createdAt: string; // String!
+    createdAt: NexusGenScalars['DateTime']; // DateTime!
     email: string; // String!
     firstName: string; // String!
     id: string; // String!
@@ -555,11 +648,11 @@ export interface NexusGenFieldTypeNames {
   CashAccount: { // field return type name
     accountName: 'String'
     balance: 'String'
-    createdAt: 'String'
+    createdAt: 'DateTime'
     currency: 'String'
     displayPicture: 'String'
     id: 'String'
-    lastUpdate: 'String'
+    lastUpdate: 'DateTime'
     userId: 'String'
   }
   CashTransaction: { // field return type name
@@ -567,7 +660,7 @@ export interface NexusGenFieldTypeNames {
     cashAccountId: 'String'
     category: 'NameAmountJson'
     currency: 'String'
-    dateTimestamp: 'String'
+    dateTimestamp: 'DateTime'
     direction: 'String'
     id: 'String'
     internalTransferTransactionId: 'String'
@@ -581,21 +674,26 @@ export interface NexusGenFieldTypeNames {
     transactionName: 'String'
     transactionType: 'String'
   }
+  CashTransactionSubscriptionType: { // field return type name
+    mutationType: 'typeOfMutationType'
+    transaction: 'CashTransaction'
+  }
   DebitAccount: { // field return type name
     accountNumber: 'String'
     balance: 'String'
-    createdAt: 'String'
+    createdAt: 'DateTime'
     currency: 'String'
+    expired: 'Boolean'
     id: 'String'
     institutionId: 'String'
-    lastUpdate: 'String'
+    lastUpdate: 'DateTime'
     userId: 'String'
   }
   DebitTransaction: { // field return type name
     amount: 'String'
     category: 'NameAmountJson'
     currency: 'String'
-    dateTimestamp: 'String'
+    dateTimestamp: 'DateTime'
     debitAccountId: 'String'
     description: 'String'
     direction: 'String'
@@ -617,21 +715,25 @@ export interface NexusGenFieldTypeNames {
     transactionName: 'String'
     transactionType: 'String'
   }
+  DebitTransactionSubscriptionType: { // field return type name
+    mutationType: 'typeOfMutationType'
+    transaction: 'DebitTransaction'
+  }
   EMoneyAccount: { // field return type name
     balance: 'String'
     cardNumber: 'String'
-    createdAt: 'String'
+    createdAt: 'DateTime'
     currency: 'String'
     id: 'String'
     institutionId: 'String'
-    lastUpdate: 'String'
+    lastUpdate: 'DateTime'
     userId: 'String'
   }
   EMoneyTransaction: { // field return type name
     amount: 'String'
     category: 'NameAmountJson'
     currency: 'String'
-    dateTimestamp: 'String'
+    dateTimestamp: 'DateTime'
     description: 'String'
     direction: 'String'
     eMoneyAccountId: 'String'
@@ -649,21 +751,26 @@ export interface NexusGenFieldTypeNames {
     transactionName: 'String'
     transactionType: 'String'
   }
+  EMoneyTransactionSubscriptionType: { // field return type name
+    mutationType: 'typeOfMutationType'
+    transaction: 'EMoneyTransaction'
+  }
   EWalletAccount: { // field return type name
     accountNumber: 'String'
     balance: 'String'
-    createdAt: 'String'
+    createdAt: 'DateTime'
     currency: 'String'
+    expired: 'Boolean'
     id: 'String'
     institutionId: 'String'
-    lastUpdate: 'String'
+    lastUpdate: 'DateTime'
     userId: 'String'
   }
   EWalletTransaction: { // field return type name
     amount: 'String'
     category: 'NameAmountJson'
     currency: 'String'
-    dateTimestamp: 'String'
+    dateTimestamp: 'DateTime'
     description: 'String'
     direction: 'String'
     eWalletAccountId: 'String'
@@ -684,6 +791,18 @@ export interface NexusGenFieldTypeNames {
     transactionName: 'String'
     transactionType: 'String'
   }
+  EWalletTransactionSubscriptionType: { // field return type name
+    mutationType: 'typeOfMutationType'
+    transaction: 'EWalletTransaction'
+  }
+  GopayEWalletAndPayLaterAccount: { // field return type name
+    EWallet: 'EWalletAccount'
+    PayLater: 'PayLaterAccount'
+  }
+  GopayEWalletAndPayLaterTransaction: { // field return type name
+    EWallet: 'EWalletTransaction'
+    PayLater: 'PayLaterTransaction'
+  }
   Location: { // field return type name
     latitude: 'String'
     longitude: 'String'
@@ -702,7 +821,7 @@ export interface NexusGenFieldTypeNames {
     changePassword: 'AuthPayLoad'
     changePin: 'AuthPayLoad'
     connectBcaViaBrick: 'DebitAccount'
-    connectGopayViaBrick: 'EWalletAccount'
+    connectGopayViaBrick: 'GopayEWalletAndPayLaterAccount'
     createEMoneyAccount: 'EMoneyAccount'
     deleteCashAccount: 'ResponseMessage'
     deleteCashTransaction: 'ResponseMessage'
@@ -719,7 +838,7 @@ export interface NexusGenFieldTypeNames {
     reconcileCashBalance: 'CashAccount'
     reconcileEMoneyAccount: 'EMoneyAccount'
     refreshBcaTransactionViaBrick: 'DebitTransaction'
-    refreshGopayTransactionViaBrick: 'ResponseMessage'
+    refreshGopayTransactionViaBrick: 'GopayEWalletAndPayLaterTransaction'
     signup: 'AuthPayLoad'
     updateEmailOrWhatsapp: 'User'
     updateProfile: 'Profile'
@@ -740,18 +859,19 @@ export interface NexusGenFieldTypeNames {
   PayLaterAccount: { // field return type name
     accountNumber: 'String'
     balance: 'String'
-    createdAt: 'String'
+    createdAt: 'DateTime'
     currency: 'String'
+    expired: 'Boolean'
     id: 'String'
     institutionId: 'String'
-    lastUpdate: 'String'
+    lastUpdate: 'DateTime'
     userId: 'String'
   }
   PayLaterTransaction: { // field return type name
     amount: 'String'
     category: 'NameAmountJson'
     currency: 'String'
-    dateTimestamp: 'String'
+    dateTimestamp: 'DateTime'
     description: 'String'
     direction: 'String'
     id: 'String'
@@ -771,6 +891,10 @@ export interface NexusGenFieldTypeNames {
     tags: 'NameAmountJson'
     transactionName: 'String'
     transactionType: 'String'
+  }
+  PayLaterTransactionSubscriptionType: { // field return type name
+    mutationType: 'typeOfMutationType'
+    transaction: 'PayLaterTransaction'
   }
   Profile: { // field return type name
     bio: 'String'
@@ -803,7 +927,7 @@ export interface NexusGenFieldTypeNames {
     verifyPin: 'AuthPayLoad'
   }
   Refresh: { // field return type name
-    date: 'String'
+    date: 'DateTime'
     id: 'String'
     user: 'User'
     userId: 'String'
@@ -811,8 +935,21 @@ export interface NexusGenFieldTypeNames {
   ResponseMessage: { // field return type name
     response: 'String'
   }
+  Subscription: { // field return type name
+    cashTransactionLive: 'CashTransactionSubscriptionType'
+    debitTransactionLive: 'DebitTransactionSubscriptionType'
+    eMoneyTransactionLive: 'EMoneyTransactionSubscriptionType'
+    eWalletTransactionLive: 'EWalletTransactionSubscriptionType'
+    newMerchantLive: 'Merchant'
+    payLaterTransactionLive: 'PayLaterTransactionSubscriptionType'
+    updatedCashAccountLive: 'CashAccount'
+    updatedDebitAccountLive: 'DebitAccount'
+    updatedEMoneyAccountLive: 'EMoneyAccount'
+    updatedEWalletAccountLive: 'EWalletAccount'
+    updatedPayLaterAccountLive: 'PayLaterAccount'
+  }
   User: { // field return type name
-    createdAt: 'String'
+    createdAt: 'DateTime'
     email: 'String'
     firstName: 'String'
     id: 'String'
@@ -920,7 +1057,6 @@ export interface NexusGenArgTypes {
       displayPicture?: string | null; // String
     }
     editCashTransaction: { // args
-      amount?: string | null; // String
       category?: Array<NexusGenInputs['NameAmountJsonInput'] | null> | null; // [NameAmountJsonInput]
       currency: string | null; // String
       direction?: NexusGenEnums['DirectionTypeEnum'] | null; // DirectionTypeEnum
@@ -950,7 +1086,6 @@ export interface NexusGenArgTypes {
       transactionType?: NexusGenEnums['ExpenseTypeEnum'] | null; // ExpenseTypeEnum
     }
     editEMoneyTransaction: { // args
-      amount?: string | null; // String
       category?: Array<NexusGenInputs['NameAmountJsonInput'] | null> | null; // [NameAmountJsonInput]
       direction?: NexusGenEnums['DirectionTypeEnum'] | null; // DirectionTypeEnum
       isHideFromBudget?: boolean | null; // Boolean
@@ -1074,6 +1209,38 @@ export interface NexusGenArgTypes {
     verifyPin: { // args
       pin: string; // String!
       username: string; // String!
+    }
+  }
+  Subscription: {
+    cashTransactionLive: { // args
+      cashAccountId: string; // String!
+    }
+    debitTransactionLive: { // args
+      debitAccountId: string; // String!
+    }
+    eMoneyTransactionLive: { // args
+      eMoneyAccountId: string; // String!
+    }
+    eWalletTransactionLive: { // args
+      eWalletAccountId: string; // String!
+    }
+    payLaterTransactionLive: { // args
+      payLaterAccountId: string; // String!
+    }
+    updatedCashAccountLive: { // args
+      cashAccountId: string; // String!
+    }
+    updatedDebitAccountLive: { // args
+      debitAccountId: string; // String!
+    }
+    updatedEMoneyAccountLive: { // args
+      eMoneyAccountId: string; // String!
+    }
+    updatedEWalletAccountLive: { // args
+      eWalletAccountId: string; // String!
+    }
+    updatedPayLaterAccountLive: { // args
+      payLaterAccountId: string; // String!
     }
   }
 }

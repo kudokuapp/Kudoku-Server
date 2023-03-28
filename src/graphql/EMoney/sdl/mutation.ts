@@ -1,14 +1,11 @@
-import { arg, extendType, nonNull, list, enumType } from 'nexus';
-import { toTimeStamp } from '../../../utils/date';
-import { Merchant, TransactionType } from '@prisma/client';
-import { DirectionTypeEnum } from '../../Enum';
+import { arg, extendType, nonNull, list } from 'nexus';
+import { TransactionType } from '@prisma/client';
 import _ from 'lodash';
-import { updateBalance } from '../../../utils/transaction';
-import { MaybePromise } from 'nexus/dist/typegenTypeHelpers';
 import {
   decodeEMoneyAccountId,
   encodeEMoneyAccountId,
-} from '../../../utils/auth';
+} from '../../../utils/auth/eMoneyAccountId';
+import updateBalance from '../../../utils/transaction/updateBalance';
 
 export const EMoneyAccountMutation = extendType({
   type: 'Mutation',
@@ -48,56 +45,56 @@ export const EMoneyAccountMutation = extendType({
         ),
       },
 
-      async resolve(parent, args, context, info) {
-        const { institutionId, cardNumber, initialBalance, currency } = args;
+      async resolve(
+        __,
+        { institutionId, cardNumber, initialBalance, currency },
+        { userId, prisma },
+        ___
+      ) {
+        try {
+          if (!userId) throw new Error('Token tidak valid.');
 
-        const { userId, prisma } = context;
+          const user = await prisma.user.findFirstOrThrow({
+            where: { id: userId },
+          });
 
-        if (!userId) throw { status: 1100, message: 'Token tidak valid.' };
+          /**
+           * Avoid account duplication
+           */
 
-        const searchUser = await prisma.user.findFirst({
-          where: { id: userId },
-        });
+          const searchEMoneyAccount = await prisma.eMoneyAccount.findFirst({
+            where: {
+              AND: [{ userId: user.id }, { cardNumber }, { institutionId }],
+            },
+          });
 
-        if (!searchUser) {
-          throw { status: 1000, message: 'User tidak ditemukan.' };
+          if (searchEMoneyAccount) throw new Error('Akun e-money sudah ada.');
+
+          const response = await prisma.eMoneyAccount.create({
+            data: {
+              institutionId,
+              userId: user.id,
+              cardNumber,
+              balance: initialBalance,
+              currency,
+              createdAt: new Date(),
+              lastUpdate: new Date(),
+            },
+          });
+
+          return {
+            id: response.id,
+            userId: response.userId,
+            institutionId: response.institutionId,
+            cardNumber: response.cardNumber,
+            balance: response.balance,
+            createdAt: response.createdAt,
+            lastUpdate: response.lastUpdate,
+            currency: response.currency,
+          };
+        } catch (error) {
+          throw error;
         }
-
-        /*
-        Avoid account duplication
-        */
-
-        const searchEMoneyAccount = await prisma.eMoneyAccount.findFirst({
-          where: {
-            AND: [{ userId: searchUser.id }, { cardNumber }, { institutionId }],
-          },
-        });
-
-        if (searchEMoneyAccount)
-          throw { status: 6000, message: 'Akun e-money sudah ada.' };
-
-        const response = await prisma.eMoneyAccount.create({
-          data: {
-            institutionId,
-            userId: searchUser.id,
-            cardNumber,
-            balance: initialBalance,
-            currency,
-            createdAt: new Date(),
-            lastUpdate: new Date(),
-          },
-        });
-
-        return {
-          id: response.id,
-          userId: response.userId,
-          institutionId: response.institutionId,
-          cardNumber: response.cardNumber,
-          balance: response.balance,
-          createdAt: toTimeStamp(response.createdAt),
-          lastUpdate: toTimeStamp(response.lastUpdate),
-          currency: response.currency,
-        };
       },
     });
 
@@ -116,69 +113,78 @@ export const EMoneyAccountMutation = extendType({
         ),
       },
 
-      async resolve(parent, args, context, info) {
-        const { newBalance, eMoneyAccountId } = args;
+      async resolve(
+        __,
+        { newBalance, eMoneyAccountId },
+        { userId, prisma, pubsub },
+        ___
+      ) {
+        try {
+          if (!userId) throw new Error('Token tidak valid.');
 
-        const { userId, prisma } = context;
+          const user = await prisma.user.findFirstOrThrow({
+            where: { id: userId },
+          });
 
-        if (!userId) throw { status: 1100, message: 'Token tidak valid.' };
+          const eMoneyAccount = await prisma.eMoneyAccount.findFirstOrThrow({
+            where: { AND: [{ id: eMoneyAccountId }, { userId: user.id }] },
+          });
 
-        const user = await prisma.user.findFirst({ where: { id: userId } });
+          if (Number(newBalance) === Number(eMoneyAccount.balance))
+            throw new Error(
+              'Untuk reconcile, balance baru tidak boleh sama dengan balance yang sekarang.'
+            );
 
-        if (!user) throw { status: 1000, message: 'User tidak ditemukan.' };
+          const response = await prisma.eMoneyAccount.update({
+            where: { id: eMoneyAccount.id },
+            data: { balance: newBalance, lastUpdate: new Date() },
+          });
 
-        const eMoneyAccount = await prisma.eMoneyAccount.findFirst({
-          where: { AND: [{ id: eMoneyAccountId }, { userId: user.id }] },
-        });
+          await pubsub.publish(`eMoneyAccountUpdated_${eMoneyAccount.id}`, {
+            eMoneyAccountUpdate: response,
+          });
 
-        if (!eMoneyAccount)
-          throw { status: 6100, message: 'Akun e-money tidak ditemukan.' };
+          const bigger = Number(newBalance) > Number(eMoneyAccount.balance);
 
-        if (Number(newBalance) === Number(eMoneyAccount.balance))
-          throw {
-            status: 2000,
-            message:
-              'Untuk reconcile, balance baru tidak boleh sama dengan balance yang sekarang.',
+          const transactionAmount = bigger
+            ? Number(newBalance) - Number(eMoneyAccount.balance)
+            : Number(eMoneyAccount.balance) - Number(newBalance);
+
+          const transaction = await prisma.eMoneyTransaction.create({
+            data: {
+              eMoneyAccountId: encodeEMoneyAccountId(eMoneyAccount.id),
+              transactionName: 'RECONCILE',
+              dateTimestamp: new Date(),
+              currency: eMoneyAccount.currency,
+              amount: transactionAmount.toString(),
+              transactionType: 'RECONCILE',
+              direction: bigger ? 'IN' : 'OUT',
+              merchantId: '640ff9450ce7b9e3754d332c',
+              isHideFromBudget: true,
+              isHideFromInsight: true,
+              isReviewed: true,
+              institutionId: eMoneyAccount.institutionId,
+            },
+          });
+
+          await pubsub.publish(`eMoneyTransactionLive_${eMoneyAccount.id}`, {
+            mutationType: 'ADD',
+            transaction,
+          });
+
+          return {
+            id: response.id,
+            userId: response.userId,
+            institutionId: response.institutionId,
+            cardNumber: response.cardNumber,
+            balance: response.balance,
+            createdAt: response.createdAt,
+            lastUpdate: response.lastUpdate,
+            currency: response.currency,
           };
-
-        const response = await prisma.eMoneyAccount.update({
-          where: { id: eMoneyAccount.id },
-          data: { balance: newBalance, lastUpdate: new Date() },
-        });
-
-        const bigger = Number(newBalance) > Number(eMoneyAccount.balance);
-
-        const transactionAmount = bigger
-          ? Number(newBalance) - Number(eMoneyAccount.balance)
-          : Number(eMoneyAccount.balance) - Number(newBalance);
-
-        await prisma.eMoneyTransaction.create({
-          data: {
-            eMoneyAccountId: encodeEMoneyAccountId(eMoneyAccount.id),
-            transactionName: 'RECONCILE',
-            dateTimestamp: new Date(),
-            currency: eMoneyAccount.currency,
-            amount: transactionAmount.toString(),
-            transactionType: 'RECONCILE',
-            direction: bigger ? 'IN' : 'OUT',
-            merchantId: '640ff9450ce7b9e3754d332c',
-            isHideFromBudget: true,
-            isHideFromInsight: true,
-            isReviewed: true,
-            institutionId: eMoneyAccount.institutionId,
-          },
-        });
-
-        return {
-          id: response.id,
-          userId: response.userId,
-          institutionId: response.institutionId,
-          cardNumber: response.cardNumber,
-          balance: response.balance,
-          createdAt: toTimeStamp(response.createdAt),
-          lastUpdate: toTimeStamp(response.lastUpdate),
-          currency: response.currency,
-        };
+        } catch (error) {
+          throw error;
+        }
       },
     });
 
@@ -195,48 +201,47 @@ export const EMoneyAccountMutation = extendType({
         ),
       },
 
-      async resolve(parent, args, context, info) {
-        const { eMoneyAccountId } = args;
+      async resolve(__, { eMoneyAccountId }, { userId, prisma }, ____) {
+        try {
+          if (!userId) throw new Error('Token tidak valid.');
 
-        const { userId, prisma } = context;
+          const user = await prisma.user.findFirstOrThrow({
+            where: { id: userId },
+          });
 
-        if (!userId) throw { status: 1100, message: 'Token tidak valid.' };
+          const eMoneyAccount = await prisma.eMoneyAccount.findFirstOrThrow({
+            where: { AND: [{ id: eMoneyAccountId }, { userId: user.id }] },
+          });
 
-        const user = await prisma.user.findFirst({ where: { id: userId } });
+          await prisma.eMoneyAccount.delete({
+            where: { id: eMoneyAccount.id },
+          });
 
-        if (!user) throw { status: 1000, message: 'User tidak ditemukan.' };
+          const transaction = await prisma.eMoneyTransaction.findMany();
 
-        const eMoneyAccount = await prisma.eMoneyAccount.findFirst({
-          where: { AND: [{ id: eMoneyAccountId }, { userId }] },
-        });
+          let count = 0;
 
-        if (!eMoneyAccount)
-          throw { status: 6100, message: 'Akun e-money tidak ditemukan.' };
+          for (let i = 0; i < transaction.length; i++) {
+            const element = transaction[i];
 
-        await prisma.eMoneyAccount.delete({ where: { id: eMoneyAccount.id } });
+            const decodedEMoneyAccount = decodeEMoneyAccountId(
+              element.eMoneyAccountId
+            );
 
-        const transaction = await prisma.eMoneyTransaction.findMany();
-
-        let count = 0;
-
-        for (let i = 0; i < transaction.length; i++) {
-          const element = transaction[i];
-
-          const decodedEMoneyAccount = decodeEMoneyAccountId(
-            element.eMoneyAccountId
-          );
-
-          if (decodedEMoneyAccount === eMoneyAccount.id) {
-            await prisma.eMoneyTransaction.delete({
-              where: { id: element.id },
-            });
-            count += 1;
+            if (decodedEMoneyAccount === eMoneyAccount.id) {
+              await prisma.eMoneyTransaction.delete({
+                where: { id: element.id },
+              });
+              count += 1;
+            }
           }
-        }
 
-        return {
-          response: `Successfully delete cash account with id ${eMoneyAccount.id} and ${count} transactions associated with that account`,
-        };
+          return {
+            response: `Successfully delete cash account with id ${eMoneyAccount.id} and ${count} transactions associated with that account`,
+          };
+        } catch (error) {
+          throw error;
+        }
       },
     });
   },
@@ -304,7 +309,7 @@ export const EMoneyTransactionMutation = extendType({
 
         direction: nonNull(
           arg({
-            type: DirectionTypeEnum,
+            type: 'DirectionTypeEnum',
             description: 'The direction for this transaction. `IN` or `OUT`',
           })
         ),
@@ -351,8 +356,9 @@ export const EMoneyTransactionMutation = extendType({
         }),
       },
 
-      async resolve(parent, args, context, info) {
-        const {
+      async resolve(
+        __,
+        {
           eMoneyAccountId,
           transactionName,
           currency,
@@ -368,150 +374,151 @@ export const EMoneyTransactionMutation = extendType({
           tags,
           isHideFromBudget,
           isHideFromInsight,
-        } = args;
+        },
+        { userId, prisma, pubsub },
+        ___
+      ) {
+        try {
+          if (!userId) throw new Error('Token tidak valid.');
 
-        const { userId, prisma } = context;
+          const user = await prisma.user.findFirstOrThrow({
+            where: { id: userId },
+          });
 
-        if (!userId) throw { status: 1100, message: 'Token tidak valid.' };
+          if (category) {
+            let categorySum: number = 0;
 
-        const user = await prisma.user.findFirst({ where: { id: userId } });
+            for (let i = 0; i < category.length; i++) {
+              const element = category[i];
 
-        if (!user) throw { status: 1000, message: 'User tidak ditemukan.' };
+              if (
+                !element ||
+                !element.hasOwnProperty('name') ||
+                !element.hasOwnProperty('amount')
+              )
+                throw new Error(
+                  'Category tidak boleh kosong. Dan harus dalam format {name, amount} untuk tiap category.'
+                );
 
-        if (category) {
-          let categorySum: number = 0;
+              categorySum += Number(element.amount);
+            }
 
-          for (let i = 0; i < category.length; i++) {
-            const element = category[i];
-
-            if (
-              !element ||
-              !element.hasOwnProperty('name') ||
-              !element.hasOwnProperty('amount')
-            )
-              throw {
-                status: 2300,
-                message:
-                  'Category tidak boleh kosong. Dan harus dalam format {name, amount} untuk tiap category.',
-              };
-
-            categorySum += Number(element.amount);
+            if (categorySum !== Number(amount))
+              throw new Error(
+                'Total amount kategori harus sama dengan amount transaksi.'
+              );
           }
 
-          if (categorySum !== Number(amount))
-            throw {
-              status: 2200,
-              message:
-                'Total amount kategori harus sama dengan amount transaksi.',
-            };
-        }
+          if (tags) {
+            let tagsSum: number = 0;
 
-        if (tags) {
-          let tagsSum: number = 0;
+            for (let i = 0; i < tags.length; i++) {
+              const element = tags[i];
 
-          for (let i = 0; i < tags.length; i++) {
-            const element = tags[i];
+              if (
+                !element ||
+                !element.hasOwnProperty('name') ||
+                !element.hasOwnProperty('amount')
+              )
+                throw new Error(
+                  'Tags harus dalam format {name, amount} untuk tiap tags.'
+                );
 
-            if (
-              !element ||
-              !element.hasOwnProperty('name') ||
-              !element.hasOwnProperty('amount')
-            )
-              throw {
-                status: 2301,
-                message:
-                  'Tags harus dalam format {name, amount} untuk tiap tags.',
-              };
+              tagsSum += Number(element.amount);
+            }
 
-            tagsSum += Number(element.amount);
+            if (tagsSum > Number(amount))
+              throw new Error(
+                'Total amount tags tidak boleh lebih besar dengan amount transaksi.'
+              );
           }
 
-          if (tagsSum > Number(amount))
-            throw {
-              status: 2201,
-              message:
-                'Total amount tags tidak boleh lebih besar dengan amount transaksi.',
-            };
+          const eMoneyAccount = await prisma.eMoneyAccount.findFirstOrThrow({
+            where: { AND: [{ id: eMoneyAccountId }, { userId: user.id }] },
+          });
+
+          const response = await prisma.eMoneyTransaction.create({
+            data: {
+              transactionName,
+              dateTimestamp: new Date(),
+              isReviewed: true,
+              eMoneyAccountId: encodeEMoneyAccountId(eMoneyAccount.id),
+              currency,
+              amount,
+              merchantId,
+              category,
+              transactionType: transactionType as TransactionType,
+              notes,
+              description,
+              institutionId,
+              location,
+              tags,
+              isHideFromBudget,
+              isHideFromInsight,
+              direction,
+            },
+          });
+
+          await pubsub.publish(`eMoneyTransactionLive_${eMoneyAccount.id}`, {
+            mutationType: 'ADD',
+            transaction: response,
+          });
+
+          /**
+           * Update balance after pulling new transaction
+           */
+
+          const updatedEMoneyAccount = await prisma.eMoneyAccount.update({
+            where: { id: eMoneyAccountId },
+            data: {
+              balance: updateBalance({
+                balance: eMoneyAccount.balance,
+                amount: response.amount,
+                direction: response.direction,
+                reverse: false,
+              }).toString(),
+              lastUpdate: new Date(),
+            },
+          });
+
+          await pubsub.publish(`eMoneyAccountUpdated_${eMoneyAccount.id}`, {
+            eMoneyAccountUpdate: updatedEMoneyAccount,
+          });
+
+          const merchant = await prisma.merchant.findFirstOrThrow({
+            where: { id: response.merchantId },
+          });
+
+          return {
+            id: response.id,
+            transactionName: response.transactionName,
+            eMoneyAccountId: decodeEMoneyAccountId(response.eMoneyAccountId),
+            dateTimestamp: response.dateTimestamp,
+            institutionId: response.institutionId,
+            currency: response.currency,
+            amount: response.amount,
+            isReviewed: response.isReviewed,
+            merchant: merchant,
+            merchantId: response.merchantId,
+            category: response.category as
+              | { amount: string; name: string }[]
+              | null
+              | undefined,
+            transactionType: response.transactionType,
+            description: response.description,
+            direction: response.direction,
+            notes: response.notes,
+            location: response.location,
+            tags: response.tags as
+              | { amount: string; name: string }[]
+              | null
+              | undefined,
+            isHideFromBudget: response.isHideFromBudget,
+            isHideFromInsight: response.isHideFromInsight,
+          };
+        } catch (error) {
+          throw error;
         }
-
-        const eMoneyAccount = await prisma.eMoneyAccount.findFirst({
-          where: { AND: [{ id: eMoneyAccountId }, { userId: user.id }] },
-        });
-
-        if (!eMoneyAccount)
-          throw { status: 6100, message: 'Akun e-money tidak ditemukan.' };
-
-        const response = await prisma.eMoneyTransaction.create({
-          data: {
-            transactionName,
-            dateTimestamp: new Date(),
-            isReviewed: true,
-            eMoneyAccountId: encodeEMoneyAccountId(eMoneyAccount.id),
-            currency,
-            amount,
-            merchantId,
-            category,
-            transactionType: transactionType as TransactionType,
-            notes,
-            description,
-            institutionId,
-            location,
-            tags,
-            isHideFromBudget,
-            isHideFromInsight,
-            direction,
-          },
-        });
-
-        /*
-        Update balance after pulling new transaction
-        */
-
-        await prisma.eMoneyAccount.update({
-          where: { id: eMoneyAccountId },
-          data: {
-            balance: updateBalance({
-              balance: eMoneyAccount.balance,
-              amount: response.amount,
-              direction: response.direction,
-              reverse: false,
-            }).toString(),
-            lastUpdate: new Date(),
-          },
-        });
-
-        const merchant = await prisma.merchant.findFirst({
-          where: { id: response.merchantId },
-        });
-
-        if (!merchant)
-          throw { status: 2400, message: 'Merchant tidak ditemukan.' };
-
-        return {
-          id: response.id,
-          transactionName: response.transactionName,
-          eMoneyAccountId: response.eMoneyAccountId,
-          dateTimestamp: toTimeStamp(response.dateTimestamp),
-          institutionId: response.institutionId,
-          currency: response.currency,
-          amount: response.amount,
-          isReviewed: response.isReviewed,
-          merchant: merchant,
-          merchantId: response.merchantId,
-          category: response.category as MaybePromise<
-            { amount: string; name: string }[] | null | undefined
-          >,
-          transactionType: response.transactionType,
-          description: response.description,
-          direction: response.direction,
-          notes: response.notes,
-          location: response.location,
-          tags: response.tags as MaybePromise<
-            { amount: string; name: string }[] | null | undefined
-          >,
-          isHideFromBudget: response.isHideFromBudget,
-          isHideFromInsight: response.isHideFromInsight,
-        };
       },
     });
 
@@ -531,11 +538,6 @@ export const EMoneyTransactionMutation = extendType({
         transactionName: arg({
           type: 'String',
           description: 'The transaction name',
-        }),
-
-        amount: arg({
-          type: 'String',
-          description: 'The amount for that transaction',
         }),
 
         merchantId: arg({
@@ -589,12 +591,12 @@ export const EMoneyTransactionMutation = extendType({
         }),
       },
 
-      async resolve(parent, args, context, info) {
-        const {
+      async resolve(
+        __,
+        {
           transactionId,
           transactionName,
           direction,
-          amount,
           merchantId,
           category,
           notes,
@@ -603,202 +605,155 @@ export const EMoneyTransactionMutation = extendType({
           isHideFromBudget,
           isHideFromInsight,
           transactionType,
-        } = args;
+        },
+        { userId, prisma, pubsub },
+        ___
+      ) {
+        try {
+          if (
+            !merchantId &&
+            !transactionName &&
+            !category &&
+            !direction &&
+            !notes &&
+            !location &&
+            !tags &&
+            !isHideFromBudget &&
+            !isHideFromInsight &&
+            !transactionType
+          )
+            throw new Error('Semua value tidak boleh null atau undefined.');
 
-        if (
-          !merchantId &&
-          !transactionName &&
-          !category &&
-          !direction &&
-          !notes &&
-          !location &&
-          !tags &&
-          !isHideFromBudget &&
-          !isHideFromInsight &&
-          !transactionType &&
-          !amount
-        )
-          throw {
-            status: 2003,
-            message: 'Semua value tidak boleh null atau undefined.',
-          };
+          if (!userId) throw new Error('Token tidak valid.');
 
-        if (amount && !category)
-          throw {
-            status: 2004,
-            message: 'Amount baru harus disertai dengan category baru.',
-          };
-
-        /*
-        Check if the category match the amount
-        */
-        if (amount && category) {
-          let categorySum: number = 0;
-
-          for (let i = 0; i < category.length; i++) {
-            const element = category[i];
-
-            if (
-              !element ||
-              !element.hasOwnProperty('name') ||
-              !element.hasOwnProperty('amount')
-            )
-              throw {
-                status: 2300,
-                message:
-                  'Category tidak boleh kosong. Dan harus dalam format {name, amount} untuk tiap category.',
-              };
-
-            categorySum += Number(element.amount);
-          }
-
-          if (categorySum !== Number(amount))
-            throw {
-              status: 2200,
-              message:
-                'Total amount kategori harus sama dengan amount transaksi.',
-            };
-        }
-
-        /*
-        Check if the tags match the amount
-        */
-        if (amount && tags) {
-          let tagsSum: number = 0;
-
-          for (let i = 0; i < tags.length; i++) {
-            const element = tags[i];
-
-            if (
-              !element ||
-              !element.hasOwnProperty('name') ||
-              !element.hasOwnProperty('amount')
-            )
-              throw {
-                status: 2301,
-                message:
-                  'Tags harus dalam format {name, amount} untuk tiap tags.',
-              };
-
-            tagsSum += Number(element.amount);
-          }
-
-          if (tagsSum !== Number(amount))
-            throw {
-              status: 2201,
-              message: 'Total amount tags harus sama dengan amount transaksi.',
-            };
-        }
-
-        const { userId, prisma } = context;
-
-        if (!userId) throw { status: 1100, message: 'Token tidak valid.' };
-
-        const user = await prisma.user.findFirst({ where: { id: userId } });
-
-        if (!user) throw { status: 1000, message: 'User tidak ditemukan.' };
-
-        const transaction = await prisma.eMoneyTransaction.findFirst({
-          where: { id: transactionId },
-        });
-
-        if (!transaction)
-          throw { status: 2500, message: 'Transaksi tidak ditemukan.' };
-
-        const { eMoneyAccountId: _eMoneyAccountId } = transaction;
-
-        const eMoneyAccountId = decodeEMoneyAccountId(_eMoneyAccountId);
-
-        /**
-         * Update balance if amount is edited
-         */
-
-        if (amount && eMoneyAccountId) {
-          const eMoneyAccount = await prisma.eMoneyAccount.findFirst({
-            where: { AND: [{ id: eMoneyAccountId }, { userId: user.id }] },
+          const user = await prisma.user.findFirstOrThrow({
+            where: { id: userId },
           });
 
-          if (!eMoneyAccount)
-            throw { status: 6100, message: 'Akun e-money tidak ditemukan.' };
+          const transaction = await prisma.eMoneyTransaction.findFirstOrThrow({
+            where: { id: transactionId },
+          });
 
-          const first = await prisma.eMoneyAccount.update({
-            where: { id: eMoneyAccount.id },
+          /**
+           * Check if the category match the amount
+           */
+          if (category) {
+            let categorySum: number = 0;
+
+            for (let i = 0; i < category.length; i++) {
+              const element = category[i];
+
+              if (
+                !element ||
+                !element.hasOwnProperty('name') ||
+                !element.hasOwnProperty('amount')
+              )
+                throw new Error(
+                  'Category tidak boleh kosong. Dan harus dalam format {name, amount} untuk tiap category.'
+                );
+
+              categorySum += Number(element.amount);
+            }
+
+            if (categorySum !== Number(transaction.amount))
+              throw new Error(
+                'Total amount kategori harus sama dengan amount transaksi.'
+              );
+          }
+
+          /**
+           * Check if the tags match the amount
+           */
+          if (tags) {
+            let tagsSum: number = 0;
+
+            for (let i = 0; i < tags.length; i++) {
+              const element = tags[i];
+
+              if (
+                !element ||
+                !element.hasOwnProperty('name') ||
+                !element.hasOwnProperty('amount')
+              )
+                throw new Error(
+                  'Tags harus dalam format {name, amount} untuk tiap tags.'
+                );
+
+              tagsSum += Number(element.amount);
+            }
+
+            if (tagsSum !== Number(transaction.amount))
+              throw new Error(
+                'Total amount tags harus sama dengan amount transaksi.'
+              );
+          }
+
+          const response = await prisma.eMoneyTransaction.update({
+            where: { id: transaction.id },
             data: {
-              balance: updateBalance({
-                balance: eMoneyAccount.balance,
-                amount: transaction.amount,
-                direction: transaction.direction,
-                reverse: true,
-              }).toString(),
-              lastUpdate: new Date(),
+              isReviewed: true,
+              merchantId: merchantId ?? transaction.merchantId,
+              category: category ?? transaction.category,
+              notes: notes ?? transaction.notes,
+              location: location ?? transaction.location,
+              tags: tags ?? transaction.tags,
+              isHideFromBudget:
+                isHideFromBudget ?? transaction.isHideFromBudget,
+              isHideFromInsight:
+                isHideFromInsight ?? transaction.isHideFromInsight,
+              transactionType: transactionType ?? transaction.transactionType,
+              direction: direction ?? transaction.direction,
             },
           });
 
-          await prisma.eMoneyAccount.update({
-            where: { id: eMoneyAccount.id },
-            data: {
-              balance: updateBalance({
-                balance: first.balance,
-                amount,
-                direction: transaction.direction,
-                reverse: false,
-              }).toString(),
-              lastUpdate: new Date(),
-            },
+          const decodedEMoneyAccountId = decodeEMoneyAccountId(
+            response.eMoneyAccountId
+          );
+
+          await pubsub.publish(
+            `eMoneyTransactionLive_${decodedEMoneyAccountId}`,
+            {
+              mutationType: 'EDIT',
+              transaction: response,
+            }
+          );
+
+          const merchant = await prisma.merchant.findFirstOrThrow({
+            where: { id: response.merchantId },
           });
+
+          return {
+            id: response.id,
+            transactionName: response.transactionName,
+            eMoneyAccountId: decodeEMoneyAccountId(response.eMoneyAccountId),
+            dateTimestamp: response.dateTimestamp,
+            institutionId: response.institutionId,
+            currency: response.currency,
+            amount: response.amount,
+            isReviewed: response.isReviewed,
+            merchant,
+            merchantId: response.merchantId,
+            category: response.category as
+              | { amount: string; name: string }[]
+              | null
+              | undefined,
+            transactionType: response.transactionType,
+            description: response.description,
+            direction: response.direction,
+            notes: response.notes,
+            location: response.location,
+            tags: response.tags as
+              | { amount: string; name: string }[]
+              | null
+              | undefined,
+            isHideFromBudget: response.isHideFromBudget,
+            internalTransferTransactionId:
+              response.internalTransferTransactionId,
+            isHideFromInsight: response.isHideFromInsight,
+          };
+        } catch (error) {
+          throw error;
         }
-
-        const response = await prisma.eMoneyTransaction.update({
-          where: { id: transactionId },
-          data: {
-            isReviewed: true,
-            amount: amount ?? transaction.amount,
-            merchantId: merchantId ?? transaction.merchantId,
-            category: category ?? transaction.category,
-            notes: notes ?? transaction.notes,
-            location: location ?? transaction.location,
-            tags: tags ?? transaction.tags,
-            isHideFromBudget: isHideFromBudget ?? transaction.isHideFromBudget,
-            isHideFromInsight:
-              isHideFromInsight ?? transaction.isHideFromInsight,
-            transactionType: transactionType ?? transaction.transactionType,
-            direction: direction ?? transaction.direction,
-          },
-        });
-
-        const merchant = await prisma.merchant.findFirst({
-          where: { id: response.merchantId },
-        });
-
-        if (!merchant)
-          throw { status: 2400, message: 'Merchant tidak ditemukan.' };
-
-        return {
-          id: response.id,
-          transactionName: response.transactionName,
-          eMoneyAccountId: response.eMoneyAccountId,
-          dateTimestamp: toTimeStamp(response.dateTimestamp),
-          institutionId: response.institutionId,
-          currency: response.currency,
-          amount: response.amount,
-          isReviewed: response.isReviewed,
-          merchant,
-          merchantId: response.merchantId,
-          category: response.category as MaybePromise<
-            { amount: string; name: string }[] | null | undefined
-          >,
-          transactionType: response.transactionType,
-          description: response.description,
-          direction: response.direction,
-          notes: response.notes,
-          location: response.location,
-          tags: response.tags as MaybePromise<
-            { amount: string; name: string }[] | null | undefined
-          >,
-          isHideFromBudget: response.isHideFromBudget,
-          internalTransferTransactionId: response.internalTransferTransactionId,
-          isHideFromInsight: response.isHideFromInsight,
-        };
       },
     });
 
@@ -815,56 +770,61 @@ export const EMoneyTransactionMutation = extendType({
         ),
       },
 
-      async resolve(parent, args, context, info) {
-        const { transactionId } = args;
+      async resolve(__, { transactionId }, { userId, prisma, pubsub }, ___) {
+        try {
+          if (!userId) throw new Error('Token tidak valid.');
 
-        const { userId, prisma } = context;
+          const user = await prisma.user.findFirstOrThrow({
+            where: { id: userId },
+          });
 
-        if (!userId) throw { status: 1100, message: 'Token tidak valid.' };
+          const transaction = await prisma.eMoneyTransaction.findFirstOrThrow({
+            where: { id: transactionId },
+          });
 
-        const user = await prisma.user.findFirst({ where: { id: userId } });
+          const { eMoneyAccountId: _eMoneyAccountId } = transaction;
 
-        if (!user) throw { status: 1000, message: 'User tidak ditemukan.' };
+          const eMoneyAccountId = decodeEMoneyAccountId(_eMoneyAccountId);
 
-        const transaction = await prisma.eMoneyTransaction.findFirst({
-          where: { id: transactionId },
-        });
+          const eMoneyAccount = await prisma.eMoneyAccount.findFirstOrThrow({
+            where: { AND: [{ id: eMoneyAccountId }, { userId: user.id }] },
+          });
 
-        if (!transaction)
-          throw { status: 2500, message: 'Transaksi tidak ditemukan.' };
+          /**
+           * Update balance
+           */
+          const updatedEMoneyAccount = await prisma.eMoneyAccount.update({
+            where: { id: eMoneyAccountId },
+            data: {
+              balance: updateBalance({
+                balance: eMoneyAccount.balance,
+                amount: transaction.amount,
+                direction: transaction.direction,
+                reverse: true,
+              }).toString(),
+              lastUpdate: new Date(),
+            },
+          });
 
-        const { eMoneyAccountId: _eMoneyAccountId } = transaction;
+          const deletedTransaction = await prisma.eMoneyTransaction.delete({
+            where: { id: transactionId },
+          });
 
-        const eMoneyAccountId = decodeEMoneyAccountId(_eMoneyAccountId);
+          await pubsub.publish(`eMoneyTransactionLive_${eMoneyAccount.id}`, {
+            mutationType: 'DELETE',
+            transaction: deletedTransaction,
+          });
 
-        const eMoneyAccount = await prisma.eMoneyAccount.findFirst({
-          where: { AND: [{ id: eMoneyAccountId }, { userId: user.id }] },
-        });
+          await pubsub.publish(`eMoneyAccountUpdated_${eMoneyAccount.id}`, {
+            eMoneyAccountUpdate: updatedEMoneyAccount,
+          });
 
-        if (!eMoneyAccount)
-          throw { status: 6100, message: 'Akun e-money tidak ditemukan.' };
-
-        /*
-        Update balance
-        */
-        await prisma.eMoneyAccount.update({
-          where: { id: eMoneyAccountId },
-          data: {
-            balance: updateBalance({
-              balance: eMoneyAccount.balance,
-              amount: transaction.amount,
-              direction: transaction.direction,
-              reverse: true,
-            }).toString(),
-            lastUpdate: new Date(),
-          },
-        });
-
-        await prisma.eMoneyTransaction.delete({ where: { id: transactionId } });
-
-        return {
-          response: `Successfully delete transaction of ${transactionId} and update balance`,
-        };
+          return {
+            response: `Successfully delete transaction of ${transactionId} and update balance`,
+          };
+        } catch (error) {
+          throw error;
+        }
       },
     });
   },

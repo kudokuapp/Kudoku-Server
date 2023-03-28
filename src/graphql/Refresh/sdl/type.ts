@@ -11,6 +11,6 @@ export const Refresh = objectType({
 
     t.nonNull.string('userId');
 
-    t.nonNull.string('date');
+    t.nonNull.dateTime('date');
   },
 });

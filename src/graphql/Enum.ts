@@ -19,3 +19,8 @@ export const typeOfAccount = enumType({
   name: 'typeOfAccount',
   members: ['CASH', 'DEBIT', 'EWALLET', 'EMONEY', 'PAYLATER'],
 });
+
+export const typeOfMutationType = enumType({
+  name: 'typeOfMutationType',
+  members: ['ADD', 'EDIT', 'DELETE'],
+});

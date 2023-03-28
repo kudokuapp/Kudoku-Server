@@ -17,7 +17,7 @@ type CashAccount {
   balance: String!
 
   """When this account is created"""
-  createdAt: String!
+  createdAt: DateTime!
 
   """The ISO currency of this account"""
   currency: String!
@@ -29,7 +29,7 @@ type CashAccount {
   id: String!
 
   """When this account is last updated"""
-  lastUpdate: String!
+  lastUpdate: DateTime!
   userId: String!
 }
 
@@ -47,7 +47,7 @@ type CashTransaction {
   currency: String!
 
   """Date and Timestamp for this transaction"""
-  dateTimestamp: String!
+  dateTimestamp: DateTime!
 
   """The direction of the transaction. It's either `IN`, or `OUT`"""
   direction: String!
@@ -88,6 +88,17 @@ type CashTransaction {
   transactionType: String!
 }
 
+type CashTransactionSubscriptionType {
+  """The type of mutationType. Either `ADD` `EDIT` or `DELETE`"""
+  mutationType: typeOfMutationType!
+  transaction: CashTransaction!
+}
+
+"""
+A date-time string at UTC, such as 2007-12-03T10:15:30Z, compliant with the date-time format.
+"""
+scalar DateTime
+
 type DebitAccount {
   accountNumber: String!
 
@@ -95,17 +106,20 @@ type DebitAccount {
   balance: String!
 
   """When this account is created"""
-  createdAt: String!
+  createdAt: DateTime!
 
   """The ISO currency of this account"""
   currency: String!
+
+  """Wether or not this debit account access token is expired"""
+  expired: Boolean!
 
   """id generated automatically by MongoDB"""
   id: String!
   institutionId: String!
 
   """When this account is last updated"""
-  lastUpdate: String!
+  lastUpdate: DateTime!
   userId: String!
 }
 
@@ -120,7 +134,7 @@ type DebitTransaction {
   currency: String!
 
   """Date and Timestamp for this transaction"""
-  dateTimestamp: String!
+  dateTimestamp: DateTime!
 
   """The debit account Id"""
   debitAccountId: String!
@@ -187,6 +201,12 @@ type DebitTransaction {
   transactionType: String!
 }
 
+type DebitTransactionSubscriptionType {
+  """The type of mutationType. Either `ADD` `EDIT` or `DELETE`"""
+  mutationType: typeOfMutationType!
+  transaction: DebitTransaction!
+}
+
 enum DirectionTypeEnum {
   IN
   OUT
@@ -198,7 +218,7 @@ type EMoneyAccount {
   cardNumber: String!
 
   """When this account is created"""
-  createdAt: String!
+  createdAt: DateTime!
 
   """The ISO currency of this account"""
   currency: String!
@@ -208,7 +228,7 @@ type EMoneyAccount {
   institutionId: String!
 
   """When this account is last updated"""
-  lastUpdate: String!
+  lastUpdate: DateTime!
   userId: String!
 }
 
@@ -223,7 +243,7 @@ type EMoneyTransaction {
   currency: String!
 
   """Date and Timestamp for this transaction"""
-  dateTimestamp: String!
+  dateTimestamp: DateTime!
 
   """The description given by the Banks API"""
   description: String
@@ -276,6 +296,12 @@ type EMoneyTransaction {
   transactionType: String!
 }
 
+type EMoneyTransactionSubscriptionType {
+  """The type of mutationType. Either `ADD` `EDIT` or `DELETE`"""
+  mutationType: typeOfMutationType!
+  transaction: EMoneyTransaction!
+}
+
 type EWalletAccount {
   accountNumber: String!
 
@@ -283,17 +309,20 @@ type EWalletAccount {
   balance: String!
 
   """When this account is created"""
-  createdAt: String!
+  createdAt: DateTime!
 
   """The ISO currency of this account"""
   currency: String!
+
+  """Wether or not this e-wallet account access token is expired"""
+  expired: Boolean!
 
   """id generated automatically by MongoDB"""
   id: String!
   institutionId: String!
 
   """When this account is last updated"""
-  lastUpdate: String!
+  lastUpdate: DateTime!
   userId: String!
 }
 
@@ -308,7 +337,7 @@ type EWalletTransaction {
   currency: String!
 
   """Date and Timestamp for this transaction"""
-  dateTimestamp: String!
+  dateTimestamp: DateTime!
 
   """The description given by the Banks API"""
   description: String!
@@ -372,9 +401,25 @@ type EWalletTransaction {
   transactionType: String!
 }
 
+type EWalletTransactionSubscriptionType {
+  """The type of mutationType. Either `ADD` `EDIT` or `DELETE`"""
+  mutationType: typeOfMutationType!
+  transaction: EWalletTransaction!
+}
+
 enum ExpenseTypeEnum {
   EXPENSE
   INCOME
+}
+
+type GopayEWalletAndPayLaterAccount {
+  EWallet: EWalletAccount!
+  PayLater: PayLaterAccount!
+}
+
+type GopayEWalletAndPayLaterTransaction {
+  EWallet: [EWalletTransaction]!
+  PayLater: [PayLaterTransaction]!
 }
 
 type Location {
@@ -567,7 +612,7 @@ type Mutation {
 
     """Nomor HP Gopay"""
     username: String!
-  ): [EWalletAccount!]!
+  ): GopayEWalletAndPayLaterAccount!
 
   """Create an E-Money account"""
   createEMoneyAccount(
@@ -638,11 +683,6 @@ type Mutation {
 
   """Edit a cash transaction"""
   editCashTransaction(
-    """
-    The amount for this transaction. IMPORTANT: only number and commas allowed! E.g.: 50000 for Rp 50.000, or 1002350,89 for Rp 1.002.350,89
-    """
-    amount: String
-
     """The category of the transaction"""
     category: [NameAmountJsonInput]
 
@@ -728,9 +768,6 @@ type Mutation {
 
   """Edit a particular e-money transaction and update it's balance"""
   editEMoneyTransaction(
-    """The amount for that transaction"""
-    amount: String
-
     """The category of the transaction"""
     category: [NameAmountJsonInput]
 
@@ -880,7 +917,7 @@ type Mutation {
 
     """The associated id of that paylater account id"""
     payLaterAccountId: String
-  ): ResponseMessage
+  ): GopayEWalletAndPayLaterTransaction
 
   """
   This is the API where user can sign up after they got invited. This means that the user's data is already in our MongoDB database.
@@ -959,17 +996,20 @@ type PayLaterAccount {
   balance: String!
 
   """When this account is created"""
-  createdAt: String!
+  createdAt: DateTime!
 
   """The ISO currency of this account"""
   currency: String!
+
+  """Wether or not this pay later account access token is expired"""
+  expired: Boolean!
 
   """id generated automatically by MongoDB"""
   id: String!
   institutionId: String!
 
   """When this account is last updated"""
-  lastUpdate: String!
+  lastUpdate: DateTime!
   userId: String!
 }
 
@@ -984,7 +1024,7 @@ type PayLaterTransaction {
   currency: String!
 
   """Date and Timestamp for this transaction"""
-  dateTimestamp: String!
+  dateTimestamp: DateTime!
 
   """The description given by the Banks API"""
   description: String!
@@ -1046,6 +1086,12 @@ type PayLaterTransaction {
   The transaction type for this transaction. It's either `INCOME`, `EXPENSE`, or `TRANSFER`
   """
   transactionType: String!
+}
+
+type PayLaterTransactionSubscriptionType {
+  """The type of mutationType. Either `ADD` `EDIT` or `DELETE`"""
+  mutationType: typeOfMutationType!
+  transaction: PayLaterTransaction!
 }
 
 type Profile {
@@ -1156,9 +1202,7 @@ type Query {
 
   """Get User's info from their Username"""
   getUser(
-    """
-    Fill this with username, otherwise fill this with "null"
-    """
+    """Fill this with username"""
     username: String!
   ): User
   login(password: String!, username: String!): AuthPayLoad!
@@ -1190,7 +1234,7 @@ type Query {
 }
 
 type Refresh {
-  date: String!
+  date: DateTime!
   id: String!
   user: User!
   userId: String!
@@ -1201,6 +1245,71 @@ type ResponseMessage {
   response: String
 }
 
+type Subscription {
+  """Subscription for cash transaction"""
+  cashTransactionLive(
+    """The cashAccountId associated with that cash account"""
+    cashAccountId: String!
+  ): CashTransactionSubscriptionType
+
+  """Subscription for debit transaction"""
+  debitTransactionLive(
+    """The debitAccountId associated with that debit account"""
+    debitAccountId: String!
+  ): DebitTransactionSubscriptionType
+
+  """Subscription for e-money transaction"""
+  eMoneyTransactionLive(
+    """The eMoneyAccountId associated with that e-money account"""
+    eMoneyAccountId: String!
+  ): EMoneyTransactionSubscriptionType
+
+  """Subscription for e-wallet transaction"""
+  eWalletTransactionLive(
+    """The eWalletAccountId associated with that e-wallet account"""
+    eWalletAccountId: String!
+  ): EWalletTransactionSubscriptionType
+
+  """Subscription for new merchant"""
+  newMerchantLive: Merchant
+
+  """Subscription for pay later transaction"""
+  payLaterTransactionLive(
+    """The payLaterAccountId associated with that pay later account"""
+    payLaterAccountId: String!
+  ): PayLaterTransactionSubscriptionType
+
+  """Subscription for cash account"""
+  updatedCashAccountLive(
+    """The cashAccountId associated with that cash account"""
+    cashAccountId: String!
+  ): CashAccount
+
+  """Subscription for debit account"""
+  updatedDebitAccountLive(
+    """The debitAccountId associated with that debit account"""
+    debitAccountId: String!
+  ): DebitAccount
+
+  """Subscription for e-money account"""
+  updatedEMoneyAccountLive(
+    """The eMoneyAccountId associated with that e-money account"""
+    eMoneyAccountId: String!
+  ): EMoneyAccount
+
+  """Subscription for e-wallet account"""
+  updatedEWalletAccountLive(
+    """The eWalletAccountId associated with that e-wallet account"""
+    eWalletAccountId: String!
+  ): EWalletAccount
+
+  """Subscription for pay later account"""
+  updatedPayLaterAccountLive(
+    """The payLaterAccountId associated with that pay later account"""
+    payLaterAccountId: String!
+  ): PayLaterAccount
+}
+
 enum TransactionMethodEnum {
   Debit
   QRIS
@@ -1209,7 +1318,7 @@ enum TransactionMethodEnum {
 }
 
 type User {
-  createdAt: String!
+  createdAt: DateTime!
   email: String!
   firstName: String!
 
@@ -1229,4 +1338,10 @@ enum typeOfAccount {
   EMONEY
   EWALLET
   PAYLATER
+}
+
+enum typeOfMutationType {
+  ADD
+  DELETE
+  EDIT
 }

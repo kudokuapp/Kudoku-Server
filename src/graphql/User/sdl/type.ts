@@ -15,6 +15,6 @@ export const User = objectType({
       description: 'This is the kudos No.',
     });
 
-    t.nonNull.string('createdAt');
+    t.nonNull.dateTime('createdAt');
   },
 });

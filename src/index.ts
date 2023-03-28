@@ -1,20 +1,48 @@
-import { ApolloServer } from 'apollo-server';
+import { ApolloServer, BaseContext, ContextFunction } from '@apollo/server';
 import { PrismaClient } from '@prisma/client';
-import {
-  ApolloServerPluginLandingPageLocalDefault,
-  ApolloServerPluginLandingPageDisabled,
-} from 'apollo-server-core';
+import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
+import { ApolloServerPluginLandingPageDisabled } from '@apollo/server/plugin/disabled';
 import { schema } from './schema';
 import { context } from './context';
+import express from 'express';
+import { createServer } from 'http';
+import { WebSocketServer } from 'ws';
+import { useServer } from 'graphql-ws/lib/use/ws';
+import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
+import cors from 'cors';
+import bodyParser from 'body-parser';
+import {
+  ExpressContextFunctionArgument,
+  expressMiddleware,
+} from '@apollo/server/express4';
+
+const app = express();
+const httpServer = createServer(app);
+
+const wsServer = new WebSocketServer({
+  server: httpServer,
+  path: '/graphql',
+});
+
+const serverCleanup = useServer({ schema, context }, wsServer);
 
 export const server = new ApolloServer({
   schema,
-  context,
   introspection: process.env.NODE_ENV !== 'production',
   plugins: [
     process.env.NODE_ENV === 'production'
       ? ApolloServerPluginLandingPageDisabled()
       : ApolloServerPluginLandingPageLocalDefault(),
+    ApolloServerPluginDrainHttpServer({ httpServer }),
+    {
+      async serverWillStart() {
+        return {
+          async drainServer() {
+            await serverCleanup.dispose();
+          },
+        };
+      },
+    },
   ],
   formatError: (error) => {
     const { extensions = {}, message } = error;
@@ -30,10 +58,28 @@ export const server = new ApolloServer({
   },
 });
 
-const port = (process.env.PORT as unknown as number) || 8080;
+async function startServer() {
+  await server.start();
 
-server.listen({ port }).then(({ url }) => {
-  console.log(`Server ready at ${url}`);
+  app.use(
+    '/graphql',
+    cors<cors.CorsRequest>(),
+    bodyParser.json(),
+    expressMiddleware(server, {
+      context: context as unknown as ContextFunction<
+        [ExpressContextFunctionArgument],
+        BaseContext
+      >,
+    })
+  );
+}
+
+startServer();
+
+const PORT = (process.env.PORT as unknown as number) || 8080;
+
+httpServer.listen(PORT, () => {
+  console.log(`Server is now running on http://localhost:${PORT}/graphql`);
 });
 
 const prisma = new PrismaClient();

@@ -7,40 +7,40 @@ export const MerchantQuery = extendType({
       type: 'Merchant',
       description: "This API is to get every merchant's data",
 
-      async resolve(parent, args, context, info) {
-        const { userId: id, prisma } = context;
+      async resolve(__, ___, { userId, prisma }, ____) {
+        try {
+          if (!userId) throw new Error('Token tidak valid.');
 
-        if (!id) {
-          throw { status: 1100, message: 'Token tidak valid.' };
-        }
+          const user = await prisma.user.findFirstOrThrow({
+            where: { id: userId },
+          });
 
-        const user = await prisma.user.findFirst({ where: { id } });
+          const excludedMerchantIds = [
+            //UNDEFINED
+            '63d8b775d3e050940af0caf1',
 
-        if (!user) throw { status: 1000, message: 'User tidak ditemukan.' };
+            //RECONCILE
+            '640ff9450ce7b9e3754d332c',
 
-        const excludedMerchantIds = [
-          //UNDEFINED
-          '63d8b775d3e050940af0caf1',
+            //TRANSFER
+            '640ff9670ce7b9e3754d332d',
 
-          //RECONCILE
-          '640ff9450ce7b9e3754d332c',
+            //INCOME
+            '6414a1e910657b29b4ffbaf9',
+          ];
 
-          //TRANSFER
-          '640ff9670ce7b9e3754d332d',
-
-          //INCOME
-          '6414a1e910657b29b4ffbaf9',
-        ];
-
-        return await prisma.merchant.findMany({
-          where: {
-            NOT: {
-              id: {
-                in: excludedMerchantIds,
+          return await prisma.merchant.findMany({
+            where: {
+              NOT: {
+                id: {
+                  in: excludedMerchantIds,
+                },
               },
             },
-          },
-        });
+          });
+        } catch (error) {
+          throw error;
+        }
       },
     });
   },

@@ -28,39 +28,45 @@ export const MerchantMutation = extendType({
         ),
       },
 
-      async resolve(parent, args, context) {
-        const { name, picture, url } = args;
-        const { userId: id, prisma } = context;
+      async resolve(
+        __,
+        { name, picture, url },
+        { userId, prisma, pubsub },
+        ___
+      ) {
+        try {
+          if (!userId) throw new Error('Token tidak valid.');
 
-        if (!id) {
-          throw { status: 1100, message: 'Token tidak valid.' };
-        }
+          const user = await prisma.user.findFirstOrThrow({
+            where: { id: userId },
+          });
 
-        const user = await prisma.user.findFirst({ where: { id } });
+          const alreadyMerchant = await prisma.merchant.findFirst({
+            where: { OR: [{ name }, { url }] },
+          });
 
-        if (!user) throw { status: 1000, message: 'User tidak ditemukan.' };
+          if (alreadyMerchant)
+            throw new Error(
+              'Merchant dengan nama atau url tersebut sudah ada.'
+            );
 
-        const alreadyMerchant = await prisma.merchant.findFirst({
-          where: { OR: [{ name }, { url }] },
-        });
+          const response = await prisma.merchant.create({
+            data: { name, picture, url },
+          });
 
-        if (alreadyMerchant)
-          throw {
-            status: 2005,
-            message:
-              'Merchant dengan nama atau url atau gambar tersebut sudah ada.',
+          await pubsub.publish(`newMerchantLive`, {
+            merchant: response,
+          });
+
+          return {
+            id: response.id,
+            name: response.name,
+            picture: response.picture,
+            url: response.url,
           };
-
-        const response = await prisma.merchant.create({
-          data: { name, picture, url },
-        });
-
-        return {
-          id: response.id,
-          name: response.name,
-          picture: response.picture,
-          url: response.url,
-        };
+        } catch (error) {
+          throw error;
+        }
       },
     });
   },

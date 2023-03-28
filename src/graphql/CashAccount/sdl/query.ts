@@ -1,6 +1,5 @@
-import { toTimeStamp } from '../../../utils/date';
 import { arg, extendType, nonNull } from 'nexus';
-import { decodeCashAccountId } from '../../../utils/auth';
+import { decodeCashAccountId } from '../../../utils/auth/cashAccountId';
 
 export const CashAccountQuery = extendType({
   type: 'Query',
@@ -9,38 +8,37 @@ export const CashAccountQuery = extendType({
       type: 'CashAccount',
       description: 'Get all cash account for a particular user.',
 
-      async resolve(parent, args, context, info) {
-        const { userId, prisma } = context;
+      async resolve(__, ___, { userId, prisma }, ____) {
+        try {
+          if (!userId) throw new Error('Token tidak valid.');
 
-        if (!userId) throw { status: 1100, message: 'Token tidak valid.' };
+          const cashAccount = await prisma.cashAccount.findMany({
+            where: { userId },
+          });
 
-        const cashAccount = await prisma.cashAccount.findMany({
-          where: { userId },
-        });
+          let response: any[] = [];
 
-        if (!cashAccount)
-          throw { status: 3000, message: 'Akun cash tidak ditemukan' };
+          for (let i = 0; i < cashAccount.length; i++) {
+            const element = cashAccount[i];
 
-        let response: any[] = [];
+            const obj = {
+              id: element.id,
+              userId: element.userId,
+              createdAt: element.createdAt,
+              lastUpdate: element.lastUpdate,
+              accountName: element.accountName,
+              displayPicture: element.displayPicture,
+              balance: element.balance,
+              currency: element.currency,
+            };
 
-        for (let i = 0; i < cashAccount.length; i++) {
-          const element = cashAccount[i];
+            response.push(obj);
+          }
 
-          const obj = {
-            id: element.id,
-            userId: element.userId,
-            createdAt: toTimeStamp(element.createdAt),
-            lastUpdate: toTimeStamp(element.lastUpdate),
-            accountName: element.accountName,
-            displayPicture: element.displayPicture,
-            balance: element.balance,
-            currency: element.currency,
-          };
-
-          response.push(obj);
+          return response;
+        } catch (error) {
+          throw error;
         }
-
-        return response;
       },
     });
   },
@@ -61,71 +59,65 @@ export const CashTransactionQuery = extendType({
         ),
       },
 
-      async resolve(parent, args, context, info) {
-        const { cashAccountId } = args;
+      async resolve(__, { cashAccountId }, { userId, prisma }, ___) {
+        try {
+          if (!userId) throw new Error('Token tidak valid.');
 
-        const { userId, prisma } = context;
+          const user = await prisma.user.findFirstOrThrow({
+            where: { id: userId },
+          });
 
-        if (!userId) throw { status: 1100, message: 'Token tidak valid.' };
+          const cashAccount = await prisma.cashAccount.findFirstOrThrow({
+            where: { id: cashAccountId },
+          });
 
-        const user = await prisma.user.findFirst({ where: { id: userId } });
+          const response = await prisma.cashTransaction.findMany({
+            orderBy: [{ dateTimestamp: 'desc' }],
+          });
 
-        if (!user) throw { status: 1000, message: 'User tidak ditemukan.' };
+          let responseArray: any[] = [];
 
-        const cashAccount = await prisma.cashAccount.findFirst({
-          where: { id: cashAccountId },
-        });
+          for (let i = 0; i < response.length; i++) {
+            const element = response[i];
 
-        if (!cashAccount)
-          throw { status: 3000, message: 'Akun cash tidak ditemukan' };
+            const decodedCashAccountId = decodeCashAccountId(
+              element.cashAccountId
+            ) as unknown as string;
 
-        const response = await prisma.cashTransaction.findMany({
-          orderBy: [{ dateTimestamp: 'desc' }],
-        });
+            if (decodedCashAccountId === cashAccountId) {
+              const merchant = await prisma.merchant.findFirstOrThrow({
+                where: { id: element.merchantId },
+              });
 
-        let responseArray: any[] = [];
+              const obj = {
+                id: element.id,
+                cashAccountId: decodeCashAccountId(element.cashAccountId),
+                dateTimestamp: element.dateTimestamp,
+                currency: element.currency,
+                transactionName: element.transactionName,
+                amount: element.amount,
+                merchant,
+                merchantId: element.merchantId,
+                category: element.category,
+                direction: element.direction,
+                transactionType: element.transactionType,
+                internalTransferTransactionId:
+                  element.internalTransferTransactionId,
+                notes: element.notes,
+                location: element.location,
+                tags: element.tags,
+                isHideFromBudget: element.isHideFromBudget,
+                isHideFromInsight: element.isHideFromInsight,
+              };
 
-        for (let i = 0; i < response.length; i++) {
-          const element = response[i];
-
-          const decodedCashAccountId = decodeCashAccountId(
-            element.cashAccountId
-          ) as unknown as string;
-
-          if (decodedCashAccountId === cashAccountId) {
-            const merchant = await prisma.merchant.findFirst({
-              where: { id: element.merchantId },
-            });
-
-            if (!merchant)
-              throw { status: 2400, message: 'Merchant tidak ditemukan.' };
-
-            const obj = {
-              id: element.id,
-              cashAccountId: decodeCashAccountId(element.cashAccountId),
-              dateTimestamp: toTimeStamp(element.dateTimestamp),
-              currency: element.currency,
-              transactionName: element['transactionName'],
-              amount: element.amount,
-              merchant,
-              merchantId: element.merchantId,
-              category: element.category,
-              direction: element.direction,
-              transactionType: element.transactionType,
-              internalTransferTransactionId:
-                element.internalTransferTransactionId,
-              notes: element.notes,
-              location: element.location,
-              tags: element.tags,
-              isHideFromBudget: element.isHideFromBudget,
-              isHideFromInsight: element.isHideFromInsight,
-            };
-
-            responseArray.push(obj);
+              responseArray.push(obj);
+            }
           }
-        }
 
-        return responseArray;
+          return responseArray;
+        } catch (error) {
+          throw error;
+        }
       },
     });
   },

@@ -11,8 +11,8 @@
     "noImplicitAny": false,
     "baseUrl": ".",
     "paths": {
-      "$algorithm/*": ["./algorithm/*"],
-      "$utils/*": ["./src/utils/*"]
+      "@algorithm/*": ["./algorithm/*"],
+      "@utils/*": ["./src/utils/*"]
     }
   },
   "exclude": ["node_modules"]

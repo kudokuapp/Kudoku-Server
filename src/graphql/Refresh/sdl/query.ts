@@ -1,4 +1,3 @@
-import { toTimeStamp } from '../../../utils/date';
 import { Refresh, User } from '@prisma/client';
 import { arg, extendType } from 'nexus';
 
@@ -14,6 +13,7 @@ export const RefreshQuery = extendType({
           description:
             'Fill this with their id, otherwise fill this with "null"',
         }),
+
         username: arg({
           type: 'String',
           description:
@@ -21,73 +21,67 @@ export const RefreshQuery = extendType({
         }),
       },
 
-      async resolve(parent, args, context, info) {
-        const { userId, username } = args;
+      async resolve(__, { userId, username }, { prisma }, ___) {
+        try {
+          let refresh: Refresh[];
+          let user: User;
 
-        const { prisma } = context;
+          if (userId !== null && userId !== undefined) {
+            const response = await prisma.user.findFirstOrThrow({
+              where: { id: userId },
+            });
 
-        let refresh: Refresh[];
-        let user: User;
+            user = response;
 
-        if (userId !== null && userId !== undefined) {
-          const response = await prisma.user.findFirst({
-            where: { id: userId },
-          });
-          if (!response)
-            throw { status: 1000, message: 'User tidak ditemukan.' };
+            refresh = await prisma.refresh.findMany({
+              where: { userId: response.id },
+              orderBy: [{ date: 'desc' }],
+            });
+          } else if (username !== null && username !== undefined) {
+            const response = await prisma.user.findFirstOrThrow({
+              where: { username },
+            });
 
-          user = response;
+            user = response;
 
-          refresh = await prisma.refresh.findMany({
-            where: { userId },
-            orderBy: [{ date: 'desc' }],
-          });
-        } else if (username !== null && username !== undefined) {
-          const response = await prisma.user.findFirst({
-            where: { username },
-          });
-          if (!response)
-            throw { status: 1000, message: 'User tidak ditemukan.' };
-          user = response;
+            refresh = await prisma.refresh.findMany({
+              where: { user: { username: response.username } },
+              orderBy: [{ date: 'desc' }],
+            });
+          } else {
+            throw new Error('Semua value tidak boleh null atau undefined.');
+          }
 
-          refresh = await prisma.refresh.findMany({
-            where: { user: { username } },
-            orderBy: [{ date: 'desc' }],
-          });
-        } else {
-          throw {
-            status: 2003,
-            message: 'Semua value tidak boleh null atau undefined.',
-          };
+          let response: any[] = [];
+
+          for (let i = 0; i < refresh.length; i++) {
+            const element = refresh[i];
+
+            const obj = {
+              id: element.id,
+              userId: element.userId,
+
+              user: {
+                id: user.id,
+                username: user.username,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email,
+                whatsapp: user.whatsapp,
+                kudosNo: user.kudosNo,
+                createdAt: user.createdAt,
+              },
+
+              date: element.date,
+            };
+
+            response.push(obj);
+          }
+
+          return response;
+        } catch (error) {
+          throw error;
         }
-
-        let response: any[] = [];
-
-        for (let i = 0; i < refresh.length; i++) {
-          const element = refresh[i];
-
-          const obj = {
-            id: element.id,
-            userId: element.userId,
-
-            user: {
-              id: user.id,
-              username: user.username,
-              firstName: user.firstName,
-              lastName: user.lastName,
-              email: user.email,
-              whatsapp: user.whatsapp,
-              kudosNo: user.kudosNo,
-              createdAt: toTimeStamp(user.createdAt),
-            },
-
-            date: toTimeStamp(element.date),
-          };
-
-          response.push(obj);
-        }
-
-        return response;
       },
     });
   },

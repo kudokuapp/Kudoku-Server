@@ -1,10 +1,10 @@
-import { extendType, idArg, nonNull, stringArg } from 'nexus';
+import { idArg, mutationType, nonNull, stringArg } from 'nexus';
 import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
-import { AuthTokenPayload, OTP_SECRET, APP_SECRET } from '../../../utils/auth';
+import { APP_SECRET, OTP_SECRET } from '../../../utils/auth/constant';
+import { AuthTokenPayload } from '../../../utils/auth/decodeAuthHeader';
 
-export const AuthMutation = extendType({
-  type: 'Mutation',
+export const AuthMutation = mutationType({
   definition(t) {
     t.nonNull.field('signup', {
       type: 'AuthPayLoad',
@@ -18,37 +18,40 @@ export const AuthMutation = extendType({
         jwtToken: nonNull(stringArg()),
       },
 
-      async resolve(parent, args, context) {
-        const { username, id, jwtToken } = args;
-        const { prisma } = context;
-        const { userId } = jwt.verify(
-          jwtToken,
-          OTP_SECRET
-        ) as unknown as AuthTokenPayload;
+      async resolve(
+        __,
+        { id, username, password: passwordArg, pin: pinArg, jwtToken },
+        { prisma },
+        ___
+      ) {
+        try {
+          const { userId } = jwt.verify(
+            jwtToken,
+            OTP_SECRET
+          ) as unknown as AuthTokenPayload;
 
-        if (id !== userId)
-        throw ({status: 1200, message: 'Ada ketidakcocokan antara token dan userId.'})
+          if (id !== userId)
+            throw new Error('Ada ketidakcocokan antara token dan userId.');
 
-        const password = await bcrypt.hash(args.password, 10);
+          const searchUser = await prisma.user.findFirstOrThrow({
+            where: { id },
+          });
 
-        const pin = await bcrypt.hash(args.pin, 10);
+          const password = await bcrypt.hash(passwordArg, 10);
 
-        const searchUser = await prisma.user.findFirst({
-          where: { id },
-        });
+          const pin = await bcrypt.hash(pinArg, 10);
 
-        if (!searchUser) {
-          throw ({status: 1001, message: 'User belum diundang untuk masuk aplikasi Kudoku.'})
+          const user = await prisma.user.update({
+            where: { id: searchUser.id },
+            data: { username, password, pin },
+          });
+
+          const token = jwt.sign({ userId: user.id }, APP_SECRET);
+
+          return { token };
+        } catch (e) {
+          throw e;
         }
-
-        const user = await prisma.user.update({
-          where: { id: searchUser.id },
-          data: { username, password, pin },
-        });
-
-        const token = jwt.sign({ userId: user.id }, APP_SECRET);
-
-        return { token };
       },
     });
 
@@ -61,33 +64,32 @@ export const AuthMutation = extendType({
         jwtToken: nonNull(stringArg()),
       },
 
-      async resolve(parent, args, context) {
-        const { jwtToken } = args;
-        const { prisma } = context;
+      async resolve(__, { password: passwordArg, jwtToken }, { prisma }, ___) {
+        try {
+          const { userId: id } = jwt.verify(
+            jwtToken,
+            OTP_SECRET
+          ) as unknown as AuthTokenPayload;
 
-        const { userId: id } = jwt.verify(
-          jwtToken,
-          OTP_SECRET
-        ) as unknown as AuthTokenPayload;
+          if (!id) throw new Error('Token tidak valid.');
 
-        if (!id) {
-          throw ({status: 1100, message: 'Token tidak valid.'})
+          const searchUser = await prisma.user.findFirstOrThrow({
+            where: { id },
+          });
+
+          const password = await bcrypt.hash(passwordArg, 10);
+
+          const user = await prisma.user.update({
+            where: { id: searchUser.id },
+            data: { password },
+          });
+
+          const token = jwt.sign({ userId: user.id }, APP_SECRET);
+
+          return { token };
+        } catch (error) {
+          throw error;
         }
-
-        const password = await bcrypt.hash(args.password, 10);
-
-        const user = await prisma.user.update({
-          where: { id },
-          data: { password },
-        });
-
-        if (!user) {
-          throw ({status: 1000, message: 'User tidak ditemukan.'})
-        }
-
-        const token = jwt.sign({ userId: user.id }, APP_SECRET);
-
-        return { token };
       },
     });
 
@@ -100,37 +102,32 @@ export const AuthMutation = extendType({
         jwtToken: nonNull(stringArg()),
       },
 
-      async resolve(parent, args, context) {
-        const { jwtToken } = args;
-        const { prisma } = context;
+      async resolve(__, { pin: pinArg, jwtToken }, { prisma }, ___) {
+        try {
+          const { userId: id } = jwt.verify(
+            jwtToken,
+            OTP_SECRET
+          ) as unknown as AuthTokenPayload;
 
-        const { userId: id } = jwt.verify(
-          jwtToken,
-          OTP_SECRET
-        ) as unknown as AuthTokenPayload;
+          if (!id) throw new Error('Token tidak valid.');
 
-        if (!id) {
-          throw ({status: 1100, message: 'Token tidak valid.'})
+          const pin = await bcrypt.hash(pinArg, 10);
+
+          const searchUser = await prisma.user.findFirstOrThrow({
+            where: { id },
+          });
+
+          const user = await prisma.user.update({
+            where: { id: searchUser.id },
+            data: { pin },
+          });
+
+          const token = jwt.sign({ userId: user.id }, APP_SECRET);
+
+          return { token };
+        } catch (error) {
+          throw error;
         }
-
-        const pin = await bcrypt.hash(args.pin, 10);
-        
-        const searchUser = await prisma.user.findFirst({where: {id}})
-        
-        if (!searchUser) {
-          throw ({status: 1000, message: 'User tidak ditemukan.'})
-        }
-
-        const user = await prisma.user.update({
-          where: { id: searchUser.id },
-          data: { pin },
-        });
-
-        
-
-        const token = jwt.sign({ userId: user.id }, APP_SECRET);
-
-        return { token };
       },
     });
   },

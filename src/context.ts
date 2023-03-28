@@ -1,25 +1,36 @@
 import { PrismaClient } from '@prisma/client';
-import { decodeAuthHeader } from '../src/utils/auth';
-import { Request } from 'express';
+import decodeAuthHeader from './utils/auth/decodeAuthHeader';
+import { Request, Response } from 'express';
 import twilio from 'twilio';
+import { PubSub } from 'graphql-subscriptions';
 
-export const prisma = new PrismaClient();
+const pubsub = new PubSub();
 
-export const twilioClient = twilio(
+const prisma = new PrismaClient();
+
+const twilioClient = twilio(
   process.env.TWILIO_ACCCOUNT_SID,
   process.env.TWILIO_AUTH_TOKEN
 );
 
 export interface Context {
   prisma: PrismaClient;
-  userId?: string;
+  userId: string | null;
   twilioClient: twilio.Twilio;
+  pubsub: PubSub;
 }
 
-export const context = ({ req }: { req: Request }): Context => {
+export const context = ({
+  req,
+  res,
+}: {
+  req: Request;
+  res: Response;
+}): Context => {
   const token =
     req && req.headers.authorization
       ? decodeAuthHeader(req.headers.authorization)
       : null;
-  return { prisma, userId: token?.userId, twilioClient };
+
+  return { prisma, userId: token ? token.userId : null, twilioClient, pubsub };
 };

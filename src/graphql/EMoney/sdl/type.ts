@@ -13,11 +13,11 @@ export const EMoneyAccount = objectType({
 
     t.nonNull.string('cardNumber');
 
-    t.nonNull.string('createdAt', {
+    t.nonNull.dateTime('createdAt', {
       description: 'When this account is created',
     });
 
-    t.nonNull.string('lastUpdate', {
+    t.nonNull.dateTime('lastUpdate', {
       description: 'When this account is last updated',
     });
 
@@ -46,7 +46,7 @@ export const EMoneyTransaction = objectType({
       description: 'The E-Wallet account Id',
     });
 
-    t.nonNull.string('dateTimestamp', {
+    t.nonNull.dateTime('dateTimestamp', {
       description: 'Date and Timestamp for this transaction',
     });
 
@@ -120,5 +120,16 @@ export const EMoneyTransaction = objectType({
     t.nonNull.boolean('isHideFromInsight', {
       description: 'Whether or not this transaction is hidden from insight',
     });
+  },
+});
+
+export const EMoneyTransactionSubscriptionType = objectType({
+  name: 'EMoneyTransactionSubscriptionType',
+  definition(t) {
+    t.nonNull.field('mutationType', {
+      type: 'typeOfMutationType',
+      description: 'The type of mutationType. Either `ADD` `EDIT` or `DELETE`',
+    });
+    t.nonNull.field('transaction', { type: 'EMoneyTransaction' });
   },
 });

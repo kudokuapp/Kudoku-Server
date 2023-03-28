@@ -1,5 +1,5 @@
-import { cleanDate, toTimeStamp } from '../../../utils/date';
 import { Profile, User } from '@prisma/client';
+import { cleanDate } from '../../../utils/date/cleanDate';
 import { arg, extendType } from 'nexus';
 
 export const ProfileQuery = extendType({
@@ -21,66 +21,59 @@ export const ProfileQuery = extendType({
         }),
       },
 
-      async resolve(parent, args, context, info) {
-        const { userId, username } = args;
+      async resolve(__, { userId, username }, { prisma }, ___) {
+        try {
+          let response: Profile;
+          let responseUser: User;
 
-        let response: Profile;
-        let responseUser: User;
+          if (userId !== null && userId !== undefined) {
+            const user = await prisma.user.findFirstOrThrow({
+              where: { id: userId },
+            });
 
-        if (userId !== null && userId !== undefined) {
-          const user = await context.prisma.user.findFirst({
-            where: { id: userId },
-          });
-          if (!user) throw { status: 1000, message: 'User tidak ditemukan.' };
-          responseUser = user;
+            const profile = await prisma.profile.findFirstOrThrow({
+              where: { userId },
+            });
 
-          const profile = await context.prisma.profile.findFirst({
-            where: { userId },
-          });
-          if (!profile)
-            throw { status: 2800, message: 'User profile tidak ditemukan.' };
+            responseUser = user;
+            response = profile;
+          } else if (username !== null && username !== undefined) {
+            const user = await prisma.user.findFirstOrThrow({
+              where: { username },
+            });
 
-          response = profile;
-        } else if (username !== null && username !== undefined) {
-          const user = await context.prisma.user.findFirst({
-            where: { username },
-          });
-          if (!user) throw { status: 1000, message: 'User tidak ditemukan.' };
-          responseUser = user;
-          const profile = await context.prisma.profile.findFirst({
-            where: { user: { username } },
-          });
-          if (!profile)
-            throw { status: 2800, message: 'User profile tidak ditemukan.' };
+            const profile = await prisma.profile.findFirstOrThrow({
+              where: { user: { username } },
+            });
 
-          response = profile;
-        } else {
-          throw {
-            status: 2003,
-            message: 'Semua value tidak boleh null atau undefined.',
+            responseUser = user;
+            response = profile;
+          } else {
+            throw new Error('Semua value tidak boleh null atau undefined.');
+          }
+
+          if (!responseUser.username) throw new Error('Tidak ada username.');
+
+          return {
+            id: response.id,
+            user: {
+              id: responseUser.id,
+              username: responseUser.username,
+              firstName: responseUser.firstName,
+              lastName: responseUser.lastName,
+              email: responseUser.email,
+              whatsapp: responseUser.whatsapp,
+              kudosNo: responseUser.kudosNo,
+              createdAt: responseUser.createdAt,
+            },
+            userId: response.id,
+            bio: response.bio ?? null,
+            profilePicture: response.profilePicture ?? null,
+            birthday: response.birthday ? cleanDate(response.birthday) : null,
           };
+        } catch (error) {
+          throw error;
         }
-
-        if (!responseUser.username)
-          throw { status: 1600, message: 'Tidak ada username.' };
-
-        return {
-          id: response.id,
-          user: {
-            id: responseUser.id,
-            username: responseUser.username,
-            firstName: responseUser.firstName,
-            lastName: responseUser.lastName,
-            email: responseUser.email,
-            whatsapp: responseUser.whatsapp,
-            kudosNo: responseUser.kudosNo,
-            createdAt: toTimeStamp(responseUser.createdAt),
-          },
-          userId: response.id,
-          bio: response.bio ?? null,
-          profilePicture: response.profilePicture ?? null,
-          birthday: response.birthday ? cleanDate(response.birthday) : null,
-        };
       },
     });
   },

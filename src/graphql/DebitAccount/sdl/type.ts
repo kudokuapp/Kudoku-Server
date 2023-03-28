@@ -13,11 +13,11 @@ export const DebitAccount = objectType({
 
     t.nonNull.string('accountNumber');
 
-    t.nonNull.string('createdAt', {
+    t.nonNull.dateTime('createdAt', {
       description: 'When this account is created',
     });
 
-    t.nonNull.string('lastUpdate', {
+    t.nonNull.dateTime('lastUpdate', {
       description: 'When this account is last updated',
     });
 
@@ -27,6 +27,10 @@ export const DebitAccount = objectType({
 
     t.nonNull.string('currency', {
       description: 'The ISO currency of this account',
+    });
+
+    t.nonNull.boolean('expired', {
+      description: 'Wether or not this debit account access token is expired',
     });
   },
 });
@@ -46,7 +50,7 @@ export const DebitTransaction = objectType({
       description: 'The debit account Id',
     });
 
-    t.nonNull.string('dateTimestamp', {
+    t.nonNull.dateTime('dateTimestamp', {
       description: 'Date and Timestamp for this transaction',
     });
 
@@ -137,5 +141,16 @@ export const DebitTransaction = objectType({
     t.nonNull.string('transactionMethod', {
       description: 'The transaction method. `Virtual Account`, `Debit`',
     });
+  },
+});
+
+export const DebitTransactionSubscriptionType = objectType({
+  name: 'DebitTransactionSubscriptionType',
+  definition(t) {
+    t.nonNull.field('mutationType', {
+      type: 'typeOfMutationType',
+      description: 'The type of mutationType. Either `ADD` `EDIT` or `DELETE`',
+    });
+    t.nonNull.field('transaction', { type: 'DebitTransaction' });
   },
 });
