@@ -46,6 +46,65 @@ export const PayLaterAccountQuery = extendType({
         }
       },
     });
+
+    t.field('getInfoPayLaterAccount', {
+      type: 'PayLaterAccount',
+
+      description: 'Get info on a particular pay later account',
+
+      args: {
+        payLaterAccountId: nonNull(
+          arg({
+            type: 'String',
+            description: 'The pay later account id',
+          })
+        ),
+      },
+
+      resolve: async (__, { payLaterAccountId }, { userId, prisma }, ___) => {
+        try {
+          if (!userId) throw new Error('Token tidak valid.');
+
+          const user = await prisma.user.findFirstOrThrow({
+            where: { id: userId },
+          });
+
+          const payLaterAccount = await prisma.payLaterAccount.findFirstOrThrow(
+            {
+              where: { AND: [{ id: payLaterAccountId }, { userId: user.id }] },
+            }
+          );
+
+          const allPayLaterTransaction =
+            await prisma.payLaterTransaction.findMany({
+              orderBy: [{ dateTimestamp: 'desc' }, { referenceId: 'desc' }],
+            });
+
+          const latestTransaction = allPayLaterTransaction.find((element) => {
+            const decodedPayLaterAccountId = decodePayLaterAccountId(
+              element.payLaterAccountId
+            );
+            return decodedPayLaterAccountId === payLaterAccount.id;
+          });
+
+          return {
+            id: payLaterAccount.id,
+            userId: user.id,
+            institutionId: payLaterAccount.institutionId,
+            accountNumber: payLaterAccount.accountNumber,
+            createdAt: payLaterAccount.createdAt,
+            lastUpdate: latestTransaction
+              ? latestTransaction.dateTimestamp
+              : payLaterAccount.lastUpdate,
+            balance: payLaterAccount.balance,
+            currency: payLaterAccount.currency,
+            expired: payLaterAccount.expired,
+          };
+        } catch (error) {
+          throw error;
+        }
+      },
+    });
   },
 });
 

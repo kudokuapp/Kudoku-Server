@@ -45,6 +45,61 @@ export const EMoneyAccountQuery = extendType({
         }
       },
     });
+
+    t.field('getInfoEMoneyAccount', {
+      type: 'EMoneyAccount',
+
+      description: 'Get info on a particular e-money account',
+
+      args: {
+        eMoneyAccountId: nonNull(
+          arg({
+            type: 'String',
+            description: 'The e-money account id',
+          })
+        ),
+      },
+
+      resolve: async (__, { eMoneyAccountId }, { userId, prisma }, ___) => {
+        try {
+          if (!userId) throw new Error('Token tidak valid.');
+
+          const user = await prisma.user.findFirstOrThrow({
+            where: { id: userId },
+          });
+
+          const eMoneyAccount = await prisma.eMoneyAccount.findFirstOrThrow({
+            where: { AND: [{ id: eMoneyAccountId }, { userId: user.id }] },
+          });
+
+          const allEMoneyTransaction = await prisma.eMoneyTransaction.findMany({
+            orderBy: [{ dateTimestamp: 'desc' }],
+          });
+
+          const latestTransaction = allEMoneyTransaction.find((element) => {
+            const decodedEMoneyAccountId = decodeEMoneyAccountId(
+              element.eMoneyAccountId
+            );
+            return decodedEMoneyAccountId === eMoneyAccount.id;
+          });
+
+          return {
+            id: eMoneyAccount.id,
+            userId: user.id,
+            institutionId: eMoneyAccount.institutionId,
+            cardNumber: eMoneyAccount.cardNumber,
+            createdAt: eMoneyAccount.createdAt,
+            lastUpdate: latestTransaction
+              ? latestTransaction.dateTimestamp
+              : eMoneyAccount.lastUpdate,
+            balance: eMoneyAccount.balance,
+            currency: eMoneyAccount.currency,
+          };
+        } catch (error) {
+          throw error;
+        }
+      },
+    });
   },
 });
 

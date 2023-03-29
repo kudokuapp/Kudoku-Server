@@ -1161,6 +1161,36 @@ type Query {
   """
   getAllUser: [User]!
 
+  """Get info on a particular cash account"""
+  getInfoCashAccount(
+    """The cash account id"""
+    cashAccountId: String!
+  ): CashAccount
+
+  """Get info on a particular debit account"""
+  getInfoDebitAccount(
+    """The debit account id"""
+    debitAccountId: String!
+  ): DebitAccount
+
+  """Get info on a particular e-money account"""
+  getInfoEMoneyAccount(
+    """The e-money account id"""
+    eMoneyAccountId: String!
+  ): EMoneyAccount
+
+  """Get info on a particular e-wallet account"""
+  getInfoEWalletAccount(
+    """The e-wallet account id"""
+    eWalletAccountId: String!
+  ): EWalletAccount
+
+  """Get info on a particular pay later account"""
+  getInfoPayLaterAccount(
+    """The pay later account id"""
+    payLaterAccountId: String!
+  ): PayLaterAccount
+
   """Get OTP to user email/whatsapp. WhatsApp needs to have "+62" prefix."""
   getOtp(
     """

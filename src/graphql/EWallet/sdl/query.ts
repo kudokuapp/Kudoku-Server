@@ -110,6 +110,63 @@ export const EWalletAccountQuery = extendType({
         }
       },
     });
+
+    t.field('getInfoEWalletAccount', {
+      type: 'EWalletAccount',
+
+      description: 'Get info on a particular e-wallet account',
+
+      args: {
+        eWalletAccountId: nonNull(
+          arg({
+            type: 'String',
+            description: 'The e-wallet account id',
+          })
+        ),
+      },
+
+      resolve: async (__, { eWalletAccountId }, { userId, prisma }, ___) => {
+        try {
+          if (!userId) throw new Error('Token tidak valid.');
+
+          const user = await prisma.user.findFirstOrThrow({
+            where: { id: userId },
+          });
+
+          const eWalletAccount = await prisma.eWalletAccount.findFirstOrThrow({
+            where: { AND: [{ id: eWalletAccountId }, { userId: user.id }] },
+          });
+
+          const allEWalletTransaction =
+            await prisma.eWalletTransaction.findMany({
+              orderBy: [{ dateTimestamp: 'desc' }, { referenceId: 'desc' }],
+            });
+
+          const latestTransaction = allEWalletTransaction.find((element) => {
+            const decodedEWalletAccountId = decodeEWalletAccountId(
+              element.eWalletAccountId
+            );
+            return decodedEWalletAccountId === eWalletAccount.id;
+          });
+
+          return {
+            id: eWalletAccount.id,
+            userId: user.id,
+            institutionId: eWalletAccount.institutionId,
+            accountNumber: eWalletAccount.accountNumber,
+            createdAt: eWalletAccount.createdAt,
+            lastUpdate: latestTransaction
+              ? latestTransaction.dateTimestamp
+              : eWalletAccount.lastUpdate,
+            balance: eWalletAccount.balance,
+            currency: eWalletAccount.currency,
+            expired: eWalletAccount.expired,
+          };
+        } catch (error) {
+          throw error;
+        }
+      },
+    });
   },
 });
 

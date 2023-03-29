@@ -598,6 +598,11 @@ export interface NexusGenFieldTypes {
     getAllPayLaterAccount: Array<NexusGenRootTypes['PayLaterAccount'] | null> | null; // [PayLaterAccount]
     getAllPayLaterTransaction: Array<NexusGenRootTypes['PayLaterTransaction'] | null> | null; // [PayLaterTransaction]
     getAllUser: Array<NexusGenRootTypes['User'] | null>; // [User]!
+    getInfoCashAccount: NexusGenRootTypes['CashAccount'] | null; // CashAccount
+    getInfoDebitAccount: NexusGenRootTypes['DebitAccount'] | null; // DebitAccount
+    getInfoEMoneyAccount: NexusGenRootTypes['EMoneyAccount'] | null; // EMoneyAccount
+    getInfoEWalletAccount: NexusGenRootTypes['EWalletAccount'] | null; // EWalletAccount
+    getInfoPayLaterAccount: NexusGenRootTypes['PayLaterAccount'] | null; // PayLaterAccount
     getOtp: NexusGenRootTypes['ResponseMessage'] | null; // ResponseMessage
     getProfile: NexusGenRootTypes['Profile'] | null; // Profile
     getRefresh: Array<NexusGenRootTypes['Refresh'] | null> | null; // [Refresh]
@@ -917,6 +922,11 @@ export interface NexusGenFieldTypeNames {
     getAllPayLaterAccount: 'PayLaterAccount'
     getAllPayLaterTransaction: 'PayLaterTransaction'
     getAllUser: 'User'
+    getInfoCashAccount: 'CashAccount'
+    getInfoDebitAccount: 'DebitAccount'
+    getInfoEMoneyAccount: 'EMoneyAccount'
+    getInfoEWalletAccount: 'EWalletAccount'
+    getInfoPayLaterAccount: 'PayLaterAccount'
     getOtp: 'ResponseMessage'
     getProfile: 'Profile'
     getRefresh: 'Refresh'
@@ -1177,6 +1187,21 @@ export interface NexusGenArgTypes {
       eWalletAccountId: string; // String!
     }
     getAllPayLaterTransaction: { // args
+      payLaterAccountId: string; // String!
+    }
+    getInfoCashAccount: { // args
+      cashAccountId: string; // String!
+    }
+    getInfoDebitAccount: { // args
+      debitAccountId: string; // String!
+    }
+    getInfoEMoneyAccount: { // args
+      eMoneyAccountId: string; // String!
+    }
+    getInfoEWalletAccount: { // args
+      eWalletAccountId: string; // String!
+    }
+    getInfoPayLaterAccount: { // args
       payLaterAccountId: string; // String!
     }
     getOtp: { // args

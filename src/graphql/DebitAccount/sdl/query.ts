@@ -46,6 +46,62 @@ export const DebitAccountQuery = extendType({
         }
       },
     });
+
+    t.field('getInfoDebitAccount', {
+      type: 'DebitAccount',
+
+      description: 'Get info on a particular debit account',
+
+      args: {
+        debitAccountId: nonNull(
+          arg({
+            type: 'String',
+            description: 'The debit account id',
+          })
+        ),
+      },
+
+      resolve: async (__, { debitAccountId }, { userId, prisma }, ___) => {
+        try {
+          if (!userId) throw new Error('Token tidak valid.');
+
+          const user = await prisma.user.findFirstOrThrow({
+            where: { id: userId },
+          });
+
+          const debitAccount = await prisma.debitAccount.findFirstOrThrow({
+            where: { AND: [{ id: debitAccountId }, { userId: user.id }] },
+          });
+
+          const allDebitTransaction = await prisma.debitTransaction.findMany({
+            orderBy: [{ dateTimestamp: 'desc' }, { referenceId: 'desc' }],
+          });
+
+          const latestTransaction = allDebitTransaction.find((element) => {
+            const decodedDebitAccountId = decodeDebitAccountId(
+              element.debitAccountId
+            );
+            return decodedDebitAccountId === debitAccount.id;
+          });
+
+          return {
+            id: debitAccount.id,
+            userId: user.id,
+            institutionId: debitAccount.institutionId,
+            accountNumber: debitAccount.accountNumber,
+            createdAt: debitAccount.createdAt,
+            lastUpdate: latestTransaction
+              ? latestTransaction.dateTimestamp
+              : debitAccount.lastUpdate,
+            balance: debitAccount.balance,
+            currency: debitAccount.currency,
+            expired: debitAccount.expired,
+          };
+        } catch (error) {
+          throw error;
+        }
+      },
+    });
   },
 });
 

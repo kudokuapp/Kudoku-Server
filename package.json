@@ -1,6 +1,6 @@
 {
   "name": "kudoku-server",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "description": "Server supporting the Kudoku App on the Web, iOS, iPadOS, macOS, Windows, and Android.",
   "main": "dist/index.js",
   "scripts": {

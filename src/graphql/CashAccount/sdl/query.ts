@@ -1,3 +1,4 @@
+import { CashTransaction } from '@prisma/client';
 import { arg, extendType, nonNull } from 'nexus';
 import { decodeCashAccountId } from '../../../utils/auth/cashAccountId';
 
@@ -36,6 +37,60 @@ export const CashAccountQuery = extendType({
           }
 
           return response;
+        } catch (error) {
+          throw error;
+        }
+      },
+    });
+
+    t.field('getInfoCashAccount', {
+      type: 'CashAccount',
+
+      description: 'Get info on a particular cash account',
+
+      args: {
+        cashAccountId: nonNull(
+          arg({
+            type: 'String',
+            description: 'The cash account id',
+          })
+        ),
+      },
+
+      resolve: async (__, { cashAccountId }, { userId, prisma }, ___) => {
+        try {
+          if (!userId) throw new Error('Token tidak valid.');
+
+          const user = await prisma.user.findFirstOrThrow({
+            where: { id: userId },
+          });
+
+          const cashAccount = await prisma.cashAccount.findFirstOrThrow({
+            where: { AND: [{ id: cashAccountId }, { userId: user.id }] },
+          });
+
+          const allCashTransaction = await prisma.cashTransaction.findMany({
+            orderBy: [{ dateTimestamp: 'desc' }],
+          });
+
+          const latestTransaction = allCashTransaction.find((element) => {
+            const decodedCashAccountId = decodeCashAccountId(
+              element.cashAccountId
+            );
+            return decodedCashAccountId === cashAccount.id;
+          });
+
+          return {
+            id: cashAccount.id,
+            userId: user.id,
+            createdAt: cashAccount.createdAt,
+            lastUpdate: latestTransaction
+              ? latestTransaction.dateTimestamp
+              : cashAccount.lastUpdate,
+            balance: cashAccount.balance,
+            currency: cashAccount.currency,
+            accountName: cashAccount.accountName,
+          };
         } catch (error) {
           throw error;
         }
