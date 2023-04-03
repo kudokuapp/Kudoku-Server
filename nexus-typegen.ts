@@ -39,16 +39,16 @@ export interface NexusGenInputs {
     type?: string | null; // String
   }
   KudokuxBrickBalance: { // input type
-    available: number; // Int!
-    current: number; // Int!
-    limit?: number | null; // Int
+    available: number; // Float!
+    current: number; // Float!
+    limit?: number | null; // Float
   }
   KudokuxBrickTransaction: { // input type
     account_currency: string; // String!
     account_id: string; // String!
     account_number: string; // String!
-    amount: number; // Int!
-    category: NexusGenInputs['KudokuxBrickTransactionCategory']; // KudokuxBrickTransactionCategory!
+    amount: number; // Float!
+    category?: NexusGenInputs['KudokuxBrickTransactionCategory'] | null; // KudokuxBrickTransactionCategory
     date: string; // String!
     dateTimestamp: string; // String!
     description: string; // String!

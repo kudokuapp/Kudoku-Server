@@ -439,17 +439,17 @@ input KudokuxBrickAccount {
 }
 
 input KudokuxBrickBalance {
-  available: Int!
-  current: Int!
-  limit: Int
+  available: Float!
+  current: Float!
+  limit: Float
 }
 
 input KudokuxBrickTransaction {
   account_currency: String!
   account_id: String!
   account_number: String!
-  amount: Int!
-  category: KudokuxBrickTransactionCategory!
+  amount: Float!
+  category: KudokuxBrickTransactionCategory
   date: String!
   dateTimestamp: String!
   description: String!

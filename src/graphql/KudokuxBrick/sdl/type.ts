@@ -24,9 +24,9 @@ export const KudokuxBrickAccount = inputObjectType({
 export const KudokuxBrickBalance = inputObjectType({
   name: 'KudokuxBrickBalance',
   definition(t) {
-    t.nonNull.int('available');
-    t.nonNull.int('current');
-    t.int('limit');
+    t.nonNull.float('available');
+    t.nonNull.float('current');
+    t.float('limit');
   },
 });
 
@@ -67,7 +67,7 @@ export const KudokuxBrickTransaction = inputObjectType({
 
     t.nonNull.string('date');
 
-    t.nonNull.int('amount');
+    t.nonNull.float('amount');
 
     t.nonNull.string('description');
 
@@ -77,7 +77,7 @@ export const KudokuxBrickTransaction = inputObjectType({
 
     t.nonNull.string('reference_id');
 
-    t.nonNull.field('category', {
+    t.field('category', {
       type: 'KudokuxBrickTransactionCategory',
     });
 
