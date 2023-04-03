@@ -33,6 +33,10 @@ export const EWalletAccount = objectType({
       description:
         'Wether or not this e-wallet account access token is expired',
     });
+
+    t.string('brickAccessToken', {
+      description: 'The brick access token',
+    });
   },
 });
 

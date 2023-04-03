@@ -6,7 +6,7 @@
  * @param {BrickTransactionData[]} array The incoming array of transactions from brick
  * @returns {number} The index of which the array is new transaction.
  */
-export default function findBrickTransactionIndex(
+export function findBrickTransactionIndex(
   referenceId: string,
   array: BrickTransactionData[]
 ): number {

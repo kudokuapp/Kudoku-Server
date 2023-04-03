@@ -1,6 +1,5 @@
-import { CashTransaction } from '@prisma/client';
 import { arg, extendType, nonNull } from 'nexus';
-import { decodeCashAccountId } from '../../../utils/auth/cashAccountId';
+import { decodeCashAccountId } from '../../../utils/auth';
 
 export const CashAccountQuery = extendType({
   type: 'Query',

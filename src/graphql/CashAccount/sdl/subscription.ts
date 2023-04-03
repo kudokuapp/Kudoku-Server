@@ -1,5 +1,5 @@
 import { CashAccount, CashTransaction } from '@prisma/client';
-import { decodeCashAccountId } from '../../../utils/auth/cashAccountId';
+import { decodeCashAccountId } from '../../../utils/auth';
 import { arg, extendType, nonNull } from 'nexus';
 
 interface IPayloadCashTransaction {

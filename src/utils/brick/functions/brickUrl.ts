@@ -1,4 +1,4 @@
-export default function brickUrl(endpoint: string) {
+export function brickUrl(endpoint: string) {
   const host =
     process.env.NODE_ENV === 'production'
       ? 'https://api.onebrick.io'

@@ -10,26 +10,30 @@ import {
   TransactionType,
 } from '@prisma/client';
 import _ from 'lodash';
-import brickUrl from '../../../utils/brick/url';
-import brickPublicAccessToken from '../../../utils/brick/publicAccessToken';
-import getAccountDetail from '../../../utils/brick/getAccountDetail';
+import {
+  brickUrl,
+  brickPublicAccessToken,
+  getAccountDetail,
+  isAccessTokenIsExpired,
+  mapBrickInstitutionIdToKudoku,
+} from '../../../utils/brick';
 import {
   decodeEWalletAccountId,
   encodeEWalletAccountId,
-} from '../../../utils/auth/eWalletAccountId';
-import {
   decodePayLaterAccountId,
   encodePayLaterAccountId,
-} from '../../../utils/auth/payLaterAccountId';
-import isAccessTokenIsExpired from '../../../utils/brick/isAccessTokenExpired';
-import findBrickTransactionIndex from '../../../utils/transaction/findBrickTransactionIndex';
-import mapBrickInstitutionIdToKudoku from '../../../utils/brick/mapBrickInstitutionIdToKudoku';
+} from '../../../utils/auth';
+import { findBrickTransactionIndex } from '../../../utils/transaction';
 
 export const EWalletAccountMutation = extendType({
   type: 'Mutation',
   definition(t) {
     t.nonNull.field('connectGopayViaBrick', {
+      deprecation:
+        'Deprecated! Please use connectGopayViaKudokuxBrick instead. Can still use this mutation if running on local!',
+
       type: 'GopayEWalletAndPayLaterAccount',
+
       description: 'Connect Gopay account via BRICK.',
 
       args: {
@@ -167,7 +171,7 @@ export const EWalletAccountMutation = extendType({
               institutionId: '63d94170d3e050940af0caf2',
               accountNumber: accountDetail[0].accountNumber,
               accessToken: data.accessToken,
-              balance: accountDetail[0].balances.available.toString(),
+              balance: `${accountDetail[0].balances.available}`,
               createdAt: new Date(),
               lastUpdate: new Date(),
               currency: accountDetail[0].currency,
@@ -181,7 +185,8 @@ export const EWalletAccountMutation = extendType({
               institutionId: '641300b21465d712b0207f9c',
               accountNumber: accountDetail[1].accountNumber,
               accessToken: data.accessToken,
-              balance: accountDetail[1].balances.available.toString(),
+              balance: `${accountDetail[1].balances.available}`,
+              limit: `${accountDetail[1].balances.limit}`,
               createdAt: new Date(),
               lastUpdate: new Date(),
               currency: accountDetail[1].currency,
@@ -297,6 +302,7 @@ export const EWalletAccountMutation = extendType({
               createdAt: payLaterAccount.createdAt,
               lastUpdate: payLaterAccount.lastUpdate,
               balance: payLaterAccount.balance,
+              limit: payLaterAccount.limit,
               currency: payLaterAccount.currency,
               institutionId: payLaterAccount.institutionId,
               accountNumber: payLaterAccount.accountNumber,
@@ -304,6 +310,7 @@ export const EWalletAccountMutation = extendType({
             },
           };
         } catch (error) {
+          console.error(error);
           throw error;
         }
       },
@@ -401,6 +408,175 @@ export const EWalletAccountMutation = extendType({
         }
       },
     });
+
+    t.nonNull.field('connectGopayWalletViaKudokuxBrick', {
+      type: 'EWalletAccount',
+
+      description: 'Connect Gopay wallet after running KudokuxBrick API.',
+
+      args: {
+        account: nonNull(
+          arg({
+            type: 'KudokuxBrickAccount',
+            description: 'The account after running KudokuxBrick API.',
+          })
+        ),
+
+        transaction: list(
+          nonNull(
+            arg({
+              type: 'KudokuxBrickTransaction',
+              description: 'The transaction after running KudokuxBrick API.',
+            })
+          )
+        ),
+      },
+
+      resolve: async (
+        __,
+        { account, transaction },
+        { userId, prisma },
+        ___
+      ) => {
+        try {
+          if (!userId) throw new Error('Token tidak valid.');
+
+          const user = await prisma.user.findFirstOrThrow({
+            where: { id: userId },
+          });
+
+          /**
+           * Avoid same ewallet account duplication
+           */
+          const searchEWalletAccount = await prisma.eWalletAccount.findFirst({
+            where: {
+              AND: [
+                { accountNumber: account.accountNumber },
+                { userId: user.id },
+              ],
+            },
+          });
+
+          if (searchEWalletAccount) throw new Error('Akun ewallet sudah ada.');
+
+          const eWalletAccount = await prisma.eWalletAccount.create({
+            data: {
+              userId: user.id,
+              institutionId: '63d94170d3e050940af0caf2',
+              accountNumber: account.accountNumber,
+              accessToken: account.accessToken ?? '',
+              balance: `${account.balances.available}`,
+              createdAt: new Date(),
+              lastUpdate: new Date(),
+              currency: account.currency,
+              expired: false,
+            },
+          });
+
+          if (transaction) {
+            for (let i = 0; i < transaction.length; i++) {
+              const element = transaction[i];
+
+              const obj = {
+                eWalletAccountId: encodeEWalletAccountId(eWalletAccount.id),
+                transactionName: element.description,
+                dateTimestamp: new Date(
+                  moment(element.dateTimestamp).add(1, 'day') as unknown as Date
+                ),
+                referenceId: element.reference_id,
+                currency: element.account_currency,
+                amount: `${element.amount}`,
+                onlineTransaction: false,
+                isReviewed: false,
+                merchantId: '63d8b775d3e050940af0caf1',
+                category: [{ name: 'UNDEFINED', amount: `${element.amount}` }],
+                transactionType: (element.direction === 'in'
+                  ? 'INCOME'
+                  : 'EXPENSE') as TransactionType,
+                direction: (element.direction === 'in'
+                  ? 'IN'
+                  : 'OUT') as DirectionType,
+                isSubscription: false,
+                description: element.description,
+                institutionId: '63d94170d3e050940af0caf2',
+                isHideFromBudget: false,
+                isHideFromInsight: false,
+              };
+
+              await prisma.eWalletTransaction.create({ data: obj });
+            }
+          }
+
+          return {
+            id: eWalletAccount.id,
+            userId: eWalletAccount.userId,
+            createdAt: eWalletAccount.createdAt,
+            lastUpdate: eWalletAccount.lastUpdate,
+            balance: eWalletAccount.balance,
+            currency: eWalletAccount.currency,
+            institutionId: eWalletAccount.institutionId,
+            accountNumber: eWalletAccount.accountNumber,
+            expired: eWalletAccount.expired,
+          };
+        } catch (error) {
+          throw error;
+        }
+      },
+    });
+
+    t.field('updateEWalletAccountExpiry', {
+      type: 'ResponseMessage',
+
+      description: 'Update e-wallet account expired property.',
+
+      args: {
+        eWalletAccountId: nonNull(
+          arg({ type: 'String', description: 'The eWalletAccountId' })
+        ),
+
+        expired: nonNull(
+          arg({
+            type: 'Boolean',
+            description: 'If expired `true` if not `false`',
+          })
+        ),
+      },
+
+      resolve: async (
+        __,
+        { eWalletAccountId, expired },
+        { userId, prisma, pubsub },
+        ___
+      ) => {
+        try {
+          if (!userId) throw new Error('Token tidak valid.');
+
+          const user = await prisma.user.findFirstOrThrow({
+            where: { id: userId },
+          });
+
+          const eWalletAccountSearch =
+            await prisma.eWalletAccount.findFirstOrThrow({
+              where: { AND: [{ id: eWalletAccountId }, { userId: user.id }] },
+            });
+
+          const eWalletAccount = await prisma.eWalletAccount.update({
+            where: { id: eWalletAccountSearch.id },
+            data: { expired, lastUpdate: new Date() },
+          });
+
+          await pubsub.publish(`eWalletAccountUpdated_${eWalletAccount.id}`, {
+            eWalletAccountUpdate: eWalletAccount,
+          });
+
+          return {
+            response: `Successfully update expired property in ${eWalletAccount.id}`,
+          };
+        } catch (error) {
+          throw error;
+        }
+      },
+    });
   },
 });
 
@@ -408,8 +584,12 @@ export const EWalletTransactionMutation = extendType({
   type: 'Mutation',
   definition(t) {
     t.field('refreshGopayTransactionViaBrick', {
+      deprecation: 'Deprecated! Please only use this on dev.',
+
       type: 'GopayEWalletAndPayLaterTransaction',
+
       description: 'Update transaction and balance for gopay account',
+
       args: {
         eWalletAccountId: arg({
           type: 'String',
@@ -1600,6 +1780,189 @@ export const EWalletTransactionMutation = extendType({
             isHideFromBudget: response.isHideFromBudget,
             isHideFromInsight: response.isHideFromInsight,
           };
+        } catch (error) {
+          throw error;
+        }
+      },
+    });
+
+    t.field('refreshGopayWalletViaKudokuxBrick', {
+      type: 'EWalletTransaction',
+
+      description:
+        'A form of refreshing ewallet account database using data that has been received by running KudokuxBrick.',
+
+      args: {
+        eWalletAccountId: nonNull(
+          arg({
+            type: 'String',
+            description: 'The e-wallet account id.',
+          })
+        ),
+
+        transactionReferenceId: nonNull(
+          arg({
+            type: 'String',
+            description:
+              'The transaction reference Id after running query `getPayLaterLatestTransaction`',
+          })
+        ),
+
+        account: nonNull(
+          arg({
+            type: 'KudokuxBrickAccount',
+            description: 'The account from KudokuxBrick',
+          })
+        ),
+
+        transaction: nonNull(
+          list(
+            nonNull(
+              arg({
+                type: 'KudokuxBrickTransaction',
+                description: 'The transaction from KudokuxBrick',
+              })
+            )
+          )
+        ),
+      },
+
+      resolve: async (
+        __,
+        { account, transaction, eWalletAccountId, transactionReferenceId },
+        { userId, prisma, pubsub },
+        ___
+      ) => {
+        try {
+          if (!userId) throw new Error('Token tidak valid.');
+
+          const user = await prisma.user.findFirstOrThrow({
+            where: { id: userId },
+          });
+
+          const eWalletAccountSearch =
+            await prisma.eWalletAccount.findFirstOrThrow({
+              where: { AND: [{ id: eWalletAccountId }, { userId: user.id }] },
+            });
+
+          const eWalletAccount = await prisma.eWalletAccount.update({
+            where: { id: eWalletAccountSearch.id },
+            data: {
+              balance: `${account.balances.available}`,
+              lastUpdate: new Date(),
+            },
+          });
+
+          await pubsub.publish(`eWalletAccountUpdated_${eWalletAccount.id}`, {
+            eWalletAccountUpdate: eWalletAccount,
+          });
+
+          const sortedTransaction = _.sortBy(transaction, [
+            'dateTimestamp',
+            'reference_id',
+          ]);
+
+          const transactionData = sortedTransaction as BrickTransactionData[];
+
+          const index = findBrickTransactionIndex(
+            transactionReferenceId,
+            transactionData
+          );
+
+          const newTransaction = transactionData.splice(
+            index + 1,
+            transactionData.length
+          );
+
+          if (newTransaction.length === 0)
+            throw new Error(
+              'Tidak ada transaksi baru untuk e-wallet akun tersebut.'
+            );
+
+          let responseToIterate: any[] = [];
+
+          for (let i = 0; i < newTransaction.length; i++) {
+            const element = newTransaction[i];
+
+            const obj = {
+              eWalletAccountId: encodeEWalletAccountId(eWalletAccount.id),
+              transactionName: element.description,
+              dateTimestamp: new Date(
+                moment(element.dateTimestamp).add(1, 'day') as unknown as Date
+              ),
+              referenceId: element.reference_id,
+              currency: element.account_currency,
+              amount: `${element.amount}`,
+              onlineTransaction: false,
+              isReviewed: false,
+              merchantId: '63d8b775d3e050940af0caf1',
+              category: [{ name: 'UNDEFINED', amount: `${element.amount}` }],
+              transactionType: (element.direction === 'in'
+                ? 'INCOME'
+                : 'EXPENSE') as TransactionType,
+              direction: (element.direction === 'in'
+                ? 'IN'
+                : 'OUT') as DirectionType,
+              isSubscription: false,
+              description: element.description,
+              institutionId: '63d94170d3e050940af0caf2',
+              isHideFromBudget: false,
+              isHideFromInsight: false,
+            };
+
+            const trans = await prisma.eWalletTransaction.create({
+              data: obj,
+            });
+
+            await pubsub.publish(
+              `eWalletTransactionLive_${eWalletAccount.id}`,
+              {
+                mutationType: 'ADD',
+                transaction: trans,
+              }
+            );
+
+            responseToIterate.push(trans);
+          }
+
+          if (responseToIterate.length === 0) {
+            return null;
+          } else {
+            const response = await Promise.all(
+              responseToIterate.map(async (v) => {
+                const merchant = await prisma.merchant.findFirstOrThrow({
+                  where: { id: v.merchantId },
+                });
+                return {
+                  id: v.id,
+                  transactionName: v.transactionName,
+                  eWalletAccountId: decodeEWalletAccountId(v.eWalletAccountId),
+                  dateTimestamp: v.dateTimestamp,
+                  currency: v.currency,
+                  amount: v.amount,
+                  merchant: merchant,
+                  merchantId: v.merchantId,
+                  category: v.category,
+                  direction: v.direction,
+                  transactionType: v.transactionType,
+                  internalTransferTransactionId:
+                    v.internalTransferTransactionId,
+                  notes: v.notes,
+                  location: v.location,
+                  tags: v.tags,
+                  isHideFromBudget: v.isHideFromBudget,
+                  isHideFromInsight: v.isHideFromInsight,
+                  description: v.description,
+                  institutionId: v.institutionId,
+                  referenceId: v.referenceId,
+                  onlineTransaction: v.onlineTransaction,
+                  isReviewed: v.isReviewed,
+                  isSubscription: v.isSubscription,
+                };
+              })
+            );
+            return response as any;
+          }
         } catch (error) {
           throw error;
         }

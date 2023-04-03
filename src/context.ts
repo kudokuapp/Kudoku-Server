@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import decodeAuthHeader from './utils/auth/decodeAuthHeader';
+import { decodeAuthHeader } from './utils/auth';
 import { Request, Response } from 'express';
 import twilio from 'twilio';
 import { PubSub } from 'graphql-subscriptions';

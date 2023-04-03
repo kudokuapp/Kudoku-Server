@@ -1,5 +1,5 @@
 import { arg, extendType, nonNull } from 'nexus';
-import { decodeEMoneyAccountId } from '../../../utils/auth/eMoneyAccountId';
+import { decodeEMoneyAccountId } from '../../../utils/auth';
 
 export const EMoneyAccountQuery = extendType({
   type: 'Query',

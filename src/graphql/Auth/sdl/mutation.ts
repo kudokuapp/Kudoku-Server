@@ -1,8 +1,7 @@
 import { idArg, mutationType, nonNull, stringArg } from 'nexus';
 import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
-import { APP_SECRET, OTP_SECRET } from '../../../utils/auth/constant';
-import { AuthTokenPayload } from '../../../utils/auth/decodeAuthHeader';
+import { APP_SECRET, OTP_SECRET, AuthTokenPayload } from '../../../utils/auth/';
 
 export const AuthMutation = mutationType({
   definition(t) {

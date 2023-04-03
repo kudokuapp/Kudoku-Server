@@ -1,5 +1,5 @@
 import { EMoneyAccount, EMoneyTransaction } from '@prisma/client';
-import { decodeEMoneyAccountId } from '../../../utils/auth/eMoneyAccountId';
+import { decodeEMoneyAccountId } from '../../../utils/auth';
 import { arg, extendType, nonNull } from 'nexus';
 
 interface IPayloadEMoneyTransaction {

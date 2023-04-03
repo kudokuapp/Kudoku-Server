@@ -1,9 +1,11 @@
 import { arg, extendType, nonNull } from 'nexus';
 import axios from 'axios';
-import getClientIdandRedirectRefId from '../../../utils/brick/getClientIdandRedirectRefId';
-import brickUrl from '../../../utils/brick/url';
-import brickPublicAccessToken from '../../../utils/brick/publicAccessToken';
-import { decodeEWalletAccountId } from '../../../utils/auth/eWalletAccountId';
+import {
+  getClientIdandRedirectRefId,
+  brickUrl,
+  brickPublicAccessToken,
+} from '../../../utils/brick';
+import { decodeEWalletAccountId } from '../../../utils/auth';
 
 export const EWalletAccountQuery = extendType({
   type: 'Query',
@@ -39,6 +41,7 @@ export const EWalletAccountQuery = extendType({
               institutionId: element.institutionId,
               accountNumber: element.accountNumber,
               expired: element.expired,
+              brickAccessToken: element.accessToken,
             };
 
             response.push(obj);
@@ -106,6 +109,7 @@ export const EWalletAccountQuery = extendType({
             clientId,
           };
         } catch (error) {
+          console.error(error);
           throw error;
         }
       },
@@ -161,6 +165,7 @@ export const EWalletAccountQuery = extendType({
             balance: eWalletAccount.balance,
             currency: eWalletAccount.currency,
             expired: eWalletAccount.expired,
+            brickAccessToken: eWalletAccount.accessToken,
           };
         } catch (error) {
           throw error;
@@ -248,6 +253,89 @@ export const EWalletTransactionQuery = extendType({
           }
 
           return responseArray;
+        } catch (error) {
+          throw error;
+        }
+      },
+    });
+
+    t.field('getEWalletLatestTransaction', {
+      type: 'EWalletTransaction',
+
+      description: 'Get the latest e-wallet transaction',
+
+      args: {
+        eWalletAccountId: nonNull(
+          arg({ type: 'String', description: 'The eWalletAccountId' })
+        ),
+      },
+
+      resolve: async (__, { eWalletAccountId }, { userId, prisma }, ___) => {
+        try {
+          if (!userId) throw new Error('Token tidak valid.');
+
+          const user = await prisma.user.findFirstOrThrow({
+            where: { id: userId },
+          });
+
+          const eWalletAccount = await prisma.eWalletAccount.findFirstOrThrow({
+            where: { id: eWalletAccountId, userId: user.id },
+          });
+
+          const allEWalletTransaction =
+            await prisma.eWalletTransaction.findMany({
+              orderBy: [{ dateTimestamp: 'desc', referenceId: 'desc' }],
+            });
+
+          const eWalletTransaction = allEWalletTransaction.filter((v) => {
+            const decodedEWalletAccountId = decodeEWalletAccountId(
+              v.eWalletAccountId
+            );
+
+            return eWalletAccount.id === decodedEWalletAccountId;
+          });
+
+          if (eWalletTransaction.length === 0)
+            throw new Error('There is no transaction in this debit account.');
+
+          const latestTransaction = eWalletTransaction[0];
+
+          const merchant = await prisma.merchant.findFirstOrThrow({
+            where: { id: latestTransaction.merchantId },
+          });
+
+          return {
+            id: latestTransaction.id,
+            transactionName: latestTransaction.transactionName,
+            eWalletAccountId: latestTransaction.eWalletAccountId,
+            dateTimestamp: latestTransaction.dateTimestamp,
+            currency: latestTransaction.currency,
+            amount: latestTransaction.amount,
+            merchant: merchant,
+            merchantId: latestTransaction.merchantId,
+            category: latestTransaction.category as
+              | { amount: string; name: string }[]
+              | null
+              | undefined,
+            direction: latestTransaction.direction,
+            transactionType: latestTransaction.transactionType,
+            internalTransferTransactionId:
+              latestTransaction.internalTransferTransactionId,
+            notes: latestTransaction.notes,
+            location: latestTransaction.location,
+            tags: latestTransaction.tags as
+              | { amount: string; name: string }[]
+              | null
+              | undefined,
+            isHideFromBudget: latestTransaction.isHideFromBudget,
+            isHideFromInsight: latestTransaction.isHideFromInsight,
+            description: latestTransaction.description,
+            institutionId: latestTransaction.institutionId,
+            referenceId: latestTransaction.referenceId,
+            onlineTransaction: latestTransaction.onlineTransaction,
+            isReviewed: latestTransaction.isReviewed,
+            isSubscription: latestTransaction.isSubscription,
+          };
         } catch (error) {
           throw error;
         }

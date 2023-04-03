@@ -1,4 +1,4 @@
-import { decodeDebitAccountId } from '../../../utils/auth/debitAccountId';
+import { decodeDebitAccountId } from '../../../utils/auth';
 import { arg, extendType, nonNull } from 'nexus';
 
 export const DebitAccountQuery = extendType({
@@ -35,6 +35,7 @@ export const DebitAccountQuery = extendType({
               institutionId: element.institutionId,
               accountNumber: element.accountNumber,
               expired: element.expired,
+              brickAccessToken: element.accessToken,
             };
 
             response.push(obj);
@@ -96,6 +97,7 @@ export const DebitAccountQuery = extendType({
             balance: debitAccount.balance,
             currency: debitAccount.currency,
             expired: debitAccount.expired,
+            brickAccessToken: debitAccount.accessToken,
           };
         } catch (error) {
           throw error;
@@ -185,6 +187,91 @@ export const DebitTransactionQuery = extendType({
           }
 
           return responseArray;
+        } catch (error) {
+          throw error;
+        }
+      },
+    });
+
+    t.field('getDebitLatestTransaction', {
+      type: 'DebitTransaction',
+
+      description: 'Get the latest debit transaction',
+
+      args: {
+        debitAccountId: nonNull(
+          arg({ type: 'String', description: 'The debitAccountId' })
+        ),
+      },
+
+      resolve: async (__, { debitAccountId }, { userId, prisma }, ___) => {
+        try {
+          if (!userId) throw new Error('Token tidak valid.');
+
+          const user = await prisma.user.findFirstOrThrow({
+            where: { id: userId },
+          });
+
+          const debitAccount = await prisma.debitAccount.findFirstOrThrow({
+            where: { id: debitAccountId, userId: user.id },
+          });
+
+          const allDebitTransaction = await prisma.debitTransaction.findMany({
+            orderBy: [{ dateTimestamp: 'desc', referenceId: 'desc' }],
+          });
+
+          const debitTransaction = allDebitTransaction.filter((v) => {
+            const decodedDebitAccountId = decodeDebitAccountId(
+              v.debitAccountId
+            );
+
+            return debitAccount.id === decodedDebitAccountId;
+          });
+
+          if (debitTransaction.length === 0)
+            throw new Error('There is no transaction in this debit account.');
+
+          const latestTransaction = debitTransaction[0];
+
+          const merchant = await prisma.merchant.findFirstOrThrow({
+            where: { id: latestTransaction.merchantId },
+          });
+
+          return {
+            id: latestTransaction.id,
+            transactionName: latestTransaction.transactionName,
+            debitAccountId: decodeDebitAccountId(
+              latestTransaction.debitAccountId
+            ) as unknown as string,
+            dateTimestamp: latestTransaction.dateTimestamp,
+            currency: latestTransaction.currency,
+            amount: latestTransaction.amount,
+            merchant: merchant,
+            merchantId: latestTransaction.merchantId,
+            category: latestTransaction.category as
+              | { amount: string; name: string }[]
+              | null
+              | undefined,
+            direction: latestTransaction.direction,
+            transactionType: latestTransaction.transactionType,
+            internalTransferTransactionId:
+              latestTransaction.internalTransferTransactionId,
+            notes: latestTransaction.notes,
+            location: latestTransaction.location,
+            tags: latestTransaction.tags as
+              | { amount: string; name: string }[]
+              | null
+              | undefined,
+            isHideFromBudget: latestTransaction.isHideFromBudget,
+            isHideFromInsight: latestTransaction.isHideFromInsight,
+            description: latestTransaction.description,
+            institutionId: latestTransaction.institutionId,
+            referenceId: latestTransaction.referenceId,
+            onlineTransaction: latestTransaction.onlineTransaction,
+            isReviewed: latestTransaction.isReviewed,
+            isSubscription: latestTransaction.isSubscription,
+            transactionMethod: latestTransaction.transactionMethod,
+          };
         } catch (error) {
           throw error;
         }

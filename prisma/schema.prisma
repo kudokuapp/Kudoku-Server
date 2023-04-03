@@ -94,6 +94,7 @@ model PayLaterAccount {
   accessToken            String
   expired                Boolean
   balance                String
+  limit                  String
   createdAt              DateTime        
   lastUpdate             DateTime
   currency               String

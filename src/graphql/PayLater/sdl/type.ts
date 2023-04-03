@@ -22,7 +22,11 @@ export const PayLaterAccount = objectType({
     });
 
     t.nonNull.string('balance', {
-      description: 'The balance of that cash account',
+      description: 'The balance of that pay later account',
+    });
+
+    t.nonNull.string('limit', {
+      description: 'The limit of that pay later account',
     });
 
     t.nonNull.string('currency', {
@@ -32,6 +36,10 @@ export const PayLaterAccount = objectType({
     t.nonNull.boolean('expired', {
       description:
         'Wether or not this pay later account access token is expired',
+    });
+
+    t.string('brickAccessToken', {
+      description: 'The brick access token',
     });
   },
 });

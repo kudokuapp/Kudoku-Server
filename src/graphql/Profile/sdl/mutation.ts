@@ -1,4 +1,4 @@
-import { cleanDate } from '../../../utils/date/cleanDate';
+import { cleanDate } from '../../../utils/date';
 import { arg, extendType } from 'nexus';
 
 export const ProfileMutation = extendType({

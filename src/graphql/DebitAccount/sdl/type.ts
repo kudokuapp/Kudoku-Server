@@ -32,6 +32,10 @@ export const DebitAccount = objectType({
     t.nonNull.boolean('expired', {
       description: 'Wether or not this debit account access token is expired',
     });
+
+    t.string('brickAccessToken', {
+      description: 'The brick access token',
+    });
   },
 });
 

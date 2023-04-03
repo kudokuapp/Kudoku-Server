@@ -9,7 +9,7 @@
  * @param {boolean} reverse - A flag indicating whether to subtract or add the amount to the balance.
  * @returns {number} The updated balance after the transaction.
  */
-export default function updateBalance({
+export function updateBalance({
   balance,
   amount,
   direction,

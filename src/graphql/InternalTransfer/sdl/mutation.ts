@@ -9,14 +9,12 @@ import {
 import {
   decodeCashAccountId,
   encodeCashAccountId,
-} from '../../../utils/auth/cashAccountId';
-import { decodeDebitAccountId } from '../../../utils/auth/debitAccountId';
-import { decodeEWalletAccountId } from '../../../utils/auth/eWalletAccountId';
-import { decodePayLaterAccountId } from '../../../utils/auth/payLaterAccountId';
-import {
+  decodeDebitAccountId,
+  decodeEWalletAccountId,
+  decodePayLaterAccountId,
   decodeEMoneyAccountId,
   encodeEMoneyAccountId,
-} from '../../../utils/auth/eMoneyAccountId';
+} from '../../../utils/auth';
 
 export const InternalTransferMutation = extendType({
   type: 'Mutation',

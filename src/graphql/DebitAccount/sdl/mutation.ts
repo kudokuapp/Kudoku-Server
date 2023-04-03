@@ -7,22 +7,26 @@ import {
   TransactionType,
 } from '@prisma/client';
 import _ from 'lodash';
-import getClientIdandRedirectRefId from '../../../utils/brick/getClientIdandRedirectRefId';
-import brickUrl from '../../../utils/brick/url';
-import brickPublicAccessToken from '../../../utils/brick/publicAccessToken';
-import getAccountDetail from '../../../utils/brick/getAccountDetail';
-import mapBrickInstitutionIdToKudoku from '../../../utils/brick/mapBrickInstitutionIdToKudoku';
+import {
+  getClientIdandRedirectRefId,
+  brickUrl,
+  brickPublicAccessToken,
+  getAccountDetail,
+  mapBrickInstitutionIdToKudoku,
+  isAccessTokenIsExpired,
+} from '../../../utils/brick';
 import {
   decodeDebitAccountId,
   encodeDebitAccountId,
-} from '../../../utils/auth/debitAccountId';
-import isAccessTokenIsExpired from '../../../utils/brick/isAccessTokenExpired';
-import findBrickTransactionIndex from '../../../utils/transaction/findBrickTransactionIndex';
+} from '../../../utils/auth';
+import { findBrickTransactionIndex } from '../../../utils/transaction';
 
 export const DebitAccountMutation = extendType({
   type: 'Mutation',
   definition(t) {
     t.nonNull.field('connectBcaViaBrick', {
+      deprecation:
+        'Please do not use this anymore as a form of connecting via the web app. Unless you do this via localhost.',
       type: 'DebitAccount',
       description: 'Connect debit card account via BRICK.',
       args: {
@@ -116,7 +120,7 @@ export const DebitAccountMutation = extendType({
               institutionId: mapBrickInstitutionIdToKudoku(brickInstitutionId),
               accountNumber: accountDetail[0].accountNumber,
               accessToken: data.accessToken,
-              balance: accountDetail[0].balances.available.toString(),
+              balance: `${accountDetail[0].balances.available}`,
               createdAt: new Date(),
               lastUpdate: new Date(),
               currency: accountDetail[0].currency,
@@ -198,6 +202,7 @@ export const DebitAccountMutation = extendType({
             expired: debitAccount.expired,
           };
         } catch (error) {
+          console.error(error);
           throw error;
         }
       },
@@ -257,6 +262,177 @@ export const DebitAccountMutation = extendType({
         }
       },
     });
+
+    t.nonNull.field('addBcaViaKudokuxBrick', {
+      type: 'DebitAccount',
+
+      description:
+        'A form of pushing debit account database using data that has been received by running KudokuxBrick.',
+
+      args: {
+        account: nonNull(
+          arg({
+            type: 'KudokuxBrickAccount',
+            description: 'The account from KudokuxBrick',
+          })
+        ),
+        transaction: list(
+          nonNull(
+            arg({
+              type: 'KudokuxBrickTransaction',
+              description: 'The transaction from KudokuxBrick',
+            })
+          )
+        ),
+      },
+
+      resolve: async (
+        __,
+        { account, transaction },
+        { userId, prisma },
+        ___
+      ) => {
+        try {
+          if (!userId) throw new Error('Token tidak valid.');
+
+          const user = await prisma.user.findFirstOrThrow({
+            where: { id: userId },
+          });
+
+          /**
+           * Avoid same debit account duplication
+           */
+          const searchDebitAccount = await prisma.debitAccount.findFirst({
+            where: {
+              AND: [
+                { accountNumber: account.accountNumber },
+                { userId: user.id },
+              ],
+            },
+          });
+
+          if (searchDebitAccount) throw new Error('Akun debit sudah ada.');
+
+          const debitAccount = await prisma.debitAccount.create({
+            data: {
+              userId: user.id,
+              institutionId: '63d8bb09a2b49c686d736525',
+              accountNumber: account.accountNumber,
+              accessToken: account.accessToken ?? '',
+              balance: `${account.balances.available}`,
+              createdAt: new Date(),
+              lastUpdate: new Date(),
+              currency: account.currency,
+              expired: false,
+            },
+          });
+
+          if (transaction) {
+            for (let i = 0; i < transaction.length; i++) {
+              const element = transaction[i];
+
+              const obj = {
+                debitAccountId: encodeDebitAccountId(debitAccount.id),
+                transactionName: element.description,
+                dateTimestamp: new Date(
+                  moment(element.dateTimestamp).add(1, 'day') as unknown as Date
+                ),
+                referenceId: element.reference_id,
+                currency: element.account_currency,
+                amount: `${element.amount}`,
+                onlineTransaction: false,
+                isReviewed: false,
+                merchantId: '63d8b775d3e050940af0caf1',
+                category: [{ name: 'UNDEFINED', amount: `${element.amount}` }],
+                transactionType: (element.direction === 'in'
+                  ? 'INCOME'
+                  : 'EXPENSE') as TransactionType,
+                direction: (element.direction === 'in'
+                  ? 'IN'
+                  : 'OUT') as DirectionType,
+                isSubscription: false,
+                description: element.description,
+                institutionId: '63d8bb09a2b49c686d736525',
+                isHideFromBudget: false,
+                isHideFromInsight: false,
+                transactionMethod: 'UNDEFINED',
+              };
+
+              await prisma.debitTransaction.create({ data: obj });
+            }
+          }
+
+          return {
+            accountNumber: debitAccount.accountNumber,
+            balance: debitAccount.balance,
+            createdAt: debitAccount.createdAt,
+            currency: debitAccount.currency,
+            expired: debitAccount.expired,
+            id: debitAccount.id,
+            institutionId: debitAccount.institutionId,
+            lastUpdate: debitAccount.lastUpdate,
+            userId: debitAccount.userId,
+          };
+        } catch (error) {
+          throw error;
+        }
+      },
+    });
+
+    t.field('updateDebitAccountExpiry', {
+      type: 'ResponseMessage',
+
+      description: 'Update debit account expired property.',
+
+      args: {
+        debitAccountId: nonNull(
+          arg({ type: 'String', description: 'The debitAccountId' })
+        ),
+
+        expired: nonNull(
+          arg({
+            type: 'Boolean',
+            description: 'If expired `true` if not `false`',
+          })
+        ),
+      },
+
+      resolve: async (
+        __,
+        { debitAccountId, expired },
+        { userId, prisma, pubsub },
+        ___
+      ) => {
+        try {
+          if (!userId) throw new Error('Token tidak valid.');
+
+          const user = await prisma.user.findFirstOrThrow({
+            where: { id: userId },
+          });
+
+          const debitAccountSearch = await prisma.debitAccount.findFirstOrThrow(
+            {
+              where: { AND: [{ id: debitAccountId }, { userId: user.id }] },
+            }
+          );
+
+          const debitAccount = await prisma.debitAccount.update({
+            where: { id: debitAccountSearch.id },
+            data: { expired, lastUpdate: new Date() },
+          });
+
+          await pubsub.publish(`debitAccountUpdated_${debitAccount.id}`, {
+            debitAccountUpdate: debitAccount,
+          });
+
+          return {
+            response: `Successfully update expired property in ${debitAccount.id}`,
+          };
+        } catch (error) {
+          throw error;
+        }
+      },
+    });
   },
 });
 
@@ -264,6 +440,9 @@ export const DebitTransactionMutation = extendType({
   type: 'Mutation',
   definition(t) {
     t.list.field('refreshBcaTransactionViaBrick', {
+      deprecation:
+        'Please do not use this anymore as a form of refreshing transaction via the web app. Unless you do this via localhost.',
+
       type: 'DebitTransaction',
       description:
         'Update transaction and balance for a particular debit account',
@@ -461,7 +640,7 @@ export const DebitTransactionMutation = extendType({
           const updatedDebitAccount = await prisma.debitAccount.update({
             where: { id: debitAccount.id },
             data: {
-              balance: accountDetail[0].balances.current.toString(),
+              balance: `${accountDetail[0].balances.available}`,
               lastUpdate: new Date(),
             },
           });
@@ -530,6 +709,7 @@ export const DebitTransactionMutation = extendType({
             return response;
           }
         } catch (error) {
+          console.error(error);
           throw error;
         }
       },
@@ -779,6 +959,193 @@ export const DebitTransactionMutation = extendType({
             isHideFromInsight: response.isHideFromInsight,
             transactionMethod: response.transactionMethod,
           };
+        } catch (error) {
+          throw error;
+        }
+      },
+    });
+
+    t.field('refreshBcaViaKudokuxBrick', {
+      type: 'DebitTransaction',
+
+      description:
+        'A form of refreshing debit account database using data that has been received by running KudokuxBrick.',
+
+      args: {
+        debitAccountId: nonNull(
+          arg({
+            type: 'String',
+            description: 'The debit account id.',
+          })
+        ),
+
+        transactionReferenceId: nonNull(
+          arg({
+            type: 'String',
+            description:
+              'The transaction reference Id after running query `getDebitLatestTransaction`',
+          })
+        ),
+
+        account: nonNull(
+          arg({
+            type: 'KudokuxBrickAccount',
+            description: 'The account from KudokuxBrick',
+          })
+        ),
+
+        transaction: nonNull(
+          list(
+            nonNull(
+              arg({
+                type: 'KudokuxBrickTransaction',
+                description: 'The transaction from KudokuxBrick',
+              })
+            )
+          )
+        ),
+      },
+
+      resolve: async (
+        __,
+        { account, transaction, debitAccountId, transactionReferenceId },
+        { userId, prisma, pubsub },
+        ___
+      ) => {
+        try {
+          if (!userId) throw new Error('Token tidak valid.');
+
+          const user = await prisma.user.findFirstOrThrow({
+            where: { id: userId },
+          });
+
+          const debitAccountSearch = await prisma.debitAccount.findFirstOrThrow(
+            { where: { AND: [{ id: debitAccountId }, { userId: user.id }] } }
+          );
+
+          const debitAccount = await prisma.debitAccount.update({
+            where: { id: debitAccountSearch.id },
+            data: {
+              balance: `${account.balances.available}`,
+              lastUpdate: new Date(),
+            },
+          });
+
+          await pubsub.publish(`debitAccountUpdated_${debitAccount.id}`, {
+            debitAccountUpdate: debitAccount,
+          });
+
+          const sortedTransaction = _.sortBy(transaction, [
+            'dateTimestamp',
+            'reference_id',
+          ]);
+
+          const transactionData = sortedTransaction as BrickTransactionData[];
+
+          const index = findBrickTransactionIndex(
+            transactionReferenceId,
+            transactionData
+          );
+
+          const newTransaction = transactionData.splice(
+            index + 1,
+            transactionData.length
+          );
+
+          if (newTransaction.length === 0)
+            throw new Error(
+              'Tidak ada transaksi baru untuk debit akun tersebut.'
+            );
+
+          let responseToIterate: any[] = [];
+
+          for (let i = 0; i < newTransaction.length; i++) {
+            const element = newTransaction[i];
+
+            const obj = {
+              debitAccountId: encodeDebitAccountId(debitAccount.id),
+              transactionName: element.description,
+              dateTimestamp: new Date(
+                moment(element.dateTimestamp).add(1, 'day') as unknown as Date
+              ),
+              referenceId: element.reference_id,
+              currency: element.account_currency,
+              amount: `${element.amount}`,
+              onlineTransaction: false,
+              isReviewed: false,
+              merchantId: '63d8b775d3e050940af0caf1',
+              category: [{ name: 'UNDEFINED', amount: `${element.amount}` }],
+              transactionType: (element.direction === 'in'
+                ? 'INCOME'
+                : 'EXPENSE') as TransactionType,
+              direction: (element.direction === 'in'
+                ? 'IN'
+                : 'OUT') as DirectionType,
+              isSubscription: false,
+              description: element.description,
+              institutionId: '63d8bb09a2b49c686d736525',
+              isHideFromBudget: false,
+              isHideFromInsight: false,
+              transactionMethod: 'UNDEFINED',
+            };
+
+            const trans = await prisma.debitTransaction.create({ data: obj });
+
+            await pubsub.publish(`debitTransactionLive_${debitAccount.id}`, {
+              mutationType: 'ADD',
+              transaction: trans,
+            });
+
+            responseToIterate.push(trans);
+          }
+
+          if (responseToIterate.length === 0) {
+            return null;
+          } else {
+            const response = await Promise.all(
+              responseToIterate.map(async (v) => {
+                const merchant = await prisma.merchant.findFirstOrThrow({
+                  where: { id: v.merchantId },
+                });
+                return {
+                  id: v.id,
+                  transactionName: v.transactionName,
+                  debitAccountId: decodeDebitAccountId(
+                    v.debitAccountId
+                  ) as unknown as string,
+                  dateTimestamp: v.dateTimestamp,
+                  referenceId: v.referenceId,
+                  institutionId: v.institutionId,
+                  currency: v.currency,
+                  amount: v.amount,
+                  onlineTransaction: v.onlineTransaction,
+                  isReviewed: v.isReviewed,
+                  merchant: merchant,
+                  merchantId: v.merchantId,
+                  category: v.category as
+                    | { amount: string; name: string }[]
+                    | null
+                    | undefined,
+                  transactionType: v.transactionType,
+                  description: v.description,
+                  internalTransferTransactionId:
+                    v.internalTransferTransactionId,
+                  direction: v.direction,
+                  notes: v.notes,
+                  location: v.location,
+                  tags: v.tags as
+                    | { amount: string; name: string }[]
+                    | null
+                    | undefined,
+                  isSubscription: v.isSubscription,
+                  isHideFromBudget: v.isHideFromBudget,
+                  isHideFromInsight: v.isHideFromInsight,
+                  transactionMethod: v.transactionMethod,
+                };
+              })
+            );
+            return response as any;
+          }
         } catch (error) {
           throw error;
         }

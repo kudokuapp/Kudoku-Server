@@ -4,8 +4,8 @@ import _ from 'lodash';
 import {
   decodeEMoneyAccountId,
   encodeEMoneyAccountId,
-} from '../../../utils/auth/eMoneyAccountId';
-import updateBalance from '../../../utils/transaction/updateBalance';
+} from '../../../utils/auth';
+import { updateBalance } from '../../../utils/transaction';
 
 export const EMoneyAccountMutation = extendType({
   type: 'Mutation',

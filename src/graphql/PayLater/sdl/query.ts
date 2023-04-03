@@ -1,4 +1,4 @@
-import { decodePayLaterAccountId } from '../../../utils/auth/payLaterAccountId';
+import { decodePayLaterAccountId } from '../../../utils/auth';
 import { arg, extendType, nonNull } from 'nexus';
 
 export const PayLaterAccountQuery = extendType({
@@ -31,10 +31,12 @@ export const PayLaterAccountQuery = extendType({
               createdAt: element.createdAt,
               lastUpdate: element.lastUpdate,
               balance: element.balance,
+              limit: element.limit,
               currency: element.currency,
               institutionId: element.institutionId,
               accountNumber: element.accountNumber,
               expired: element.expired,
+              brickAccessToken: element.accessToken,
             };
 
             response.push(obj);
@@ -99,6 +101,8 @@ export const PayLaterAccountQuery = extendType({
             balance: payLaterAccount.balance,
             currency: payLaterAccount.currency,
             expired: payLaterAccount.expired,
+            limit: payLaterAccount.limit,
+            brickAccessToken: payLaterAccount.accessToken,
           };
         } catch (error) {
           throw error;
@@ -190,6 +194,95 @@ export const PayLaterTransactionQuery = extendType({
           }
 
           return responseArray;
+        } catch (error) {
+          throw error;
+        }
+      },
+    });
+
+    t.field('getPayLaterLatestTransaction', {
+      type: 'PayLaterTransaction',
+
+      description: 'Get the latest pay later transaction',
+
+      args: {
+        payLaterAccountId: nonNull(
+          arg({ type: 'String', description: 'The payLaterAccountId' })
+        ),
+      },
+
+      resolve: async (__, { payLaterAccountId }, { userId, prisma }, ___) => {
+        try {
+          if (!userId) throw new Error('Token tidak valid.');
+
+          const user = await prisma.user.findFirstOrThrow({
+            where: { id: userId },
+          });
+
+          const payLaterAccount = await prisma.payLaterAccount.findFirstOrThrow(
+            {
+              where: { id: payLaterAccountId, userId: user.id },
+            }
+          );
+
+          const allPayLaterTransaction =
+            await prisma.payLaterTransaction.findMany({
+              orderBy: [{ dateTimestamp: 'desc', referenceId: 'desc' }],
+            });
+
+          const payLaterTransaction = allPayLaterTransaction.filter((v) => {
+            const decodedPayLaterAccountId = decodePayLaterAccountId(
+              v.payLaterAccountId
+            );
+
+            return payLaterAccount.id === decodedPayLaterAccountId;
+          });
+
+          if (payLaterTransaction.length === 0)
+            throw new Error(
+              'There is no transaction in this pay later account.'
+            );
+
+          const latestTransaction = payLaterTransaction[0];
+
+          const merchant = await prisma.merchant.findFirstOrThrow({
+            where: { id: latestTransaction.merchantId },
+          });
+
+          return {
+            id: latestTransaction.id,
+            transactionName: latestTransaction.transactionName,
+            payLaterAccountId: decodePayLaterAccountId(
+              latestTransaction.payLaterAccountId
+            ),
+            dateTimestamp: latestTransaction.dateTimestamp,
+            currency: latestTransaction.currency,
+            amount: latestTransaction.amount,
+            merchant: merchant,
+            merchantId: latestTransaction.merchantId,
+            category: latestTransaction.category as
+              | { amount: string; name: string }[]
+              | null
+              | undefined,
+            direction: latestTransaction.direction,
+            transactionType: latestTransaction.transactionType,
+            internalTransferTransactionId:
+              latestTransaction.internalTransferTransactionId,
+            notes: latestTransaction.notes,
+            location: latestTransaction.location,
+            tags: latestTransaction.tags as
+              | { amount: string; name: string }[]
+              | null
+              | undefined,
+            isHideFromBudget: latestTransaction.isHideFromBudget,
+            isHideFromInsight: latestTransaction.isHideFromInsight,
+            description: latestTransaction.description,
+            institutionId: latestTransaction.institutionId,
+            referenceId: latestTransaction.referenceId,
+            onlineTransaction: latestTransaction.onlineTransaction,
+            isReviewed: latestTransaction.isReviewed,
+            isSubscription: latestTransaction.isSubscription,
+          };
         } catch (error) {
           throw error;
         }

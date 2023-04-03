@@ -1,7 +1,7 @@
 import { arg, nonNull, stringArg, queryType } from 'nexus';
 import * as jwt from 'jsonwebtoken';
 import * as bcrypt from 'bcryptjs';
-import { APP_SECRET, OTP_SECRET } from '../../../utils/auth/constant';
+import { APP_SECRET, OTP_SECRET } from '../../../utils/auth';
 
 export const AuthQuery = queryType({
   definition(t) {

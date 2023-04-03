@@ -105,6 +105,9 @@ type DebitAccount {
   """The balance of that cash account"""
   balance: String!
 
+  """The brick access token"""
+  brickAccessToken: String
+
   """When this account is created"""
   createdAt: DateTime!
 
@@ -308,6 +311,9 @@ type EWalletAccount {
   """The balance of that cash account"""
   balance: String!
 
+  """The brick access token"""
+  brickAccessToken: String
+
   """When this account is created"""
   createdAt: DateTime!
 
@@ -422,6 +428,52 @@ type GopayEWalletAndPayLaterTransaction {
   PayLater: [PayLaterTransaction]!
 }
 
+input KudokuxBrickAccount {
+  accessToken: String
+  accountHolder: String!
+  accountId: String!
+  accountNumber: String!
+  balances: KudokuxBrickBalance!
+  currency: String!
+  type: String
+}
+
+input KudokuxBrickBalance {
+  available: Int!
+  current: Int!
+  limit: Int
+}
+
+input KudokuxBrickTransaction {
+  account_currency: String!
+  account_id: String!
+  account_number: String!
+  amount: Int!
+  category: KudokuxBrickTransactionCategory!
+  date: String!
+  dateTimestamp: String!
+  description: String!
+  direction: String!
+  id: Int!
+  institution_id: Int!
+  location_city_id: Int!
+  location_country_id: Int!
+  merchant_id: Int!
+  outlet_outlet_id: Int!
+  reference_id: String!
+  status: String!
+  transaction_type: String
+}
+
+input KudokuxBrickTransactionCategory {
+  category_id: Int
+  category_name: String
+  classification_group: String
+  classification_group_id: Int
+  classification_subgroup: String
+  classification_subgroup_id: Int
+}
+
 type Location {
   latitude: String!
   longitude: String!
@@ -447,6 +499,17 @@ type Merchant {
 }
 
 type Mutation {
+  """
+  A form of pushing debit account database using data that has been received by running KudokuxBrick.
+  """
+  addBcaViaKudokuxBrick(
+    """The account from KudokuxBrick"""
+    account: KudokuxBrickAccount!
+
+    """The transaction from KudokuxBrick"""
+    transaction: [KudokuxBrickTransaction!]
+  ): DebitAccount!
+
   """Create a new cash account."""
   addCashAccount(
     """
@@ -588,7 +651,16 @@ type Mutation {
 
     """The username for the particular bank details"""
     username: String!
-  ): DebitAccount!
+  ): DebitAccount! @deprecated(reason: "Please do not use this anymore as a form of connecting via the web app. Unless you do this via localhost.")
+
+  """Connect Gopay paylater after running KudokuxBrick API."""
+  connectGopayPayLaterViaKudokuxBrick(
+    """The account after running KudokuxBrick API."""
+    account: KudokuxBrickAccount!
+
+    """The transaction after running KudokuxBrick API."""
+    transaction: [KudokuxBrickTransaction!]
+  ): PayLaterAccount!
 
   """Connect Gopay account via BRICK."""
   connectGopayViaBrick(
@@ -612,7 +684,16 @@ type Mutation {
 
     """Nomor HP Gopay"""
     username: String!
-  ): GopayEWalletAndPayLaterAccount!
+  ): GopayEWalletAndPayLaterAccount! @deprecated(reason: "Deprecated! Please use connectGopayViaKudokuxBrick instead. Can still use this mutation if running on local!")
+
+  """Connect Gopay wallet after running KudokuxBrick API."""
+  connectGopayWalletViaKudokuxBrick(
+    """The account after running KudokuxBrick API."""
+    account: KudokuxBrickAccount!
+
+    """The transaction after running KudokuxBrick API."""
+    transaction: [KudokuxBrickTransaction!]
+  ): EWalletAccount!
 
   """Create an E-Money account"""
   createEMoneyAccount(
@@ -908,7 +989,45 @@ type Mutation {
   refreshBcaTransactionViaBrick(
     """The associated id of that debit account id"""
     debitAccountId: String!
-  ): [DebitTransaction]
+  ): [DebitTransaction] @deprecated(reason: "Please do not use this anymore as a form of refreshing transaction via the web app. Unless you do this via localhost.")
+
+  """
+  A form of refreshing debit account database using data that has been received by running KudokuxBrick.
+  """
+  refreshBcaViaKudokuxBrick(
+    """The account from KudokuxBrick"""
+    account: KudokuxBrickAccount!
+
+    """The debit account id."""
+    debitAccountId: String!
+
+    """The transaction from KudokuxBrick"""
+    transaction: [KudokuxBrickTransaction!]!
+
+    """
+    The transaction reference Id after running query `getDebitLatestTransaction`
+    """
+    transactionReferenceId: String!
+  ): DebitTransaction
+
+  """
+  A form of refreshing pay later account database using data that has been received by running KudokuxBrick.
+  """
+  refreshGopayPayLaterViaKudokuxBrick(
+    """The account from KudokuxBrick"""
+    account: KudokuxBrickAccount!
+
+    """The pay later account id."""
+    payLaterAccountId: String!
+
+    """The transaction from KudokuxBrick"""
+    transaction: [KudokuxBrickTransaction!]!
+
+    """
+    The transaction reference Id after running query `getPayLaterLatestTransaction`
+    """
+    transactionReferenceId: String!
+  ): PayLaterTransaction
 
   """Update transaction and balance for gopay account"""
   refreshGopayTransactionViaBrick(
@@ -917,12 +1036,49 @@ type Mutation {
 
     """The associated id of that paylater account id"""
     payLaterAccountId: String
-  ): GopayEWalletAndPayLaterTransaction
+  ): GopayEWalletAndPayLaterTransaction @deprecated(reason: "Deprecated! Please only use this on dev.")
+
+  """
+  A form of refreshing ewallet account database using data that has been received by running KudokuxBrick.
+  """
+  refreshGopayWalletViaKudokuxBrick(
+    """The account from KudokuxBrick"""
+    account: KudokuxBrickAccount!
+
+    """The e-wallet account id."""
+    eWalletAccountId: String!
+
+    """The transaction from KudokuxBrick"""
+    transaction: [KudokuxBrickTransaction!]!
+
+    """
+    The transaction reference Id after running query `getPayLaterLatestTransaction`
+    """
+    transactionReferenceId: String!
+  ): EWalletTransaction
 
   """
   This is the API where user can sign up after they got invited. This means that the user's data is already in our MongoDB database.
   """
   signup(id: ID!, jwtToken: String!, password: String!, pin: String!, username: String!): AuthPayLoad!
+
+  """Update debit account expired property."""
+  updateDebitAccountExpiry(
+    """The debitAccountId"""
+    debitAccountId: String!
+
+    """If expired `true` if not `false`"""
+    expired: Boolean!
+  ): ResponseMessage
+
+  """Update e-wallet account expired property."""
+  updateEWalletAccountExpiry(
+    """The eWalletAccountId"""
+    eWalletAccountId: String!
+
+    """If expired `true` if not `false`"""
+    expired: Boolean!
+  ): ResponseMessage
 
   """Change user's email or whatsapp"""
   updateEmailOrWhatsapp(
@@ -939,6 +1095,15 @@ type Mutation {
     """
     whatsapp: String
   ): User!
+
+  """Update pay later account expired property."""
+  updatePayLaterAccountExpiry(
+    """If expired `true` if not `false`"""
+    expired: Boolean!
+
+    """The payLaterAccountId"""
+    payLaterAccountId: String!
+  ): ResponseMessage
 
   """Change user's public profile"""
   updateProfile(
@@ -992,8 +1157,11 @@ type OTPData {
 type PayLaterAccount {
   accountNumber: String!
 
-  """The balance of that cash account"""
+  """The balance of that pay later account"""
   balance: String!
+
+  """The brick access token"""
+  brickAccessToken: String
 
   """When this account is created"""
   createdAt: DateTime!
@@ -1010,6 +1178,9 @@ type PayLaterAccount {
 
   """When this account is last updated"""
   lastUpdate: DateTime!
+
+  """The limit of that pay later account"""
+  limit: String!
   userId: String!
 }
 
@@ -1161,6 +1332,18 @@ type Query {
   """
   getAllUser: [User]!
 
+  """Get the latest debit transaction"""
+  getDebitLatestTransaction(
+    """The debitAccountId"""
+    debitAccountId: String!
+  ): DebitTransaction
+
+  """Get the latest e-wallet transaction"""
+  getEWalletLatestTransaction(
+    """The eWalletAccountId"""
+    eWalletAccountId: String!
+  ): EWalletTransaction
+
   """Get info on a particular cash account"""
   getInfoCashAccount(
     """The cash account id"""
@@ -1203,6 +1386,12 @@ type Query {
     """
     whatsapp: String
   ): ResponseMessage
+
+  """Get the latest pay later transaction"""
+  getPayLaterLatestTransaction(
+    """The payLaterAccountId"""
+    payLaterAccountId: String!
+  ): PayLaterTransaction
 
   """Get User's profile from their userId or username"""
   getProfile(

@@ -11,3 +11,4 @@ export * from './Merchant';
 export * from './Enum';
 export * from './ObjectType';
 export * from './ScalarType';
+export * from './KudokuxBrick';

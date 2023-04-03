@@ -1,7 +1,7 @@
 import axios from 'axios';
-import brickUrl from './url';
+import { brickUrl } from './brickUrl';
 
-export default async function getAccountDetail(
+export async function getAccountDetail(
   accessToken: string
 ): Promise<BrickAccountDetail[]> {
   const url = brickUrl(`/v1/account/list`);

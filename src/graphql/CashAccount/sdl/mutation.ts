@@ -1,10 +1,7 @@
-import {
-  decodeCashAccountId,
-  encodeCashAccountId,
-} from '../../../utils/auth/cashAccountId';
+import { decodeCashAccountId, encodeCashAccountId } from '../../../utils/auth';
 import { arg, extendType, list, nonNull } from 'nexus';
 import { MaybePromise } from 'nexus/dist/typegenTypeHelpers';
-import updateBalance from '../../../utils/transaction/updateBalance';
+import { updateBalance } from '../../../utils/transaction';
 
 export const CashAccountMutation = extendType({
   type: 'Mutation',

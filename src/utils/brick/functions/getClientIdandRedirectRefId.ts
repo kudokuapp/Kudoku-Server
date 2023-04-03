@@ -1,8 +1,8 @@
 import axios from 'axios';
-import brickPublicAccessToken from './publicAccessToken';
-import brickUrl from './url';
+import { brickPublicAccessToken } from './publicAccessToken';
+import { brickUrl } from './brickUrl';
 
-export default async function getClientIdandRedirectRefId(
+export async function getClientIdandRedirectRefId(
   userId: string
 ): Promise<BrickGetClientIdandRedirectRefId> {
   const url = brickUrl('/v1/auth/token');

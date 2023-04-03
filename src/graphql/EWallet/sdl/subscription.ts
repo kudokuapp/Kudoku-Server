@@ -1,5 +1,5 @@
 import { EWalletAccount, EWalletTransaction } from '@prisma/client';
-import { decodeEWalletAccountId } from '../../../utils/auth/eWalletAccountId';
+import { decodeEWalletAccountId } from '../../../utils/auth';
 import { arg, extendType, nonNull } from 'nexus';
 
 interface IPayloadEWalletTransaction {

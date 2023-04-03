@@ -3,9 +3,7 @@
  * @param {number} institutionId
  * @returns {string} Kudoku's institution mongoDB ID
  */
-export default function mapBrickInstitutionIdToKudoku(
-  institutionId: number
-): string {
+export function mapBrickInstitutionIdToKudoku(institutionId: number): string {
   switch (institutionId) {
     case 2:
       return '63d8bb09a2b49c686d736525';

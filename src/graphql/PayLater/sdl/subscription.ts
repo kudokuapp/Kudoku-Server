@@ -120,6 +120,7 @@ export const PayLaterAccountSubscription = extendType({
           createdAt: payLaterAccountUpdate.createdAt,
           lastUpdate: payLaterAccountUpdate.lastUpdate,
           balance: payLaterAccountUpdate.balance,
+          limit: payLaterAccountUpdate.limit,
           currency: payLaterAccountUpdate.currency,
           institutionId: payLaterAccountUpdate.institutionId,
           accountNumber: payLaterAccountUpdate.accountNumber,

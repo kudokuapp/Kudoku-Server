@@ -1,5 +1,5 @@
 import { Profile, User } from '@prisma/client';
-import { cleanDate } from '../../../utils/date/cleanDate';
+import { cleanDate } from '../../../utils/date';
 import { arg, extendType } from 'nexus';
 
 export const ProfileQuery = extendType({

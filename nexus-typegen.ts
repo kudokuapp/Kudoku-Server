@@ -29,6 +29,48 @@ declare global {
 }
 
 export interface NexusGenInputs {
+  KudokuxBrickAccount: { // input type
+    accessToken?: string | null; // String
+    accountHolder: string; // String!
+    accountId: string; // String!
+    accountNumber: string; // String!
+    balances: NexusGenInputs['KudokuxBrickBalance']; // KudokuxBrickBalance!
+    currency: string; // String!
+    type?: string | null; // String
+  }
+  KudokuxBrickBalance: { // input type
+    available: number; // Int!
+    current: number; // Int!
+    limit?: number | null; // Int
+  }
+  KudokuxBrickTransaction: { // input type
+    account_currency: string; // String!
+    account_id: string; // String!
+    account_number: string; // String!
+    amount: number; // Int!
+    category: NexusGenInputs['KudokuxBrickTransactionCategory']; // KudokuxBrickTransactionCategory!
+    date: string; // String!
+    dateTimestamp: string; // String!
+    description: string; // String!
+    direction: string; // String!
+    id: number; // Int!
+    institution_id: number; // Int!
+    location_city_id: number; // Int!
+    location_country_id: number; // Int!
+    merchant_id: number; // Int!
+    outlet_outlet_id: number; // Int!
+    reference_id: string; // String!
+    status: string; // String!
+    transaction_type?: string | null; // String
+  }
+  KudokuxBrickTransactionCategory: { // input type
+    category_id?: number | null; // Int
+    category_name?: string | null; // String
+    classification_group?: string | null; // String
+    classification_group_id?: number | null; // Int
+    classification_subgroup?: string | null; // String
+    classification_subgroup_id?: number | null; // Int
+  }
   LocationInputType: { // input type
     latitude: string; // String!
     longitude: string; // String!
@@ -96,6 +138,7 @@ export interface NexusGenObjects {
   DebitAccount: { // root type
     accountNumber: string; // String!
     balance: string; // String!
+    brickAccessToken?: string | null; // String
     createdAt: NexusGenScalars['DateTime']; // DateTime!
     currency: string; // String!
     expired: boolean; // Boolean!
@@ -173,6 +216,7 @@ export interface NexusGenObjects {
   EWalletAccount: { // root type
     accountNumber: string; // String!
     balance: string; // String!
+    brickAccessToken?: string | null; // String
     createdAt: NexusGenScalars['DateTime']; // DateTime!
     currency: string; // String!
     expired: boolean; // Boolean!
@@ -244,12 +288,14 @@ export interface NexusGenObjects {
   PayLaterAccount: { // root type
     accountNumber: string; // String!
     balance: string; // String!
+    brickAccessToken?: string | null; // String
     createdAt: NexusGenScalars['DateTime']; // DateTime!
     currency: string; // String!
     expired: boolean; // Boolean!
     id: string; // String!
     institutionId: string; // String!
     lastUpdate: NexusGenScalars['DateTime']; // DateTime!
+    limit: string; // String!
     userId: string; // String!
   }
   PayLaterTransaction: { // root type
@@ -362,6 +408,7 @@ export interface NexusGenFieldTypes {
   DebitAccount: { // field return type
     accountNumber: string; // String!
     balance: string; // String!
+    brickAccessToken: string | null; // String
     createdAt: NexusGenScalars['DateTime']; // DateTime!
     currency: string; // String!
     expired: boolean; // Boolean!
@@ -439,6 +486,7 @@ export interface NexusGenFieldTypes {
   EWalletAccount: { // field return type
     accountNumber: string; // String!
     balance: string; // String!
+    brickAccessToken: string | null; // String
     createdAt: NexusGenScalars['DateTime']; // DateTime!
     currency: string; // String!
     expired: boolean; // Boolean!
@@ -495,6 +543,7 @@ export interface NexusGenFieldTypes {
     url: string; // String!
   }
   Mutation: { // field return type
+    addBcaViaKudokuxBrick: NexusGenRootTypes['DebitAccount']; // DebitAccount!
     addCashAccount: NexusGenRootTypes['CashAccount']; // CashAccount!
     addCashTransaction: NexusGenRootTypes['CashTransaction']; // CashTransaction!
     addEMoneyTransaction: NexusGenRootTypes['EMoneyTransaction']; // EMoneyTransaction!
@@ -502,7 +551,9 @@ export interface NexusGenFieldTypes {
     changePassword: NexusGenRootTypes['AuthPayLoad']; // AuthPayLoad!
     changePin: NexusGenRootTypes['AuthPayLoad']; // AuthPayLoad!
     connectBcaViaBrick: NexusGenRootTypes['DebitAccount']; // DebitAccount!
+    connectGopayPayLaterViaKudokuxBrick: NexusGenRootTypes['PayLaterAccount']; // PayLaterAccount!
     connectGopayViaBrick: NexusGenRootTypes['GopayEWalletAndPayLaterAccount']; // GopayEWalletAndPayLaterAccount!
+    connectGopayWalletViaKudokuxBrick: NexusGenRootTypes['EWalletAccount']; // EWalletAccount!
     createEMoneyAccount: NexusGenRootTypes['EMoneyAccount']; // EMoneyAccount!
     deleteCashAccount: NexusGenRootTypes['ResponseMessage'] | null; // ResponseMessage
     deleteCashTransaction: NexusGenRootTypes['ResponseMessage'] | null; // ResponseMessage
@@ -519,9 +570,15 @@ export interface NexusGenFieldTypes {
     reconcileCashBalance: NexusGenRootTypes['CashAccount']; // CashAccount!
     reconcileEMoneyAccount: NexusGenRootTypes['EMoneyAccount']; // EMoneyAccount!
     refreshBcaTransactionViaBrick: Array<NexusGenRootTypes['DebitTransaction'] | null> | null; // [DebitTransaction]
+    refreshBcaViaKudokuxBrick: NexusGenRootTypes['DebitTransaction'] | null; // DebitTransaction
+    refreshGopayPayLaterViaKudokuxBrick: NexusGenRootTypes['PayLaterTransaction'] | null; // PayLaterTransaction
     refreshGopayTransactionViaBrick: NexusGenRootTypes['GopayEWalletAndPayLaterTransaction'] | null; // GopayEWalletAndPayLaterTransaction
+    refreshGopayWalletViaKudokuxBrick: NexusGenRootTypes['EWalletTransaction'] | null; // EWalletTransaction
     signup: NexusGenRootTypes['AuthPayLoad']; // AuthPayLoad!
+    updateDebitAccountExpiry: NexusGenRootTypes['ResponseMessage'] | null; // ResponseMessage
+    updateEWalletAccountExpiry: NexusGenRootTypes['ResponseMessage'] | null; // ResponseMessage
     updateEmailOrWhatsapp: NexusGenRootTypes['User']; // User!
+    updatePayLaterAccountExpiry: NexusGenRootTypes['ResponseMessage'] | null; // ResponseMessage
     updateProfile: NexusGenRootTypes['Profile']; // Profile!
     updateUserFirstAndLastName: NexusGenRootTypes['User']; // User!
   }
@@ -540,12 +597,14 @@ export interface NexusGenFieldTypes {
   PayLaterAccount: { // field return type
     accountNumber: string; // String!
     balance: string; // String!
+    brickAccessToken: string | null; // String
     createdAt: NexusGenScalars['DateTime']; // DateTime!
     currency: string; // String!
     expired: boolean; // Boolean!
     id: string; // String!
     institutionId: string; // String!
     lastUpdate: NexusGenScalars['DateTime']; // DateTime!
+    limit: string; // String!
     userId: string; // String!
   }
   PayLaterTransaction: { // field return type
@@ -598,12 +657,15 @@ export interface NexusGenFieldTypes {
     getAllPayLaterAccount: Array<NexusGenRootTypes['PayLaterAccount'] | null> | null; // [PayLaterAccount]
     getAllPayLaterTransaction: Array<NexusGenRootTypes['PayLaterTransaction'] | null> | null; // [PayLaterTransaction]
     getAllUser: Array<NexusGenRootTypes['User'] | null>; // [User]!
+    getDebitLatestTransaction: NexusGenRootTypes['DebitTransaction'] | null; // DebitTransaction
+    getEWalletLatestTransaction: NexusGenRootTypes['EWalletTransaction'] | null; // EWalletTransaction
     getInfoCashAccount: NexusGenRootTypes['CashAccount'] | null; // CashAccount
     getInfoDebitAccount: NexusGenRootTypes['DebitAccount'] | null; // DebitAccount
     getInfoEMoneyAccount: NexusGenRootTypes['EMoneyAccount'] | null; // EMoneyAccount
     getInfoEWalletAccount: NexusGenRootTypes['EWalletAccount'] | null; // EWalletAccount
     getInfoPayLaterAccount: NexusGenRootTypes['PayLaterAccount'] | null; // PayLaterAccount
     getOtp: NexusGenRootTypes['ResponseMessage'] | null; // ResponseMessage
+    getPayLaterLatestTransaction: NexusGenRootTypes['PayLaterTransaction'] | null; // PayLaterTransaction
     getProfile: NexusGenRootTypes['Profile'] | null; // Profile
     getRefresh: Array<NexusGenRootTypes['Refresh'] | null> | null; // [Refresh]
     getUser: NexusGenRootTypes['User'] | null; // User
@@ -686,6 +748,7 @@ export interface NexusGenFieldTypeNames {
   DebitAccount: { // field return type name
     accountNumber: 'String'
     balance: 'String'
+    brickAccessToken: 'String'
     createdAt: 'DateTime'
     currency: 'String'
     expired: 'Boolean'
@@ -763,6 +826,7 @@ export interface NexusGenFieldTypeNames {
   EWalletAccount: { // field return type name
     accountNumber: 'String'
     balance: 'String'
+    brickAccessToken: 'String'
     createdAt: 'DateTime'
     currency: 'String'
     expired: 'Boolean'
@@ -819,6 +883,7 @@ export interface NexusGenFieldTypeNames {
     url: 'String'
   }
   Mutation: { // field return type name
+    addBcaViaKudokuxBrick: 'DebitAccount'
     addCashAccount: 'CashAccount'
     addCashTransaction: 'CashTransaction'
     addEMoneyTransaction: 'EMoneyTransaction'
@@ -826,7 +891,9 @@ export interface NexusGenFieldTypeNames {
     changePassword: 'AuthPayLoad'
     changePin: 'AuthPayLoad'
     connectBcaViaBrick: 'DebitAccount'
+    connectGopayPayLaterViaKudokuxBrick: 'PayLaterAccount'
     connectGopayViaBrick: 'GopayEWalletAndPayLaterAccount'
+    connectGopayWalletViaKudokuxBrick: 'EWalletAccount'
     createEMoneyAccount: 'EMoneyAccount'
     deleteCashAccount: 'ResponseMessage'
     deleteCashTransaction: 'ResponseMessage'
@@ -843,9 +910,15 @@ export interface NexusGenFieldTypeNames {
     reconcileCashBalance: 'CashAccount'
     reconcileEMoneyAccount: 'EMoneyAccount'
     refreshBcaTransactionViaBrick: 'DebitTransaction'
+    refreshBcaViaKudokuxBrick: 'DebitTransaction'
+    refreshGopayPayLaterViaKudokuxBrick: 'PayLaterTransaction'
     refreshGopayTransactionViaBrick: 'GopayEWalletAndPayLaterTransaction'
+    refreshGopayWalletViaKudokuxBrick: 'EWalletTransaction'
     signup: 'AuthPayLoad'
+    updateDebitAccountExpiry: 'ResponseMessage'
+    updateEWalletAccountExpiry: 'ResponseMessage'
     updateEmailOrWhatsapp: 'User'
+    updatePayLaterAccountExpiry: 'ResponseMessage'
     updateProfile: 'Profile'
     updateUserFirstAndLastName: 'User'
   }
@@ -864,12 +937,14 @@ export interface NexusGenFieldTypeNames {
   PayLaterAccount: { // field return type name
     accountNumber: 'String'
     balance: 'String'
+    brickAccessToken: 'String'
     createdAt: 'DateTime'
     currency: 'String'
     expired: 'Boolean'
     id: 'String'
     institutionId: 'String'
     lastUpdate: 'DateTime'
+    limit: 'String'
     userId: 'String'
   }
   PayLaterTransaction: { // field return type name
@@ -922,12 +997,15 @@ export interface NexusGenFieldTypeNames {
     getAllPayLaterAccount: 'PayLaterAccount'
     getAllPayLaterTransaction: 'PayLaterTransaction'
     getAllUser: 'User'
+    getDebitLatestTransaction: 'DebitTransaction'
+    getEWalletLatestTransaction: 'EWalletTransaction'
     getInfoCashAccount: 'CashAccount'
     getInfoDebitAccount: 'DebitAccount'
     getInfoEMoneyAccount: 'EMoneyAccount'
     getInfoEWalletAccount: 'EWalletAccount'
     getInfoPayLaterAccount: 'PayLaterAccount'
     getOtp: 'ResponseMessage'
+    getPayLaterLatestTransaction: 'PayLaterTransaction'
     getProfile: 'Profile'
     getRefresh: 'Refresh'
     getUser: 'User'
@@ -972,6 +1050,10 @@ export interface NexusGenFieldTypeNames {
 
 export interface NexusGenArgTypes {
   Mutation: {
+    addBcaViaKudokuxBrick: { // args
+      account: NexusGenInputs['KudokuxBrickAccount']; // KudokuxBrickAccount!
+      transaction?: NexusGenInputs['KudokuxBrickTransaction'][] | null; // [KudokuxBrickTransaction!]
+    }
     addCashAccount: { // args
       accountName: string; // String!
       currency: string; // String!
@@ -1028,6 +1110,10 @@ export interface NexusGenArgTypes {
       password: string; // String!
       username: string; // String!
     }
+    connectGopayPayLaterViaKudokuxBrick: { // args
+      account: NexusGenInputs['KudokuxBrickAccount']; // KudokuxBrickAccount!
+      transaction?: NexusGenInputs['KudokuxBrickTransaction'][] | null; // [KudokuxBrickTransaction!]
+    }
     connectGopayViaBrick: { // args
       clientId: number; // Int!
       otp: string; // String!
@@ -1036,6 +1122,10 @@ export interface NexusGenArgTypes {
       sessionId: string; // String!
       uniqueId: string; // String!
       username: string; // String!
+    }
+    connectGopayWalletViaKudokuxBrick: { // args
+      account: NexusGenInputs['KudokuxBrickAccount']; // KudokuxBrickAccount!
+      transaction?: NexusGenInputs['KudokuxBrickTransaction'][] | null; // [KudokuxBrickTransaction!]
     }
     createEMoneyAccount: { // args
       cardNumber: string; // String!
@@ -1147,9 +1237,27 @@ export interface NexusGenArgTypes {
     refreshBcaTransactionViaBrick: { // args
       debitAccountId: string; // String!
     }
+    refreshBcaViaKudokuxBrick: { // args
+      account: NexusGenInputs['KudokuxBrickAccount']; // KudokuxBrickAccount!
+      debitAccountId: string; // String!
+      transaction: NexusGenInputs['KudokuxBrickTransaction'][]; // [KudokuxBrickTransaction!]!
+      transactionReferenceId: string; // String!
+    }
+    refreshGopayPayLaterViaKudokuxBrick: { // args
+      account: NexusGenInputs['KudokuxBrickAccount']; // KudokuxBrickAccount!
+      payLaterAccountId: string; // String!
+      transaction: NexusGenInputs['KudokuxBrickTransaction'][]; // [KudokuxBrickTransaction!]!
+      transactionReferenceId: string; // String!
+    }
     refreshGopayTransactionViaBrick: { // args
       eWalletAccountId?: string | null; // String
       payLaterAccountId?: string | null; // String
+    }
+    refreshGopayWalletViaKudokuxBrick: { // args
+      account: NexusGenInputs['KudokuxBrickAccount']; // KudokuxBrickAccount!
+      eWalletAccountId: string; // String!
+      transaction: NexusGenInputs['KudokuxBrickTransaction'][]; // [KudokuxBrickTransaction!]!
+      transactionReferenceId: string; // String!
     }
     signup: { // args
       id: string; // ID!
@@ -1158,10 +1266,22 @@ export interface NexusGenArgTypes {
       pin: string; // String!
       username: string; // String!
     }
+    updateDebitAccountExpiry: { // args
+      debitAccountId: string; // String!
+      expired: boolean; // Boolean!
+    }
+    updateEWalletAccountExpiry: { // args
+      eWalletAccountId: string; // String!
+      expired: boolean; // Boolean!
+    }
     updateEmailOrWhatsapp: { // args
       email?: string | null; // String
       jwtToken: string; // String!
       whatsapp?: string | null; // String
+    }
+    updatePayLaterAccountExpiry: { // args
+      expired: boolean; // Boolean!
+      payLaterAccountId: string; // String!
     }
     updateProfile: { // args
       bio?: string | null; // String
@@ -1189,6 +1309,12 @@ export interface NexusGenArgTypes {
     getAllPayLaterTransaction: { // args
       payLaterAccountId: string; // String!
     }
+    getDebitLatestTransaction: { // args
+      debitAccountId: string; // String!
+    }
+    getEWalletLatestTransaction: { // args
+      eWalletAccountId: string; // String!
+    }
     getInfoCashAccount: { // args
       cashAccountId: string; // String!
     }
@@ -1207,6 +1333,9 @@ export interface NexusGenArgTypes {
     getOtp: { // args
       email?: string | null; // String
       whatsapp?: string | null; // String
+    }
+    getPayLaterLatestTransaction: { // args
+      payLaterAccountId: string; // String!
     }
     getProfile: { // args
       userId?: string | null; // String

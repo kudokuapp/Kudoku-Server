@@ -1,6 +1,6 @@
 import { DebitAccount, DebitTransaction } from '@prisma/client';
 import { arg, extendType, nonNull } from 'nexus';
-import { decodeDebitAccountId } from '../../../utils/auth/debitAccountId';
+import { decodeDebitAccountId } from '../../../utils/auth';
 
 interface IPayloadDebitTransaction {
   mutationType: 'ADD' | 'EDIT' | 'DELETE';

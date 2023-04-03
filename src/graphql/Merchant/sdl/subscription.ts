@@ -1,6 +1,5 @@
-import { EWalletAccount, EWalletTransaction, Merchant } from '@prisma/client';
-import { decodeEWalletAccountId } from '../../../utils/auth/eWalletAccountId';
-import { arg, extendType, nonNull } from 'nexus';
+import { Merchant } from '@prisma/client';
+import { extendType } from 'nexus';
 
 interface IPayloadNewMerchant {
   merchant: Merchant;

@@ -1,5 +1,5 @@
 import { AxiosError } from 'axios';
-import getAccountDetail from './getAccountDetail';
+import { getAccountDetail } from './getAccountDetail';
 
 /**
  * @description: Check if Brick's access token for a particular user is expired.
@@ -7,7 +7,7 @@ import getAccountDetail from './getAccountDetail';
  * @param accessToken
  * @returns {boolean} @description: true - if expired
  */
-export default async function isAccessTokenIsExpired(
+export async function isAccessTokenIsExpired(
   accessToken: string
 ): Promise<Boolean> {
   return new Promise(async (resolve, reject) => {
