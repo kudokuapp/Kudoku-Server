@@ -7,6 +7,32 @@ type AuthPayLoad {
   token: String!
 }
 
+enum BudgetTypeEnum {
+  CUSTOM
+  MONTHLY
+}
+
+type Budgeting {
+  """The amount of this budgeting"""
+  amount: String!
+
+  """The name of this budgeting"""
+  budgetName: String!
+
+  """Budget type of this budgeting"""
+  budgetTypeId: String!
+
+  """When this budgeting is created"""
+  createdAt: DateTime!
+
+  """id generated automatically by MongoDB"""
+  id: String!
+
+  """When this budgeting is last updated"""
+  lastUpdate: DateTime!
+  userId: String!
+}
+
 type CashAccount {
   """
   Name, should user choose it's name differently. Default should be just "Cash"
@@ -498,6 +524,21 @@ type Merchant {
   url: String!
 }
 
+enum Month {
+  Agustus
+  April
+  Desember
+  Februari
+  Januari
+  Juli
+  Juni
+  Maret
+  Mei
+  November
+  Oktober
+  September
+}
+
 type Mutation {
   """
   A form of pushing debit account database using data that has been received by running KudokuxBrick.
@@ -509,6 +550,18 @@ type Mutation {
     """The transaction from KudokuxBrick"""
     transaction: [KudokuxBrickTransaction!]
   ): DebitAccount!
+
+  """Create a new budgeting."""
+  addBudgeting(
+    """The amount of the budget"""
+    amount: String!
+
+    """The name of the budget"""
+    budgetName: String!
+
+    """The budget type of this budgeting"""
+    budgetTypeId: BudgetTypeEnum
+  ): Budgeting!
 
   """Create a new cash account."""
   addCashAccount(
@@ -710,6 +763,12 @@ type Mutation {
     institutionId: String!
   ): EMoneyAccount!
 
+  """Delete budgeting."""
+  deleteBudgeting(
+    """The id of that budgeting"""
+    budgetingId: String!
+  ): ResponseMessage
+
   """Delete cash account"""
   deleteCashAccount(
     """The cash account id"""
@@ -747,6 +806,21 @@ type Mutation {
     """The e-wallet account id"""
     eWalletAccountId: String!
   ): ResponseMessage
+
+  """Edit budgeting."""
+  editBudgeting(
+    """The amount of the budget"""
+    amount: String!
+
+    """The name of the budget"""
+    budgetName: String!
+
+    """The budget type of this budgeting"""
+    budgetTypeId: BudgetTypeEnum
+
+    """The id of that budgeting"""
+    budgetingId: String!
+  ): Budgeting!
 
   """Edit details on user's cash account"""
   editCashAccount(
@@ -1279,6 +1353,9 @@ type Profile {
 }
 
 type Query {
+  """Get all budgeting for a particular user."""
+  getAllBudgeting: [Budgeting]
+
   """Get all cash account for a particular user."""
   getAllCashAccount: [CashAccount]
 

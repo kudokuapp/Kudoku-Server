@@ -288,6 +288,17 @@ model EMoneyTransaction {
   isHideFromInsight               Boolean                     @default(false)
 }
 
+
+model Budgeting {
+  id                              String            @id @default(auto()) @map("_id") @db.ObjectId
+  userId                          String            @db.ObjectId
+  budgetTypeId	                  BudgetType        @default(MONTHLY)
+  createdAt                       DateTime
+  lastUpdate                      DateTime
+  budgetName                      String
+  amount                          String            //Takut aneh kalo number
+}
+
 enum TransactionType {
   INCOME
   EXPENSE
@@ -303,6 +314,11 @@ enum EWalletAccountType {
 enum DirectionType {
   IN
   OUT
+}
+
+enum BudgetType {
+  MONTHLY
+  CUSTOM
 }
 
 type Location {

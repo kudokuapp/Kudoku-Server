@@ -12,3 +12,4 @@ export * from './Enum';
 export * from './ObjectType';
 export * from './ScalarType';
 export * from './KudokuxBrick';
+export * from './Budgeting';

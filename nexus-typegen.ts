@@ -82,8 +82,10 @@ export interface NexusGenInputs {
 }
 
 export interface NexusGenEnums {
+  BudgetTypeEnum: "CUSTOM" | "MONTHLY"
   DirectionTypeEnum: "IN" | "OUT"
   ExpenseTypeEnum: "EXPENSE" | "INCOME"
+  Month: "Agustus" | "April" | "Desember" | "Februari" | "Januari" | "Juli" | "Juni" | "Maret" | "Mei" | "November" | "Oktober" | "September"
   TransactionMethodEnum: "Debit" | "QRIS" | "VirtualAccount" | "mPayment"
   typeOfAccount: "CASH" | "DEBIT" | "EMONEY" | "EWALLET" | "PAYLATER"
   typeOfMutationType: "ADD" | "DELETE" | "EDIT"
@@ -101,6 +103,15 @@ export interface NexusGenScalars {
 export interface NexusGenObjects {
   AuthPayLoad: { // root type
     token: string; // String!
+  }
+  Budgeting: { // root type
+    amount: string; // String!
+    budgetName: string; // String!
+    budgetTypeId: string; // String!
+    createdAt: NexusGenScalars['DateTime']; // DateTime!
+    id: string; // String!
+    lastUpdate: NexusGenScalars['DateTime']; // DateTime!
+    userId: string; // String!
   }
   CashAccount: { // root type
     accountName: string; // String!
@@ -372,6 +383,15 @@ export interface NexusGenFieldTypes {
   AuthPayLoad: { // field return type
     token: string; // String!
   }
+  Budgeting: { // field return type
+    amount: string; // String!
+    budgetName: string; // String!
+    budgetTypeId: string; // String!
+    createdAt: NexusGenScalars['DateTime']; // DateTime!
+    id: string; // String!
+    lastUpdate: NexusGenScalars['DateTime']; // DateTime!
+    userId: string; // String!
+  }
   CashAccount: { // field return type
     accountName: string; // String!
     balance: string; // String!
@@ -544,6 +564,7 @@ export interface NexusGenFieldTypes {
   }
   Mutation: { // field return type
     addBcaViaKudokuxBrick: NexusGenRootTypes['DebitAccount']; // DebitAccount!
+    addBudgeting: NexusGenRootTypes['Budgeting']; // Budgeting!
     addCashAccount: NexusGenRootTypes['CashAccount']; // CashAccount!
     addCashTransaction: NexusGenRootTypes['CashTransaction']; // CashTransaction!
     addEMoneyTransaction: NexusGenRootTypes['EMoneyTransaction']; // EMoneyTransaction!
@@ -555,12 +576,14 @@ export interface NexusGenFieldTypes {
     connectGopayViaBrick: NexusGenRootTypes['GopayEWalletAndPayLaterAccount']; // GopayEWalletAndPayLaterAccount!
     connectGopayWalletViaKudokuxBrick: NexusGenRootTypes['EWalletAccount']; // EWalletAccount!
     createEMoneyAccount: NexusGenRootTypes['EMoneyAccount']; // EMoneyAccount!
+    deleteBudgeting: NexusGenRootTypes['ResponseMessage'] | null; // ResponseMessage
     deleteCashAccount: NexusGenRootTypes['ResponseMessage'] | null; // ResponseMessage
     deleteCashTransaction: NexusGenRootTypes['ResponseMessage'] | null; // ResponseMessage
     deleteDebitAccount: NexusGenRootTypes['ResponseMessage'] | null; // ResponseMessage
     deleteEMoneyAccount: NexusGenRootTypes['ResponseMessage'] | null; // ResponseMessage
     deleteEMoneyTransaction: NexusGenRootTypes['ResponseMessage']; // ResponseMessage!
     deleteGopayAccount: NexusGenRootTypes['ResponseMessage'] | null; // ResponseMessage
+    editBudgeting: NexusGenRootTypes['Budgeting']; // Budgeting!
     editCashAccount: NexusGenRootTypes['CashAccount']; // CashAccount!
     editCashTransaction: NexusGenRootTypes['CashTransaction']; // CashTransaction!
     editDebitTransaction: NexusGenRootTypes['DebitTransaction']; // DebitTransaction!
@@ -645,6 +668,7 @@ export interface NexusGenFieldTypes {
     userId: string; // String!
   }
   Query: { // field return type
+    getAllBudgeting: Array<NexusGenRootTypes['Budgeting'] | null> | null; // [Budgeting]
     getAllCashAccount: Array<NexusGenRootTypes['CashAccount'] | null> | null; // [CashAccount]
     getAllCashTransaction: Array<NexusGenRootTypes['CashTransaction'] | null> | null; // [CashTransaction]
     getAllDebitAccount: Array<NexusGenRootTypes['DebitAccount'] | null> | null; // [DebitAccount]
@@ -711,6 +735,15 @@ export interface NexusGenFieldTypes {
 export interface NexusGenFieldTypeNames {
   AuthPayLoad: { // field return type name
     token: 'String'
+  }
+  Budgeting: { // field return type name
+    amount: 'String'
+    budgetName: 'String'
+    budgetTypeId: 'String'
+    createdAt: 'DateTime'
+    id: 'String'
+    lastUpdate: 'DateTime'
+    userId: 'String'
   }
   CashAccount: { // field return type name
     accountName: 'String'
@@ -884,6 +917,7 @@ export interface NexusGenFieldTypeNames {
   }
   Mutation: { // field return type name
     addBcaViaKudokuxBrick: 'DebitAccount'
+    addBudgeting: 'Budgeting'
     addCashAccount: 'CashAccount'
     addCashTransaction: 'CashTransaction'
     addEMoneyTransaction: 'EMoneyTransaction'
@@ -895,12 +929,14 @@ export interface NexusGenFieldTypeNames {
     connectGopayViaBrick: 'GopayEWalletAndPayLaterAccount'
     connectGopayWalletViaKudokuxBrick: 'EWalletAccount'
     createEMoneyAccount: 'EMoneyAccount'
+    deleteBudgeting: 'ResponseMessage'
     deleteCashAccount: 'ResponseMessage'
     deleteCashTransaction: 'ResponseMessage'
     deleteDebitAccount: 'ResponseMessage'
     deleteEMoneyAccount: 'ResponseMessage'
     deleteEMoneyTransaction: 'ResponseMessage'
     deleteGopayAccount: 'ResponseMessage'
+    editBudgeting: 'Budgeting'
     editCashAccount: 'CashAccount'
     editCashTransaction: 'CashTransaction'
     editDebitTransaction: 'DebitTransaction'
@@ -985,6 +1021,7 @@ export interface NexusGenFieldTypeNames {
     userId: 'String'
   }
   Query: { // field return type name
+    getAllBudgeting: 'Budgeting'
     getAllCashAccount: 'CashAccount'
     getAllCashTransaction: 'CashTransaction'
     getAllDebitAccount: 'DebitAccount'
@@ -1053,6 +1090,11 @@ export interface NexusGenArgTypes {
     addBcaViaKudokuxBrick: { // args
       account: NexusGenInputs['KudokuxBrickAccount']; // KudokuxBrickAccount!
       transaction?: NexusGenInputs['KudokuxBrickTransaction'][] | null; // [KudokuxBrickTransaction!]
+    }
+    addBudgeting: { // args
+      amount: string; // String!
+      budgetName: string; // String!
+      budgetTypeId?: NexusGenEnums['BudgetTypeEnum'] | null; // BudgetTypeEnum
     }
     addCashAccount: { // args
       accountName: string; // String!
@@ -1133,6 +1175,9 @@ export interface NexusGenArgTypes {
       initialBalance: string; // String!
       institutionId: string; // String!
     }
+    deleteBudgeting: { // args
+      budgetingId: string; // String!
+    }
     deleteCashAccount: { // args
       cashAccountId: string; // String!
     }
@@ -1150,6 +1195,12 @@ export interface NexusGenArgTypes {
     }
     deleteGopayAccount: { // args
       eWalletAccountId: string; // String!
+    }
+    editBudgeting: { // args
+      amount: string; // String!
+      budgetName: string; // String!
+      budgetTypeId?: NexusGenEnums['BudgetTypeEnum'] | null; // BudgetTypeEnum
+      budgetingId: string; // String!
     }
     editCashAccount: { // args
       accountName: string | null; // String
