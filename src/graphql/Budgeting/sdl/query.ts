@@ -27,7 +27,7 @@ export const BudgetingQuery = extendType({
               lastUpdate: element.lastUpdate,
               budgetName: element.budgetName,
               budgetTypeId: element.budgetTypeId,
-              amount: element.amount
+              amount: element.amount,
             };
 
             response.push(obj);
@@ -41,4 +41,3 @@ export const BudgetingQuery = extendType({
     });
   },
 });
-

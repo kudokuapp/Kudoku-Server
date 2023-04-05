@@ -20,7 +20,7 @@ type Budgeting {
   budgetName: String!
 
   """Budget type of this budgeting"""
-  budgetTypeId: String!
+  budgetTypeId: BudgetTypeEnum!
 
   """When this budgeting is created"""
   createdAt: DateTime!
@@ -560,7 +560,7 @@ type Mutation {
     budgetName: String!
 
     """The budget type of this budgeting"""
-    budgetTypeId: BudgetTypeEnum
+    budgetTypeId: BudgetTypeEnum!
   ): Budgeting!
 
   """Create a new cash account."""
@@ -816,7 +816,7 @@ type Mutation {
     budgetName: String!
 
     """The budget type of this budgeting"""
-    budgetTypeId: BudgetTypeEnum
+    budgetTypeId: BudgetTypeEnum!
 
     """The id of that budgeting"""
     budgetingId: String!

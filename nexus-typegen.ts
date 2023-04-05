@@ -107,7 +107,7 @@ export interface NexusGenObjects {
   Budgeting: { // root type
     amount: string; // String!
     budgetName: string; // String!
-    budgetTypeId: string; // String!
+    budgetTypeId: NexusGenEnums['BudgetTypeEnum']; // BudgetTypeEnum!
     createdAt: NexusGenScalars['DateTime']; // DateTime!
     id: string; // String!
     lastUpdate: NexusGenScalars['DateTime']; // DateTime!
@@ -386,7 +386,7 @@ export interface NexusGenFieldTypes {
   Budgeting: { // field return type
     amount: string; // String!
     budgetName: string; // String!
-    budgetTypeId: string; // String!
+    budgetTypeId: NexusGenEnums['BudgetTypeEnum']; // BudgetTypeEnum!
     createdAt: NexusGenScalars['DateTime']; // DateTime!
     id: string; // String!
     lastUpdate: NexusGenScalars['DateTime']; // DateTime!
@@ -739,7 +739,7 @@ export interface NexusGenFieldTypeNames {
   Budgeting: { // field return type name
     amount: 'String'
     budgetName: 'String'
-    budgetTypeId: 'String'
+    budgetTypeId: 'BudgetTypeEnum'
     createdAt: 'DateTime'
     id: 'String'
     lastUpdate: 'DateTime'
@@ -1094,7 +1094,7 @@ export interface NexusGenArgTypes {
     addBudgeting: { // args
       amount: string; // String!
       budgetName: string; // String!
-      budgetTypeId?: NexusGenEnums['BudgetTypeEnum'] | null; // BudgetTypeEnum
+      budgetTypeId: NexusGenEnums['BudgetTypeEnum']; // BudgetTypeEnum!
     }
     addCashAccount: { // args
       accountName: string; // String!
@@ -1199,7 +1199,7 @@ export interface NexusGenArgTypes {
     editBudgeting: { // args
       amount: string; // String!
       budgetName: string; // String!
-      budgetTypeId?: NexusGenEnums['BudgetTypeEnum'] | null; // BudgetTypeEnum
+      budgetTypeId: NexusGenEnums['BudgetTypeEnum']; // BudgetTypeEnum!
       budgetingId: string; // String!
     }
     editCashAccount: { // args
