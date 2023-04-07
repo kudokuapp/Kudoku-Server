@@ -299,6 +299,17 @@ model Budgeting {
   amount                          String            //Takut aneh kalo number
 }
 
+model CategoryPlan {
+  id                              String            @id @default(auto()) @map("_id") @db.ObjectId
+  categoryId                      String            @db.ObjectId
+  budgetId                        String            @db.ObjectId
+  tagId       	                  String            @db.ObjectId
+  createdAt                       DateTime
+  lastUpdate                      DateTime
+  monthly                         Boolean
+  amount                          String            //Takut aneh kalo number
+}
+
 enum TransactionType {
   INCOME
   EXPENSE

@@ -31,3 +31,40 @@ export const Budgeting = objectType({
     });
   },
 });
+
+export const CategoryPlan = objectType({
+  name: 'CategoryPlan',
+  definition(t) {
+    t.nonNull.string('id', {
+      description: 'id generated automatically by MongoDB',
+    });
+
+    t.nonNull.dateTime('createdAt', {
+      description: 'When this budgeting is created',
+    });
+
+    t.nonNull.dateTime('lastUpdate', {
+      description: 'When this budgeting is last updated',
+    });
+
+    t.nonNull.string('budgetId', {
+      description: 'Budget id of this planning category',
+    });
+
+    t.nonNull.string('categoryId', {
+      description: 'Category id of this planning category',
+    });
+
+    t.nonNull.string('tagId', {
+      description: 'Tag id of this planning category',
+    });
+
+    t.nonNull.boolean('monthly', {
+      description: 'Is this planning category is same for all month or not ?',
+    });
+
+    t.nonNull.string('amount', {
+      description: 'The amount of this planning category',
+    });
+  },
+});

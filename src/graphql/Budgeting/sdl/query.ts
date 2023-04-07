@@ -41,3 +41,101 @@ export const BudgetingQuery = extendType({
     });
   },
 });
+
+// export const CategoryPlanQuery = extendType({
+//   type: 'Query',
+//   definition(t) {
+//     t.list.field('getAllCategoryPlan', {
+//       type: 'CategoryPlan',
+//       description: 'Get all CategoryPlan for a particular user.',
+
+//       async resolve(__, ___, { userId, prisma }, ____) {
+//         try {
+//           if (!userId) throw new Error('Token tidak valid.');
+
+//           const CategoryPlan = await prisma.categoryPlan.findMany({
+//             where: { userId },
+//           });
+
+//           let response: any[] = [];
+
+//           for (let i = 0; i < CategoryPlan.length; i++) {
+//             const element = CategoryPlan[i];
+
+//             const obj = {
+//               id: element.id,
+//               categoryId: element.categoryId,
+//               budgetId: element.budgetId,
+//               tagId: element.tagId,
+//               monthly: element.monthly,
+//               createdAt: element.createdAt,
+//               lastUpdate: element.lastUpdate,
+//               amount: element.amount,
+//             };
+
+//             response.push(obj);
+//           }
+
+//           return response;
+//         } catch (error) {
+//           throw error;
+//         }
+//       },
+//     });
+//   },
+// });
+
+export const CategoryPlanQuery = extendType({
+  type: 'Query',
+  definition(t) {
+    t.list.field('getAllCategoryPlan', {
+      type: 'CategoryPlan',
+      description: 'Get all CategoryPlan for a particular user',
+      args: {
+        budgetId: nonNull(
+          arg({
+            type: 'String',
+            description: 'Fill this with budget id',
+          })
+        ),
+      },
+
+      async resolve(__, {budgetId}, { userId, prisma }, ___) {
+        try {
+          if (!userId) throw new Error('Token tidak valid.');
+
+          const response = await prisma.categoryPlan.findMany({
+            where: { budgetId: budgetId },
+          });
+
+          // const response = await prisma.categoryPlan.findMany({
+          //   orderBy: [{ createdAt: 'desc' }],
+          // });
+
+          let responseArray: any[] = [];
+
+          for (let i = 0; i < response.length; i++) {
+            const element = response[i];
+
+              const obj = {
+                id: element.id,
+                categoryId: element.categoryId,
+                budgetId: element.budgetId,
+                tagId: element.tagId,
+                monthly: element.monthly,
+                createdAt: element.createdAt,
+                lastUpdate: element.lastUpdate,
+                amount: element.amount,
+              };
+
+              responseArray.push(obj);
+          }
+
+          return responseArray;
+        } catch (error) {
+          throw error;
+        }
+      },
+    });
+  },
+});
