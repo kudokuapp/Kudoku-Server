@@ -706,6 +706,7 @@ export interface NexusGenFieldTypes {
     getAllPayLaterTransaction: Array<NexusGenRootTypes['PayLaterTransaction'] | null> | null; // [PayLaterTransaction]
     getAllUser: Array<NexusGenRootTypes['User'] | null>; // [User]!
     getDebitLatestTransaction: NexusGenRootTypes['DebitTransaction'] | null; // DebitTransaction
+    getDetailCategoryPlan: NexusGenRootTypes['CategoryPlan']; // CategoryPlan!
     getEWalletLatestTransaction: NexusGenRootTypes['EWalletTransaction'] | null; // EWalletTransaction
     getInfoCashAccount: NexusGenRootTypes['CashAccount'] | null; // CashAccount
     getInfoDebitAccount: NexusGenRootTypes['DebitAccount'] | null; // DebitAccount
@@ -1073,6 +1074,7 @@ export interface NexusGenFieldTypeNames {
     getAllPayLaterTransaction: 'PayLaterTransaction'
     getAllUser: 'User'
     getDebitLatestTransaction: 'DebitTransaction'
+    getDetailCategoryPlan: 'CategoryPlan'
     getEWalletLatestTransaction: 'EWalletTransaction'
     getInfoCashAccount: 'CashAccount'
     getInfoDebitAccount: 'DebitAccount'
@@ -1420,6 +1422,9 @@ export interface NexusGenArgTypes {
     }
     getDebitLatestTransaction: { // args
       debitAccountId: string; // String!
+    }
+    getDetailCategoryPlan: { // args
+      categoryPlanId: string; // String!
     }
     getEWalletLatestTransaction: { // args
       eWalletAccountId: string; // String!

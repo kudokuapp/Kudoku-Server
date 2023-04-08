@@ -1489,6 +1489,12 @@ type Query {
     debitAccountId: String!
   ): DebitTransaction
 
+  """Get Detail CategoryPlan by Id"""
+  getDetailCategoryPlan(
+    """Fill this with CategoryPlan id"""
+    categoryPlanId: String!
+  ): CategoryPlan!
+
   """Get the latest e-wallet transaction"""
   getEWalletLatestTransaction(
     """The eWalletAccountId"""

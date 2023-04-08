@@ -137,5 +137,47 @@ export const CategoryPlanQuery = extendType({
         }
       },
     });
+
+    t.nonNull.field('getDetailCategoryPlan', {
+      type: 'CategoryPlan',
+      description: 'Get Detail CategoryPlan by Id',
+      args: {
+        categoryPlanId: nonNull(
+          arg({
+            type: 'String',
+            description: 'Fill this with CategoryPlan id',
+          })
+        ),
+      },
+
+      async resolve(__, {categoryPlanId}, { userId, prisma }, ___) {
+        try {
+          if (!userId) throw new Error('Token tidak valid.');
+
+          const categoryPlanDetail = await prisma.categoryPlan.findUnique({
+            where: { id: categoryPlanId },
+          });
+
+          // const response = await prisma.categoryPlan.findMany({
+          //   orderBy: [{ createdAt: 'desc' }],
+          // });
+
+          const response = {
+            id: categoryPlanDetail.id,
+            categoryId: categoryPlanDetail.categoryId,
+            budgetId: categoryPlanDetail.budgetId,
+            tagId: categoryPlanDetail.tagId,
+            monthly: categoryPlanDetail.monthly,
+            createdAt: categoryPlanDetail.createdAt,
+            lastUpdate: categoryPlanDetail.lastUpdate,
+            amount: categoryPlanDetail.amount,
+          };
+
+          return response;
+        } catch (error) {
+          throw error;
+        }
+      },
+    });
   },
 });
