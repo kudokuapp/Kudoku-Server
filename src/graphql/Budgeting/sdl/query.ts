@@ -39,6 +39,47 @@ export const BudgetingQuery = extendType({
         }
       },
     });
+
+    t.nonNull.field('getDetailBudgeting', {
+      type: 'Budgeting',
+      description: 'Get Detail Budgeting by Id',
+      args: {
+        budgetId: nonNull(
+          arg({
+            type: 'String',
+            description: 'Fill this with Budgeting id',
+          })
+        ),
+      },
+
+      async resolve(__, {budgetId}, { userId, prisma }, ___) {
+        try {
+          if (!userId) throw new Error('Token tidak valid.');
+
+          const budgetingDetail = await prisma.budgeting.findUnique({
+            where: { id: budgetId },
+          });
+
+          // const response = await prisma.categoryPlan.findMany({
+          //   orderBy: [{ createdAt: 'desc' }],
+          // });
+
+          const response = {
+            id: budgetingDetail.id,
+            userId: budgetingDetail.userId,
+            createdAt: budgetingDetail.createdAt,
+            lastUpdate: budgetingDetail.lastUpdate,
+            budgetName: budgetingDetail.budgetName,
+            budgetTypeId: budgetingDetail.budgetTypeId,
+            amount: budgetingDetail.amount,
+          };
+
+          return response;
+        } catch (error) {
+          throw error;
+        }
+      },
+    });
   },
 });
 

@@ -1489,6 +1489,12 @@ type Query {
     debitAccountId: String!
   ): DebitTransaction
 
+  """Get Detail Budgeting by Id"""
+  getDetailBudgeting(
+    """Fill this with Budgeting id"""
+    budgetId: String!
+  ): Budgeting!
+
   """Get Detail CategoryPlan by Id"""
   getDetailCategoryPlan(
     """Fill this with CategoryPlan id"""
