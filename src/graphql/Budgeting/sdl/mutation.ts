@@ -141,32 +141,34 @@ export const BudgetingMutation = extendType({
       },
     });
 
-    t.field('deleteCategoryPlan', {
+    t.field('deleteBudgeting', {
       type: 'ResponseMessage',
-      description: 'Delete Category Plan.',
+      description: 'Delete budgeting.',
       args: {
-        categoryPlanId: nonNull(
+        budgetingId: nonNull(
           arg({
             type: 'String',
-            description: 'The id of that category plan',
+            description: 'The id of that budgeting',
           })
         ),
       },
 
-      async resolve(__, { categoryPlanId }, { userId, prisma }, ___) {
+      async resolve(__, { budgetingId }, { userId, prisma }, ___) {
         try {
           if (!userId) throw new Error('Token tidak valid.');
 
-          const categoryPlan = await prisma.categoryPlan.findFirstOrThrow({
-            where: { AND: [{ id: categoryPlanId }] },
+          const budgeting = await prisma.budgeting.findFirstOrThrow({
+            where: { AND: [{ id: budgetingId }] },
           });
 
-          await prisma.categoryPlan.delete({
-            where: { id: categoryPlanId },
+          const budgetName = budgeting.budgetName;
+
+          await prisma.budgeting.delete({
+            where: { id: budgetingId },
           });
 
           return {
-            response: `Successfully delete planning category`,
+            response: `Successfully delete ${budgetName}`,
           };
         } catch (error) {
           console.log(error);
@@ -340,34 +342,32 @@ export const CategoryPlanMutation = extendType({
       },
     });
 
-    t.field('deleteBudgeting', {
+    t.field('deleteCategoryPlan', {
       type: 'ResponseMessage',
-      description: 'Delete budgeting.',
+      description: 'Delete Category Plan.',
       args: {
-        budgetingId: nonNull(
+        categoryPlanId: nonNull(
           arg({
             type: 'String',
-            description: 'The id of that budgeting',
+            description: 'The id of that category plan',
           })
         ),
       },
 
-      async resolve(__, { budgetingId }, { userId, prisma }, ___) {
+      async resolve(__, { categoryPlanId }, { userId, prisma }, ___) {
         try {
           if (!userId) throw new Error('Token tidak valid.');
 
-          const budgeting = await prisma.budgeting.findFirstOrThrow({
-            where: { AND: [{ id: budgetingId }] },
+          const categoryPlan = await prisma.categoryPlan.findFirstOrThrow({
+            where: { AND: [{ id: categoryPlanId }] },
           });
 
-          const budgetName = budgeting.budgetName;
-
-          await prisma.budgeting.delete({
-            where: { id: budgetingId },
+          await prisma.categoryPlan.delete({
+            where: { id: categoryPlanId },
           });
 
           return {
-            response: `Successfully delete ${budgetName}`,
+            response: `Successfully delete planning category`,
           };
         } catch (error) {
           console.log(error);
