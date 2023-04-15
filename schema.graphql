@@ -120,6 +120,32 @@ type CashTransactionSubscriptionType {
   transaction: CashTransaction!
 }
 
+type CategoryPlan {
+  """The amount of this planning category"""
+  amount: String!
+
+  """Budget id of this planning category"""
+  budgetId: String!
+
+  """Category id of this planning category"""
+  categoryId: String!
+
+  """When this budgeting is created"""
+  createdAt: DateTime!
+
+  """id generated automatically by MongoDB"""
+  id: String!
+
+  """When this budgeting is last updated"""
+  lastUpdate: DateTime!
+
+  """Is this planning category is same for all month or not ?"""
+  monthly: Boolean!
+
+  """Tag id of this planning category"""
+  tagId: String!
+}
+
 """
 A date-time string at UTC, such as 2007-12-03T10:15:30Z, compliant with the date-time format.
 """
@@ -626,6 +652,24 @@ type Mutation {
     transactionType: ExpenseTypeEnum!
   ): CashTransaction!
 
+  """Create a new planning category."""
+  addCategoryPlan(
+    """The amount of the budget"""
+    amount: String!
+
+    """Budget id of this planning category"""
+    budgetId: String!
+
+    """Category id of this planning category"""
+    categoryId: String!
+
+    """Is this planning category is same for all month or not ?"""
+    monthly: Boolean!
+
+    """Tag id of this planning category"""
+    tagId: String!
+  ): CategoryPlan!
+
   """Add transaction and balance for a particular e-money account"""
   addEMoneyTransaction(
     """The amount for that transaction"""
@@ -781,6 +825,12 @@ type Mutation {
     transactionId: String!
   ): ResponseMessage
 
+  """Delete Category Plan."""
+  deleteCategoryPlan(
+    """The id of that category plan"""
+    categoryPlanId: String!
+  ): ResponseMessage
+
   """Delete debit account"""
   deleteDebitAccount(
     """The debit account id"""
@@ -876,6 +926,24 @@ type Mutation {
     """
     transactionType: ExpenseTypeEnum
   ): CashTransaction!
+
+  """Edit Planning Category."""
+  editCategoryPlan(
+    """The amount of the category plan"""
+    amount: String!
+
+    """Category id of this planning category"""
+    categoryId: String!
+
+    """The amount of this category plan"""
+    categoryPlanId: String!
+
+    """Is this planning category is same for all month or not ?"""
+    monthly: Boolean!
+
+    """Tag id of this planning category"""
+    tagId: String!
+  ): CategoryPlan!
 
   """Edit a particular debit transaction"""
   editDebitTransaction(
@@ -1365,6 +1433,12 @@ type Query {
     cashAccountId: String!
   ): [CashTransaction]
 
+  """Get all CategoryPlan for a particular user"""
+  getAllCategoryPlan(
+    """Fill this with budget id"""
+    budgetId: String!
+  ): [CategoryPlan]
+
   """Get all debit account for a particular user."""
   getAllDebitAccount: [DebitAccount]
 
@@ -1414,6 +1488,18 @@ type Query {
     """The debitAccountId"""
     debitAccountId: String!
   ): DebitTransaction
+
+  """Get Detail Budgeting by Id"""
+  getDetailBudgeting(
+    """Fill this with Budgeting id"""
+    budgetId: String!
+  ): Budgeting!
+
+  """Get Detail CategoryPlan by Id"""
+  getDetailCategoryPlan(
+    """Fill this with CategoryPlan id"""
+    categoryPlanId: String!
+  ): CategoryPlan!
 
   """Get the latest e-wallet transaction"""
   getEWalletLatestTransaction(

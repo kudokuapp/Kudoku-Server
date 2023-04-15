@@ -146,6 +146,16 @@ export interface NexusGenObjects {
     mutationType: NexusGenEnums['typeOfMutationType']; // typeOfMutationType!
     transaction: NexusGenRootTypes['CashTransaction']; // CashTransaction!
   }
+  CategoryPlan: { // root type
+    amount: string; // String!
+    budgetId: string; // String!
+    categoryId: string; // String!
+    createdAt: NexusGenScalars['DateTime']; // DateTime!
+    id: string; // String!
+    lastUpdate: NexusGenScalars['DateTime']; // DateTime!
+    monthly: boolean; // Boolean!
+    tagId: string; // String!
+  }
   DebitAccount: { // root type
     accountNumber: string; // String!
     balance: string; // String!
@@ -425,6 +435,16 @@ export interface NexusGenFieldTypes {
     mutationType: NexusGenEnums['typeOfMutationType']; // typeOfMutationType!
     transaction: NexusGenRootTypes['CashTransaction']; // CashTransaction!
   }
+  CategoryPlan: { // field return type
+    amount: string; // String!
+    budgetId: string; // String!
+    categoryId: string; // String!
+    createdAt: NexusGenScalars['DateTime']; // DateTime!
+    id: string; // String!
+    lastUpdate: NexusGenScalars['DateTime']; // DateTime!
+    monthly: boolean; // Boolean!
+    tagId: string; // String!
+  }
   DebitAccount: { // field return type
     accountNumber: string; // String!
     balance: string; // String!
@@ -567,6 +587,7 @@ export interface NexusGenFieldTypes {
     addBudgeting: NexusGenRootTypes['Budgeting']; // Budgeting!
     addCashAccount: NexusGenRootTypes['CashAccount']; // CashAccount!
     addCashTransaction: NexusGenRootTypes['CashTransaction']; // CashTransaction!
+    addCategoryPlan: NexusGenRootTypes['CategoryPlan']; // CategoryPlan!
     addEMoneyTransaction: NexusGenRootTypes['EMoneyTransaction']; // EMoneyTransaction!
     addMerchant: NexusGenRootTypes['Merchant']; // Merchant!
     changePassword: NexusGenRootTypes['AuthPayLoad']; // AuthPayLoad!
@@ -579,6 +600,7 @@ export interface NexusGenFieldTypes {
     deleteBudgeting: NexusGenRootTypes['ResponseMessage'] | null; // ResponseMessage
     deleteCashAccount: NexusGenRootTypes['ResponseMessage'] | null; // ResponseMessage
     deleteCashTransaction: NexusGenRootTypes['ResponseMessage'] | null; // ResponseMessage
+    deleteCategoryPlan: NexusGenRootTypes['ResponseMessage'] | null; // ResponseMessage
     deleteDebitAccount: NexusGenRootTypes['ResponseMessage'] | null; // ResponseMessage
     deleteEMoneyAccount: NexusGenRootTypes['ResponseMessage'] | null; // ResponseMessage
     deleteEMoneyTransaction: NexusGenRootTypes['ResponseMessage']; // ResponseMessage!
@@ -586,6 +608,7 @@ export interface NexusGenFieldTypes {
     editBudgeting: NexusGenRootTypes['Budgeting']; // Budgeting!
     editCashAccount: NexusGenRootTypes['CashAccount']; // CashAccount!
     editCashTransaction: NexusGenRootTypes['CashTransaction']; // CashTransaction!
+    editCategoryPlan: NexusGenRootTypes['CategoryPlan']; // CategoryPlan!
     editDebitTransaction: NexusGenRootTypes['DebitTransaction']; // DebitTransaction!
     editEMoneyTransaction: NexusGenRootTypes['EMoneyTransaction']; // EMoneyTransaction!
     editEWalletTransaction: NexusGenRootTypes['EWalletTransaction']; // EWalletTransaction!
@@ -671,6 +694,7 @@ export interface NexusGenFieldTypes {
     getAllBudgeting: Array<NexusGenRootTypes['Budgeting'] | null> | null; // [Budgeting]
     getAllCashAccount: Array<NexusGenRootTypes['CashAccount'] | null> | null; // [CashAccount]
     getAllCashTransaction: Array<NexusGenRootTypes['CashTransaction'] | null> | null; // [CashTransaction]
+    getAllCategoryPlan: Array<NexusGenRootTypes['CategoryPlan'] | null> | null; // [CategoryPlan]
     getAllDebitAccount: Array<NexusGenRootTypes['DebitAccount'] | null> | null; // [DebitAccount]
     getAllDebitTransaction: Array<NexusGenRootTypes['DebitTransaction'] | null> | null; // [DebitTransaction]
     getAllEMoneyAccount: Array<NexusGenRootTypes['EMoneyAccount'] | null> | null; // [EMoneyAccount]
@@ -682,6 +706,8 @@ export interface NexusGenFieldTypes {
     getAllPayLaterTransaction: Array<NexusGenRootTypes['PayLaterTransaction'] | null> | null; // [PayLaterTransaction]
     getAllUser: Array<NexusGenRootTypes['User'] | null>; // [User]!
     getDebitLatestTransaction: NexusGenRootTypes['DebitTransaction'] | null; // DebitTransaction
+    getDetailBudgeting: NexusGenRootTypes['Budgeting']; // Budgeting!
+    getDetailCategoryPlan: NexusGenRootTypes['CategoryPlan']; // CategoryPlan!
     getEWalletLatestTransaction: NexusGenRootTypes['EWalletTransaction'] | null; // EWalletTransaction
     getInfoCashAccount: NexusGenRootTypes['CashAccount'] | null; // CashAccount
     getInfoDebitAccount: NexusGenRootTypes['DebitAccount'] | null; // DebitAccount
@@ -777,6 +803,16 @@ export interface NexusGenFieldTypeNames {
   CashTransactionSubscriptionType: { // field return type name
     mutationType: 'typeOfMutationType'
     transaction: 'CashTransaction'
+  }
+  CategoryPlan: { // field return type name
+    amount: 'String'
+    budgetId: 'String'
+    categoryId: 'String'
+    createdAt: 'DateTime'
+    id: 'String'
+    lastUpdate: 'DateTime'
+    monthly: 'Boolean'
+    tagId: 'String'
   }
   DebitAccount: { // field return type name
     accountNumber: 'String'
@@ -920,6 +956,7 @@ export interface NexusGenFieldTypeNames {
     addBudgeting: 'Budgeting'
     addCashAccount: 'CashAccount'
     addCashTransaction: 'CashTransaction'
+    addCategoryPlan: 'CategoryPlan'
     addEMoneyTransaction: 'EMoneyTransaction'
     addMerchant: 'Merchant'
     changePassword: 'AuthPayLoad'
@@ -932,6 +969,7 @@ export interface NexusGenFieldTypeNames {
     deleteBudgeting: 'ResponseMessage'
     deleteCashAccount: 'ResponseMessage'
     deleteCashTransaction: 'ResponseMessage'
+    deleteCategoryPlan: 'ResponseMessage'
     deleteDebitAccount: 'ResponseMessage'
     deleteEMoneyAccount: 'ResponseMessage'
     deleteEMoneyTransaction: 'ResponseMessage'
@@ -939,6 +977,7 @@ export interface NexusGenFieldTypeNames {
     editBudgeting: 'Budgeting'
     editCashAccount: 'CashAccount'
     editCashTransaction: 'CashTransaction'
+    editCategoryPlan: 'CategoryPlan'
     editDebitTransaction: 'DebitTransaction'
     editEMoneyTransaction: 'EMoneyTransaction'
     editEWalletTransaction: 'EWalletTransaction'
@@ -1024,6 +1063,7 @@ export interface NexusGenFieldTypeNames {
     getAllBudgeting: 'Budgeting'
     getAllCashAccount: 'CashAccount'
     getAllCashTransaction: 'CashTransaction'
+    getAllCategoryPlan: 'CategoryPlan'
     getAllDebitAccount: 'DebitAccount'
     getAllDebitTransaction: 'DebitTransaction'
     getAllEMoneyAccount: 'EMoneyAccount'
@@ -1035,6 +1075,8 @@ export interface NexusGenFieldTypeNames {
     getAllPayLaterTransaction: 'PayLaterTransaction'
     getAllUser: 'User'
     getDebitLatestTransaction: 'DebitTransaction'
+    getDetailBudgeting: 'Budgeting'
+    getDetailCategoryPlan: 'CategoryPlan'
     getEWalletLatestTransaction: 'EWalletTransaction'
     getInfoCashAccount: 'CashAccount'
     getInfoDebitAccount: 'DebitAccount'
@@ -1117,6 +1159,13 @@ export interface NexusGenArgTypes {
       transactionName: string; // String!
       transactionType: NexusGenEnums['ExpenseTypeEnum']; // ExpenseTypeEnum!
     }
+    addCategoryPlan: { // args
+      amount: string; // String!
+      budgetId: string; // String!
+      categoryId: string; // String!
+      monthly: boolean; // Boolean!
+      tagId: string; // String!
+    }
     addEMoneyTransaction: { // args
       amount: string; // String!
       category: Array<NexusGenInputs['NameAmountJsonInput'] | null>; // [NameAmountJsonInput]!
@@ -1184,6 +1233,9 @@ export interface NexusGenArgTypes {
     deleteCashTransaction: { // args
       transactionId: string; // String!
     }
+    deleteCategoryPlan: { // args
+      categoryPlanId: string; // String!
+    }
     deleteDebitAccount: { // args
       debitAccountId: string; // String!
     }
@@ -1220,6 +1272,13 @@ export interface NexusGenArgTypes {
       transactionId: string; // String!
       transactionName?: string | null; // String
       transactionType?: NexusGenEnums['ExpenseTypeEnum'] | null; // ExpenseTypeEnum
+    }
+    editCategoryPlan: { // args
+      amount: string; // String!
+      categoryId: string; // String!
+      categoryPlanId: string; // String!
+      monthly: boolean; // Boolean!
+      tagId: string; // String!
     }
     editDebitTransaction: { // args
       category?: Array<NexusGenInputs['NameAmountJsonInput'] | null> | null; // [NameAmountJsonInput]
@@ -1348,6 +1407,9 @@ export interface NexusGenArgTypes {
     getAllCashTransaction: { // args
       cashAccountId: string; // String!
     }
+    getAllCategoryPlan: { // args
+      budgetId: string; // String!
+    }
     getAllDebitTransaction: { // args
       debitAccountId: string; // String!
     }
@@ -1362,6 +1424,12 @@ export interface NexusGenArgTypes {
     }
     getDebitLatestTransaction: { // args
       debitAccountId: string; // String!
+    }
+    getDetailBudgeting: { // args
+      budgetId: string; // String!
+    }
+    getDetailCategoryPlan: { // args
+      categoryPlanId: string; // String!
     }
     getEWalletLatestTransaction: { // args
       eWalletAccountId: string; // String!
