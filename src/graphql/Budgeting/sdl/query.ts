@@ -65,13 +65,13 @@ export const BudgetingQuery = extendType({
           // });
 
           const response = {
-            id: budgetingDetail.id,
-            userId: budgetingDetail.userId,
-            createdAt: budgetingDetail.createdAt,
-            lastUpdate: budgetingDetail.lastUpdate,
-            budgetName: budgetingDetail.budgetName,
-            budgetTypeId: budgetingDetail.budgetTypeId,
-            amount: budgetingDetail.amount,
+            id: budgetingDetail!.id,
+            userId: budgetingDetail!.userId,
+            createdAt: budgetingDetail!.createdAt,
+            lastUpdate: budgetingDetail!.lastUpdate,
+            budgetName: budgetingDetail!.budgetName,
+            budgetTypeId: budgetingDetail!.budgetTypeId,
+            amount: budgetingDetail!.amount,
           };
 
           return response;
@@ -204,14 +204,14 @@ export const CategoryPlanQuery = extendType({
           // });
 
           const response = {
-            id: categoryPlanDetail.id,
-            categoryId: categoryPlanDetail.categoryId,
-            budgetId: categoryPlanDetail.budgetId,
-            tagId: categoryPlanDetail.tagId,
-            monthly: categoryPlanDetail.monthly,
-            createdAt: categoryPlanDetail.createdAt,
-            lastUpdate: categoryPlanDetail.lastUpdate,
-            amount: categoryPlanDetail.amount,
+            id: categoryPlanDetail!.id,
+            categoryId: categoryPlanDetail!.categoryId,
+            budgetId: categoryPlanDetail!.budgetId,
+            tagId: categoryPlanDetail!.tagId,
+            monthly: categoryPlanDetail!.monthly,
+            createdAt: categoryPlanDetail!.createdAt,
+            lastUpdate: categoryPlanDetail!.lastUpdate,
+            amount: categoryPlanDetail!.amount,
           };
 
           return response;
