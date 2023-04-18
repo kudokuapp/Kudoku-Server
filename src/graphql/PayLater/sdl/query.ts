@@ -227,7 +227,7 @@ export const PayLaterTransactionQuery = extendType({
 
           const allPayLaterTransaction =
             await prisma.payLaterTransaction.findMany({
-              orderBy: [{ dateTimestamp: 'desc', referenceId: 'desc' }],
+              orderBy: [{ dateTimestamp: 'desc' }, { referenceId: 'desc' }],
             });
 
           const payLaterTransaction = allPayLaterTransaction.filter((v) => {
