@@ -284,7 +284,7 @@ export const EWalletTransactionQuery = extendType({
 
           const allEWalletTransaction =
             await prisma.eWalletTransaction.findMany({
-              orderBy: [{ dateTimestamp: 'desc', referenceId: 'desc' }],
+              orderBy: [{ dateTimestamp: 'desc' }, { referenceId: 'desc' }],
             });
 
           const eWalletTransaction = allEWalletTransaction.filter((v) => {

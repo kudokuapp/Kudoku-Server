@@ -217,7 +217,7 @@ export const DebitTransactionQuery = extendType({
           });
 
           const allDebitTransaction = await prisma.debitTransaction.findMany({
-            orderBy: [{ dateTimestamp: 'desc', referenceId: 'desc' }],
+            orderBy: [{ dateTimestamp: 'desc' }, { referenceId: 'desc' }],
           });
 
           const debitTransaction = allDebitTransaction.filter((v) => {
