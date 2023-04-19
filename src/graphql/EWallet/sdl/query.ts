@@ -42,6 +42,7 @@ export const EWalletAccountQuery = extendType({
               accountNumber: element.accountNumber,
               expired: element.expired,
               brickAccessToken: element.accessToken,
+              brickInstitutionId: element.brickInstitutionId,
             };
 
             response.push(obj);
@@ -166,6 +167,7 @@ export const EWalletAccountQuery = extendType({
             currency: eWalletAccount.currency,
             expired: eWalletAccount.expired,
             brickAccessToken: eWalletAccount.accessToken,
+            brickInstitutionId: eWalletAccount.brickInstitutionId,
           };
         } catch (error) {
           throw error;

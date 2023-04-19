@@ -37,6 +37,7 @@ export const PayLaterAccountQuery = extendType({
               accountNumber: element.accountNumber,
               expired: element.expired,
               brickAccessToken: element.accessToken,
+              brickInstitutionId: element.brickInstitutionId,
             };
 
             response.push(obj);
@@ -103,6 +104,7 @@ export const PayLaterAccountQuery = extendType({
             expired: payLaterAccount.expired,
             limit: payLaterAccount.limit,
             brickAccessToken: payLaterAccount.accessToken,
+            brickInstitutionId: payLaterAccount.brickInstitutionId,
           };
         } catch (error) {
           throw error;

@@ -470,6 +470,7 @@ export const EWalletAccountMutation = extendType({
               lastUpdate: new Date(),
               currency: account.currency,
               expired: false,
+              brickInstitutionId: 11,
             },
           });
 
@@ -517,6 +518,7 @@ export const EWalletAccountMutation = extendType({
             institutionId: eWalletAccount.institutionId,
             accountNumber: eWalletAccount.accountNumber,
             expired: eWalletAccount.expired,
+            brickInstitutionId: eWalletAccount.brickInstitutionId,
           };
         } catch (error) {
           throw error;

@@ -30,12 +30,13 @@ declare global {
 
 export interface NexusGenInputs {
   KudokuxBrickAccount: { // input type
-    accessToken?: string | null; // String
+    accessToken: string; // String!
     accountHolder: string; // String!
     accountId: string; // String!
     accountNumber: string; // String!
     balances: NexusGenInputs['KudokuxBrickBalance']; // KudokuxBrickBalance!
     currency: string; // String!
+    institutionId: number; // Int!
     type?: string | null; // String
   }
   KudokuxBrickBalance: { // input type
@@ -160,6 +161,7 @@ export interface NexusGenObjects {
     accountNumber: string; // String!
     balance: string; // String!
     brickAccessToken?: string | null; // String
+    brickInstitutionId?: number | null; // Int
     createdAt: NexusGenScalars['DateTime']; // DateTime!
     currency: string; // String!
     expired: boolean; // Boolean!
@@ -238,6 +240,7 @@ export interface NexusGenObjects {
     accountNumber: string; // String!
     balance: string; // String!
     brickAccessToken?: string | null; // String
+    brickInstitutionId?: number | null; // Int
     createdAt: NexusGenScalars['DateTime']; // DateTime!
     currency: string; // String!
     expired: boolean; // Boolean!
@@ -310,6 +313,7 @@ export interface NexusGenObjects {
     accountNumber: string; // String!
     balance: string; // String!
     brickAccessToken?: string | null; // String
+    brickInstitutionId?: number | null; // Int
     createdAt: NexusGenScalars['DateTime']; // DateTime!
     currency: string; // String!
     expired: boolean; // Boolean!
@@ -449,6 +453,7 @@ export interface NexusGenFieldTypes {
     accountNumber: string; // String!
     balance: string; // String!
     brickAccessToken: string | null; // String
+    brickInstitutionId: number | null; // Int
     createdAt: NexusGenScalars['DateTime']; // DateTime!
     currency: string; // String!
     expired: boolean; // Boolean!
@@ -527,6 +532,7 @@ export interface NexusGenFieldTypes {
     accountNumber: string; // String!
     balance: string; // String!
     brickAccessToken: string | null; // String
+    brickInstitutionId: number | null; // Int
     createdAt: NexusGenScalars['DateTime']; // DateTime!
     currency: string; // String!
     expired: boolean; // Boolean!
@@ -644,6 +650,7 @@ export interface NexusGenFieldTypes {
     accountNumber: string; // String!
     balance: string; // String!
     brickAccessToken: string | null; // String
+    brickInstitutionId: number | null; // Int
     createdAt: NexusGenScalars['DateTime']; // DateTime!
     currency: string; // String!
     expired: boolean; // Boolean!
@@ -818,6 +825,7 @@ export interface NexusGenFieldTypeNames {
     accountNumber: 'String'
     balance: 'String'
     brickAccessToken: 'String'
+    brickInstitutionId: 'Int'
     createdAt: 'DateTime'
     currency: 'String'
     expired: 'Boolean'
@@ -896,6 +904,7 @@ export interface NexusGenFieldTypeNames {
     accountNumber: 'String'
     balance: 'String'
     brickAccessToken: 'String'
+    brickInstitutionId: 'Int'
     createdAt: 'DateTime'
     currency: 'String'
     expired: 'Boolean'
@@ -1013,6 +1022,7 @@ export interface NexusGenFieldTypeNames {
     accountNumber: 'String'
     balance: 'String'
     brickAccessToken: 'String'
+    brickInstitutionId: 'Int'
     createdAt: 'DateTime'
     currency: 'String'
     expired: 'Boolean'

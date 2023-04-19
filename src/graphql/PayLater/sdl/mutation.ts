@@ -74,6 +74,7 @@ export const PayLaterAccountMutation = extendType({
               lastUpdate: new Date(),
               currency: account.currency,
               expired: false,
+              brickInstitutionId: 11,
             },
           });
 
@@ -122,6 +123,7 @@ export const PayLaterAccountMutation = extendType({
             institutionId: payLaterAccount.institutionId,
             accountNumber: payLaterAccount.accountNumber,
             expired: payLaterAccount.expired,
+            brickInstitutionId: payLaterAccount.brickInstitutionId,
           };
         } catch (error) {
           throw error;

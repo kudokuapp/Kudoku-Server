@@ -36,6 +36,7 @@ export const DebitAccountQuery = extendType({
               accountNumber: element.accountNumber,
               expired: element.expired,
               brickAccessToken: element.accessToken,
+              brickInstitutionId: element.brickInstitutionId,
             };
 
             response.push(obj);
@@ -98,6 +99,7 @@ export const DebitAccountQuery = extendType({
             currency: debitAccount.currency,
             expired: debitAccount.expired,
             brickAccessToken: debitAccount.accessToken,
+            brickInstitutionId: debitAccount.brickInstitutionId,
           };
         } catch (error) {
           throw error;

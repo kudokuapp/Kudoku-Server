@@ -17,7 +17,9 @@ export const KudokuxBrickAccount = inputObjectType({
 
     t.string('type');
 
-    t.string('accessToken');
+    t.nonNull.string('accessToken');
+
+    t.nonNull.int('institutionId');
   },
 });
 

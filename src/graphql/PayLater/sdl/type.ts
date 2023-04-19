@@ -41,6 +41,10 @@ export const PayLaterAccount = objectType({
     t.string('brickAccessToken', {
       description: 'The brick access token',
     });
+
+    t.int('brickInstitutionId', {
+      description: 'Brick institution ID.',
+    });
   },
 });
 
