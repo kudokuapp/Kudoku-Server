@@ -174,6 +174,52 @@ export const EWalletAccountQuery = extendType({
         }
       },
     });
+
+    t.field('getEWalletAccountViaBrickAccessToken', {
+      type: 'EWalletAccount',
+
+      description:
+        'Get info on a particular e-wallet account based on brick access token.',
+
+      args: {
+        accessToken: nonNull(
+          arg({
+            type: 'String',
+            description: 'The access token.',
+          })
+        ),
+      },
+
+      resolve: async (__, { accessToken }, { userId, prisma }, ___) => {
+        try {
+          if (!userId) throw new Error('Token tidak valid.');
+
+          const user = await prisma.user.findFirstOrThrow({
+            where: { id: userId },
+          });
+
+          const eWalletAccount = await prisma.eWalletAccount.findFirstOrThrow({
+            where: { AND: [{ accessToken }, { userId: user.id }] },
+          });
+
+          return {
+            id: eWalletAccount.id,
+            userId: user.id,
+            institutionId: eWalletAccount.institutionId,
+            accountNumber: eWalletAccount.accountNumber,
+            createdAt: eWalletAccount.createdAt,
+            lastUpdate: eWalletAccount.lastUpdate,
+            balance: eWalletAccount.balance,
+            currency: eWalletAccount.currency,
+            expired: eWalletAccount.expired,
+            brickAccessToken: eWalletAccount.accessToken,
+            brickInstitutionId: eWalletAccount.brickInstitutionId,
+          };
+        } catch (error) {
+          throw error;
+        }
+      },
+    });
   },
 });
 

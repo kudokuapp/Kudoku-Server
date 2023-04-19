@@ -1511,6 +1511,12 @@ type Query {
     categoryPlanId: String!
   ): CategoryPlan!
 
+  """Get info on a particular e-wallet account based on brick access token."""
+  getEWalletAccountViaBrickAccessToken(
+    """The access token."""
+    accessToken: String!
+  ): EWalletAccount
+
   """Get the latest e-wallet transaction"""
   getEWalletLatestTransaction(
     """The eWalletAccountId"""
@@ -1559,6 +1565,14 @@ type Query {
     """
     whatsapp: String
   ): ResponseMessage
+
+  """
+  Get info on a particular pay later account based on brick access token.
+  """
+  getPayLaterAccountViaBrickAccessToken(
+    """The access token."""
+    accessToken: String!
+  ): PayLaterAccount
 
   """Get the latest pay later transaction"""
   getPayLaterLatestTransaction(

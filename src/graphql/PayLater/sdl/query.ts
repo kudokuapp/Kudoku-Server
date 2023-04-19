@@ -111,6 +111,55 @@ export const PayLaterAccountQuery = extendType({
         }
       },
     });
+
+    t.field('getPayLaterAccountViaBrickAccessToken', {
+      type: 'PayLaterAccount',
+
+      description:
+        'Get info on a particular pay later account based on brick access token.',
+
+      args: {
+        accessToken: nonNull(
+          arg({
+            type: 'String',
+            description: 'The access token.',
+          })
+        ),
+      },
+
+      resolve: async (__, { accessToken }, { userId, prisma }, ___) => {
+        try {
+          if (!userId) throw new Error('Token tidak valid.');
+
+          const user = await prisma.user.findFirstOrThrow({
+            where: { id: userId },
+          });
+
+          const payLaterAccount = await prisma.payLaterAccount.findFirstOrThrow(
+            {
+              where: { AND: [{ accessToken }, { userId: user.id }] },
+            }
+          );
+
+          return {
+            id: payLaterAccount.id,
+            userId: user.id,
+            institutionId: payLaterAccount.institutionId,
+            accountNumber: payLaterAccount.accountNumber,
+            createdAt: payLaterAccount.createdAt,
+            lastUpdate: payLaterAccount.lastUpdate,
+            balance: payLaterAccount.balance,
+            currency: payLaterAccount.currency,
+            expired: payLaterAccount.expired,
+            limit: payLaterAccount.limit,
+            brickAccessToken: payLaterAccount.accessToken,
+            brickInstitutionId: payLaterAccount.brickInstitutionId,
+          };
+        } catch (error) {
+          throw error;
+        }
+      },
+    });
   },
 });
 
