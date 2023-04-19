@@ -715,6 +715,7 @@ export interface NexusGenFieldTypes {
     getDebitLatestTransaction: NexusGenRootTypes['DebitTransaction'] | null; // DebitTransaction
     getDetailBudgeting: NexusGenRootTypes['Budgeting']; // Budgeting!
     getDetailCategoryPlan: NexusGenRootTypes['CategoryPlan']; // CategoryPlan!
+    getEWalletAccountViaBrickAccessToken: NexusGenRootTypes['EWalletAccount'] | null; // EWalletAccount
     getEWalletLatestTransaction: NexusGenRootTypes['EWalletTransaction'] | null; // EWalletTransaction
     getInfoCashAccount: NexusGenRootTypes['CashAccount'] | null; // CashAccount
     getInfoDebitAccount: NexusGenRootTypes['DebitAccount'] | null; // DebitAccount
@@ -722,6 +723,7 @@ export interface NexusGenFieldTypes {
     getInfoEWalletAccount: NexusGenRootTypes['EWalletAccount'] | null; // EWalletAccount
     getInfoPayLaterAccount: NexusGenRootTypes['PayLaterAccount'] | null; // PayLaterAccount
     getOtp: NexusGenRootTypes['ResponseMessage'] | null; // ResponseMessage
+    getPayLaterAccountViaBrickAccessToken: NexusGenRootTypes['PayLaterAccount'] | null; // PayLaterAccount
     getPayLaterLatestTransaction: NexusGenRootTypes['PayLaterTransaction'] | null; // PayLaterTransaction
     getProfile: NexusGenRootTypes['Profile'] | null; // Profile
     getRefresh: Array<NexusGenRootTypes['Refresh'] | null> | null; // [Refresh]
@@ -1087,6 +1089,7 @@ export interface NexusGenFieldTypeNames {
     getDebitLatestTransaction: 'DebitTransaction'
     getDetailBudgeting: 'Budgeting'
     getDetailCategoryPlan: 'CategoryPlan'
+    getEWalletAccountViaBrickAccessToken: 'EWalletAccount'
     getEWalletLatestTransaction: 'EWalletTransaction'
     getInfoCashAccount: 'CashAccount'
     getInfoDebitAccount: 'DebitAccount'
@@ -1094,6 +1097,7 @@ export interface NexusGenFieldTypeNames {
     getInfoEWalletAccount: 'EWalletAccount'
     getInfoPayLaterAccount: 'PayLaterAccount'
     getOtp: 'ResponseMessage'
+    getPayLaterAccountViaBrickAccessToken: 'PayLaterAccount'
     getPayLaterLatestTransaction: 'PayLaterTransaction'
     getProfile: 'Profile'
     getRefresh: 'Refresh'
@@ -1441,6 +1445,9 @@ export interface NexusGenArgTypes {
     getDetailCategoryPlan: { // args
       categoryPlanId: string; // String!
     }
+    getEWalletAccountViaBrickAccessToken: { // args
+      accessToken: string; // String!
+    }
     getEWalletLatestTransaction: { // args
       eWalletAccountId: string; // String!
     }
@@ -1462,6 +1469,9 @@ export interface NexusGenArgTypes {
     getOtp: { // args
       email?: string | null; // String
       whatsapp?: string | null; // String
+    }
+    getPayLaterAccountViaBrickAccessToken: { // args
+      accessToken: string; // String!
     }
     getPayLaterLatestTransaction: { // args
       payLaterAccountId: string; // String!
