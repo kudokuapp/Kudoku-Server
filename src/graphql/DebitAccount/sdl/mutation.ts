@@ -324,6 +324,7 @@ export const DebitAccountMutation = extendType({
               lastUpdate: new Date(),
               currency: account.currency,
               expired: false,
+              brickInstitutionId: account.institutionId,
             },
           });
 
@@ -372,6 +373,7 @@ export const DebitAccountMutation = extendType({
             institutionId: debitAccount.institutionId,
             lastUpdate: debitAccount.lastUpdate,
             userId: debitAccount.userId,
+            brickInstitutionId: debitAccount.brickInstitutionId,
           };
         } catch (error) {
           throw error;

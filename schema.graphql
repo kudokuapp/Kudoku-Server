@@ -160,6 +160,9 @@ type DebitAccount {
   """The brick access token"""
   brickAccessToken: String
 
+  """Brick institution ID."""
+  brickInstitutionId: Int
+
   """When this account is created"""
   createdAt: DateTime!
 
@@ -366,6 +369,9 @@ type EWalletAccount {
   """The brick access token"""
   brickAccessToken: String
 
+  """Brick institution ID."""
+  brickInstitutionId: Int
+
   """When this account is created"""
   createdAt: DateTime!
 
@@ -481,12 +487,13 @@ type GopayEWalletAndPayLaterTransaction {
 }
 
 input KudokuxBrickAccount {
-  accessToken: String
+  accessToken: String!
   accountHolder: String!
   accountId: String!
   accountNumber: String!
   balances: KudokuxBrickBalance!
   currency: String!
+  institutionId: Int!
   type: String
 }
 
@@ -1304,6 +1311,9 @@ type PayLaterAccount {
 
   """The brick access token"""
   brickAccessToken: String
+
+  """Brick institution ID."""
+  brickInstitutionId: Int
 
   """When this account is created"""
   createdAt: DateTime!
