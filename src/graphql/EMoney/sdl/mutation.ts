@@ -244,6 +244,69 @@ export const EMoneyAccountMutation = extendType({
         }
       },
     });
+
+    t.nonNull.field('editEMoneyAccount', {
+      type: 'EMoneyAccount',
+
+      description: "Edit details on user's e-money account",
+
+      args: {
+        cardNumber: arg({
+          type: 'String',
+          description:
+            'The account name of the cash account that user created.',
+        }),
+
+        institutionId: arg({
+          type: 'String',
+          description: 'The institution id that e-money account',
+        }),
+
+        eMoneyAccountId: nonNull(
+          arg({
+            type: 'String',
+            description: 'The id of that e-money account',
+          })
+        ),
+      },
+
+      async resolve(
+        __,
+        { cardNumber, institutionId, eMoneyAccountId },
+        { userId, prisma },
+        ___
+      ) {
+        try {
+          if (!cardNumber && !institutionId)
+            throw new Error(
+              'Card Number and Institution ID both cannot be null'
+            );
+
+          if (!userId) throw new Error('Token tidak valid.');
+
+          const user = await prisma.user.findFirstOrThrow({
+            where: { id: userId },
+          });
+
+          const eMoneyAccount = await prisma.eMoneyAccount.findFirstOrThrow({
+            where: { AND: [{ id: eMoneyAccountId }, { userId: user.id }] },
+          });
+
+          const response = await prisma.eMoneyAccount.update({
+            where: { id: eMoneyAccount.id },
+            data: {
+              cardNumber: cardNumber ?? eMoneyAccount.cardNumber,
+              institutionId: institutionId ?? eMoneyAccount.institutionId,
+              lastUpdate: new Date(),
+            },
+          });
+
+          return response;
+        } catch (error) {
+          throw error;
+        }
+      },
+    });
   },
 });
 
