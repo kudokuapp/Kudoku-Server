@@ -996,6 +996,18 @@ type Mutation {
     transactionType: ExpenseTypeEnum
   ): DebitTransaction!
 
+  """Edit details on user's e-money account"""
+  editEMoneyAccount(
+    """The account name of the cash account that user created."""
+    cardNumber: String
+
+    """The id of that e-money account"""
+    eMoneyAccountId: String!
+
+    """The institution id that e-money account"""
+    institutionId: String
+  ): EMoneyAccount!
+
   """Edit a particular e-money transaction and update it's balance"""
   editEMoneyTransaction(
     """The category of the transaction"""

@@ -616,6 +616,7 @@ export interface NexusGenFieldTypes {
     editCashTransaction: NexusGenRootTypes['CashTransaction']; // CashTransaction!
     editCategoryPlan: NexusGenRootTypes['CategoryPlan']; // CategoryPlan!
     editDebitTransaction: NexusGenRootTypes['DebitTransaction']; // DebitTransaction!
+    editEMoneyAccount: NexusGenRootTypes['EMoneyAccount']; // EMoneyAccount!
     editEMoneyTransaction: NexusGenRootTypes['EMoneyTransaction']; // EMoneyTransaction!
     editEWalletTransaction: NexusGenRootTypes['EWalletTransaction']; // EWalletTransaction!
     editPayLaterTransaction: NexusGenRootTypes['PayLaterTransaction']; // PayLaterTransaction!
@@ -990,6 +991,7 @@ export interface NexusGenFieldTypeNames {
     editCashTransaction: 'CashTransaction'
     editCategoryPlan: 'CategoryPlan'
     editDebitTransaction: 'DebitTransaction'
+    editEMoneyAccount: 'EMoneyAccount'
     editEMoneyTransaction: 'EMoneyTransaction'
     editEWalletTransaction: 'EWalletTransaction'
     editPayLaterTransaction: 'PayLaterTransaction'
@@ -1308,6 +1310,11 @@ export interface NexusGenArgTypes {
       transactionMethod?: NexusGenEnums['TransactionMethodEnum'] | null; // TransactionMethodEnum
       transactionName?: string | null; // String
       transactionType?: NexusGenEnums['ExpenseTypeEnum'] | null; // ExpenseTypeEnum
+    }
+    editEMoneyAccount: { // args
+      cardNumber?: string | null; // String
+      eMoneyAccountId: string; // String!
+      institutionId?: string | null; // String
     }
     editEMoneyTransaction: { // args
       category?: Array<NexusGenInputs['NameAmountJsonInput'] | null> | null; // [NameAmountJsonInput]
